@@ -1,0 +1,138 @@
+/*
+  이 파일은 프로젝트 전체에서 사용하는 커스텀 스타일입니다.
+  Bootstrap 5의 기본 디자인은 그대로 쓰되, 서비스에 맞게 색상/간격만 일부 조정합니다.
+
+  ⚠️ 이 파일은 여러 페이지에 영향을 주는 공통 파일입니다.
+     수정하기 전에 팀원과 상의해 주세요. (README의 "협업 원칙" 참고)
+*/
+
+:root {
+  /* 관리자 서비스 색상 (네이비/블루 계열, 업무용 느낌) */
+  --admin-primary: #1a2b4c;
+  --admin-primary-light: #2c4370;
+  --admin-accent: #3d6ee0;
+  --admin-bg: #f4f6fa;
+  --admin-sidebar-width: 220px;
+
+  /* 사용자 서비스 색상 (밝고 직관적인 느낌) */
+  --user-primary: #2f6fed;
+  --user-bg: #ffffff;
+  --user-header-height: 64px;
+}
+
+body {
+  background-color: #ffffff;
+  color: #212529;
+  font-family:
+    'Pretendard',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+/* ---------- 공통 유틸 ---------- */
+.page-title {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.page-description {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+/* ---------- 사용자(User) 영역 ---------- */
+.user-header {
+  height: var(--user-header-height);
+  background-color: #ffffff;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.user-footer {
+  background-color: var(--admin-primary);
+  color: #dee3ee;
+}
+
+.user-menu-card {
+  border: 1px solid #e9ecef;
+  border-radius: 0.75rem;
+  transition: box-shadow 0.15s ease-in-out;
+  text-decoration: none;
+  color: inherit;
+}
+
+.user-menu-card:hover {
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+/* ---------- 관리자(Admin) 영역 ---------- */
+.admin-layout {
+  min-height: 100vh;
+  background-color: var(--admin-bg);
+}
+
+.admin-header {
+  background-color: var(--admin-primary);
+  color: #ffffff;
+  height: 56px;
+}
+
+.admin-sidebar {
+  width: var(--admin-sidebar-width);
+  min-height: calc(100vh - 56px);
+  background-color: var(--admin-primary-light);
+}
+
+.admin-sidebar .nav-link {
+  color: #d7deee;
+  border-radius: 0.5rem;
+  margin: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+
+.admin-sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.admin-sidebar .nav-link.active {
+  background-color: var(--admin-accent);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.admin-sidebar .nav-sublink {
+  color: #b7c1da;
+  padding-left: 2.25rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.admin-sidebar .nav-sublink:hover {
+  color: #ffffff;
+}
+
+.admin-sidebar .nav-sublink.active {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.admin-content {
+  background-color: var(--admin-bg);
+  min-height: calc(100vh - 56px);
+}
+
+.summary-card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.summary-card .summary-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--admin-primary);
+}
