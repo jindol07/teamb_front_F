@@ -6,7 +6,6 @@ import ParkingStatus from '../pages/user/parking-status/ParkingStatus';
 import Notice from '../pages/user/notice/Notice';
 import Reservation from '../pages/user/reservation/Reservation';
 import UserSignUp from '../pages/user/login/UserSignUp';
-import MyPage from '../pages/user/mypage/MyPage';
 
 /**
  * UserRoutes
@@ -35,7 +34,6 @@ export default function UserRoutes() {
         <Route path="parking-status" element={<ParkingStatus />} />
         <Route path="notice" element={<Notice />} />
         <Route path="reservation" element={<Reservation />} />
-        <Route path="mypage" element={<MyPage />} />
       </Route>
     </>
   );
