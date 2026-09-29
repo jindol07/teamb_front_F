@@ -3,7 +3,7 @@ import { noticeListMock } from '../../../mock/noticeMock';
 export default function AdminNotice() {
   const [category, setCategory] = useState('전체');
   /*
-  searchKeyword : 사용자가 제목 검색창에 입력한 문자열을 저장
+    searchKeyword : 사용자가 제목 검색창에 입력한 문자열을 저장
   */
   const [searchKeyword, setSearchKeyword] = useState('');
   /*
@@ -20,7 +20,8 @@ export default function AdminNotice() {
   /*
     등록할 공지 유형
   */
-  const [registerCategory, setRegisterCategory] = useState('이용안내');
+  const [registerCategory, setRegisterCategory] =
+    useState('이용안내');
   /*
     등록할 제목
   */
@@ -32,48 +33,118 @@ export default function AdminNotice() {
   /*
     중요 공지 여부
   */
-  const [registerImportant, setRegisterImportant] = useState(false);
+  const [registerImportant, setRegisterImportant] =
+    useState(false);
   /*
     상단 고정 여부
   */
-  const [registerPinned, setRegisterPinned] = useState(false);
+  const [registerPinned, setRegisterPinned] =
+    useState(false);
   /*
-    첨부파일
-    파일이 없으면 null
+    첨부파일 목록
+    File[]을 사용해서
+    여러 개의 파일을 저장할 수 있도록 함
   */
-  const [registerFile, setRegisterFile] = useState<File | null>(null);
+  const [registerFiles, setRegisterFiles] =
+    useState<File[]>([]);
   /*
-    filter(): 배열에서 조건에 맞는 데이터만 새로운 배열로 반환
+    첨부파일 추가
+    - Ctrl / Shift로 여러 파일 한 번에 선택 가능
+    - 파일 선택 버튼을 여러 번 눌러 추가 가능
+    - 같은 파일 중복 선택 방지
+    - 중복 파일 선택 시 알림 표시
   */
-  const filteredNoticeList = noticeList.filter((notice) => {
-    const categoryMatch =
-      category === '전체' || notice.category === category;
-    /*
-      "전체"가 선택되어있으면 모든 공지를 허용, 특정 유형 선택시 해당 유형만 허용
-    */
-    const titleMatch =
-      notice.title
-        .toLowerCase()
-        .includes(searchKeyword.toLowerCase());
-    return categoryMatch && titleMatch;
-    /*
-      categoryMatch,titleMatch 모두 만족시 결과에 포함
-    */
-  });
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedFiles = Array.from(
+      e.target.files ?? []
+    );
+    // 중복 파일 찾기
+    const duplicateFiles = selectedFiles.filter(
+      (selectedFile) =>
+        registerFiles.some(
+          (file) =>
+            file.name === selectedFile.name &&
+            file.size === selectedFile.size
+        )
+    );
+    // 중복 파일 알림
+    if (duplicateFiles.length > 0) {
+      const duplicateFileNames =
+        duplicateFiles
+          .map((file) => file.name)
+          .join(', ');
+      alert(
+        `이미 선택된 파일입니다.\n${duplicateFileNames}`
+      );
+    }
+    // 중복되지 않은 파일만 가져오기
+    const newFiles = selectedFiles.filter(
+      (selectedFile) =>
+        !registerFiles.some(
+          (file) =>
+            file.name === selectedFile.name &&
+            file.size === selectedFile.size
+        )
+    );
+    // 기존 파일 + 새로운 파일
+    setRegisterFiles([
+      ...registerFiles,
+      ...newFiles
+    ]);
+    // input 초기화
+    e.target.value = '';
+  };
+  /*
+    선택한 첨부파일 삭제
+  */
+  const handleFileDelete = (index: number) => {
+    setRegisterFiles((prev) =>
+      prev.filter(
+        (_, i) => i !== index
+      )
+    );
+  };
+  /*
+    filter(): 배열에서 조건에 맞는 데이터만
+    새로운 배열로 반환
+  */
+  const filteredNoticeList =
+    noticeList.filter((notice) => {
+      const categoryMatch =
+        category === '전체' ||
+        notice.category === category;
+      /*
+        "전체"가 선택되어있으면 모든 공지를 허용
+        특정 유형 선택시 해당 유형만 허용
+      */
+      const titleMatch =
+        notice.title
+          .toLowerCase()
+          .includes(
+            searchKeyword.toLowerCase()
+          );
+      /*
+        categoryMatch, titleMatch
+        모두 만족시 결과에 포함
+      */
+      return categoryMatch && titleMatch;
+    });
   /*
     상단 고정된 공지만 따로 가져옴
-    notice.isPinned이 true인 공지만 pinnedNoticeList에 저장
   */
-  const pinnedNoticeList = filteredNoticeList.filter(
-    (notice) => notice.isPinned
-  );
+  const pinnedNoticeList =
+    filteredNoticeList.filter(
+      (notice) => notice.isPinned
+    );
   /*
     상단 고정이 아닌 일반 공지만 따로 가져옴
-    !notice.isPinned은 isPinned이 false인 경우를 의미
   */
-  const normalNoticeList = filteredNoticeList.filter(
-    (notice) => !notice.isPinned
-  );
+  const normalNoticeList =
+    filteredNoticeList.filter(
+      (notice) => !notice.isPinned
+    );
   /*
     상단 고정 공지를 먼저 넣고,
     그 뒤에 일반 공지를 넣어서 하나의 배열로 합침
@@ -83,8 +154,7 @@ export default function AdminNotice() {
     ...normalNoticeList
   ];
   /*
-    공지사항 등록 함수
-    등록 버튼을 클릭했을 때 실행
+    공지사항 등록
   */
   const handleRegister = () => {
     if (registerTitle.trim() === '') {
@@ -97,22 +167,32 @@ export default function AdminNotice() {
     }
     /*
       새 공지사항 객체 생성
+      registerFiles에 들어있는 파일들을
+      attachments 형태로 변환
     */
     const newNotice = {
       id: Date.now(),
       title: registerTitle,
       writer: '관리자',
       content: registerContent,
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt:
+        new Date()
+          .toISOString()
+          .slice(0, 10),
       views: 0,
       category: registerCategory,
       isPinned: registerPinned,
       isImportant: registerImportant,
-      attachmentName: registerFile ? registerFile.name : null,
-      attachmentUrl: null
+      attachments:
+        registerFiles.map((file, index) => ({
+          id: Date.now() + index,
+          name: file.name,
+          url: '',
+        })),
     };
     /*
-      기존 공지사항 앞에 새 공지 추가
+      기존 공지사항 앞에
+      새 공지사항 추가
     */
     setNoticeList([
       newNotice,
@@ -130,8 +210,23 @@ export default function AdminNotice() {
     setRegisterContent('');
     setRegisterImportant(false);
     setRegisterPinned(false);
-    setRegisterFile(null);
+    setRegisterFiles([]);
   };
+  /*
+    공지사항 등록 취소
+  */
+  const handleCancel = () => {
+    setIsRegisterOpen(false);
+    setRegisterCategory('이용안내');
+    setRegisterTitle('');
+    setRegisterContent('');
+    setRegisterImportant(false);
+    setRegisterPinned(false);
+    setRegisterFiles([]);
+  };
+  /*
+    공지 유형별 Bootstrap 배지 색상
+  */
   const getCategoryBadge = (category: string) => {
     switch (category) {
       case '이용안내':
@@ -150,7 +245,17 @@ export default function AdminNotice() {
   };
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      {/* =========================
+          페이지 제목 / 등록 버튼
+         ========================= */}
+      <div
+        className="
+          d-flex
+          justify-content-between
+          align-items-center
+          mb-3
+        "
+      >
         <div>
           <h2 className="page-title mb-1">
             공지사항 관리
@@ -162,47 +267,79 @@ export default function AdminNotice() {
         <button
           type="button"
           className="btn btn-primary"
-          onClick={() => setIsRegisterOpen(true)}
+          onClick={() =>
+            setIsRegisterOpen(true)
+          }
         >
           + 공지사항 등록
         </button>
       </div>
-      {/* 검색 영역 */}
+      {/* =========================
+          검색 영역
+         ========================= */}
       <div className="d-flex gap-2 mb-3">
         <select
           className="form-select"
           style={{ width: '160px' }}
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) =>
+            setCategory(e.target.value)
+          }
         >
-          <option value="전체">전체</option>
-          <option value="이용안내">이용안내</option>
-          <option value="시설점검">시설점검</option>
-          <option value="주차요금">주차요금</option>
-          <option value="긴급공지">긴급공지</option>
-          <option value="정기권">정기권</option>
+          <option value="전체">
+            전체
+          </option>
+          <option value="이용안내">
+            이용안내
+          </option>
+          <option value="시설점검">
+            시설점검
+          </option>
+          <option value="주차요금">
+            주차요금
+          </option>
+          <option value="긴급공지">
+            긴급공지
+          </option>
+          <option value="정기권">
+            정기권
+          </option>
         </select>
         <input
           type="text"
           className="form-control"
           placeholder="제목을 검색하세요."
           value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
+          onChange={(e) =>
+            setSearchKeyword(
+              e.target.value
+            )
+          }
         />
       </div>
-      {/* 공지사항 등록창 */}
+      {/* =========================
+          공지사항 등록창
+         ========================= */}
       {isRegisterOpen && (
         <div className="card p-4 mb-3">
-          <div className="d-flex justify-content-between align-items-center mb-3">
+          <div
+            className="
+              d-flex
+              justify-content-between
+              align-items-center
+              mb-3
+            "
+          >
             <h4 className="mb-0">
               공지사항 등록
             </h4>
             <button
               type="button"
               className="btn-close"
-              onClick={() => setIsRegisterOpen(false)}
+              onClick={handleCancel}
             />
           </div>
+          {/* 공지 유형 */}
           <div className="mb-3">
             <label className="form-label">
               공지 유형
@@ -210,15 +347,30 @@ export default function AdminNotice() {
             <select
               className="form-select"
               value={registerCategory}
-              onChange={(e) => setRegisterCategory(e.target.value)}
+              onChange={(e) =>
+                setRegisterCategory(
+                  e.target.value
+                )
+              }
             >
-              <option value="이용안내">이용안내</option>
-              <option value="시설점검">시설점검</option>
-              <option value="주차요금">주차요금</option>
-              <option value="긴급공지">긴급공지</option>
-              <option value="정기권">정기권</option>
+              <option value="이용안내">
+                이용안내
+              </option>
+              <option value="시설점검">
+                시설점검
+              </option>
+              <option value="주차요금">
+                주차요금
+              </option>
+              <option value="긴급공지">
+                긴급공지
+              </option>
+              <option value="정기권">
+                정기권
+              </option>
             </select>
           </div>
+          {/* 제목 */}
           <div className="mb-3">
             <label className="form-label">
               제목
@@ -228,9 +380,14 @@ export default function AdminNotice() {
               className="form-control"
               placeholder="공지사항 제목을 입력하세요."
               value={registerTitle}
-              onChange={(e) => setRegisterTitle(e.target.value)}
+              onChange={(e) =>
+                setRegisterTitle(
+                  e.target.value
+                )
+              }
             />
           </div>
+          {/* 내용 */}
           <div className="mb-3">
             <label className="form-label">
               내용
@@ -240,16 +397,25 @@ export default function AdminNotice() {
               rows={5}
               placeholder="공지사항 내용을 입력하세요."
               value={registerContent}
-              onChange={(e) => setRegisterContent(e.target.value)}
+              onChange={(e) =>
+                setRegisterContent(
+                  e.target.value
+                )
+              }
             />
           </div>
+          {/* 중요 공지 */}
           <div className="form-check mb-2">
             <input
               type="checkbox"
               className="form-check-input"
               id="importantCheck"
               checked={registerImportant}
-              onChange={(e) => setRegisterImportant(e.target.checked)}
+              onChange={(e) =>
+                setRegisterImportant(
+                  e.target.checked
+                )
+              }
             />
             <label
               className="form-check-label"
@@ -258,13 +424,18 @@ export default function AdminNotice() {
               중요 공지
             </label>
           </div>
+          {/* 상단 고정 */}
           <div className="form-check mb-3">
             <input
               type="checkbox"
               className="form-check-input"
               id="pinnedCheck"
               checked={registerPinned}
-              onChange={(e) => setRegisterPinned(e.target.checked)}
+              onChange={(e) =>
+                setRegisterPinned(
+                  e.target.checked
+                )
+              }
             />
             <label
               className="form-check-label"
@@ -273,6 +444,12 @@ export default function AdminNotice() {
               상단 고정
             </label>
           </div>
+          {/* =========================
+              첨부파일
+              - 여러 파일 동시 선택
+              - 파일 추가 선택
+              - 개별 파일 삭제
+             ========================= */}
           <div className="mb-3">
             <label className="form-label">
               첨부파일
@@ -280,18 +457,51 @@ export default function AdminNotice() {
             <input
               type="file"
               className="form-control"
-              onChange={(e) =>
-                setRegisterFile(
-                  e.target.files?.[0] ?? null
-                )
-              }
+              multiple
+              onChange={handleFileChange}
             />
+            {/* 선택한 파일 목록 */}
+            {registerFiles.length > 0 && (
+              <div className="mt-2">
+                {registerFiles.map(
+                  (file, index) => (
+                    <div
+                      key={`${file.name}-${file.size}-${index}`}
+                      className="
+                        d-flex
+                        align-items-center
+                        mb-1
+                      "
+                    >
+                      <span className="small text-secondary">
+                        📎 {file.name}
+                      </span>
+                      <button
+                        type="button"
+                        className="
+                          btn
+                          btn-sm
+                          btn-outline-danger
+                          ms-2
+                        "
+                        onClick={() =>
+                          handleFileDelete(index)
+                        }
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
           </div>
+          {/* 취소 / 등록 */}
           <div className="d-flex justify-content-end gap-2">
             <button
               type="button"
               className="btn btn-secondary"
-              onClick={() => setIsRegisterOpen(false)}
+              onClick={handleCancel}
             >
               취소
             </button>
@@ -305,6 +515,9 @@ export default function AdminNotice() {
           </div>
         </div>
       )}
+      {/* =========================
+          공지사항 목록
+         ========================= */}
       <div className="card p-3">
         <table className="table table-hover align-middle mb-0">
           <thead>
@@ -322,85 +535,128 @@ export default function AdminNotice() {
             </tr>
           </thead>
           <tbody>
-            {sortedNoticeList.map((notice, index) => (
-              <tr key={notice.id}>
-                <td>
-                  {sortedNoticeList.length - index}
-                </td>
-                <td>
-                  <span
-                    className={`badge ${getCategoryBadge(notice.category)}`}
-                  >
-                    {notice.category}
-                  </span>
-                </td>
-                <td>
-                  {notice.isPinned && (
-                    <span className="me-1">📌</span>
-                  )}
-                  {notice.isImportant && (
-                    <span className="text-danger fw-bold me-1">
-                      [중요]
-                    </span>
-                  )}
-                  {notice.title}
-                </td>
-                <td>
-                  {notice.isImportant ? (
-                    <span className="badge bg-danger">
-                      중요
-                    </span>
-                  ) : (
-                    <span className="text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  {notice.isPinned ? (
-                    <span className="badge bg-dark">
-                      고정
-                    </span>
-                  ) : (
-                    <span className="text-muted">-</span>
-                  )}
-                </td>
-                <td>
-                  {notice.attachmentName && notice.attachmentUrl ? (
-                    <a
-                      href={notice.attachmentUrl}
-                      className="text-decoration-none"
+            {sortedNoticeList.map(
+              (notice, index) => (
+                <tr key={notice.id}>
+                  {/* 번호 */}
+                  <td>
+                    {sortedNoticeList.length - index}
+                  </td>
+                  {/* 공지 유형 */}
+                  <td>
+                    <span
+                      className={`badge ${getCategoryBadge(
+                        notice.category
+                      )}`}
                     >
-                      📎 {notice.attachmentName}
-                    </a>
-                  ) : (
-                    <span className="text-muted">
-                      없음
+                      {notice.category}
                     </span>
-                  )}
-                </td>
-                <td>{notice.writer}</td>
-                <td>{notice.createdAt}</td>
-                <td>{notice.views}</td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary me-1"
-                  >
-                    수정
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-danger"
-                  >
-                    삭제
-                  </button>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  {/* 제목 */}
+                  <td>
+                    {notice.isPinned && (
+                      <span className="me-1">
+                        📌
+                      </span>
+                    )}
+                    {notice.isImportant && (
+                      <span
+                        className="
+                          text-danger
+                          fw-bold
+                          me-1
+                        "
+                      >
+                        [중요]
+                      </span>
+                    )}
+                    {notice.title}
+                  </td>
+                  {/* 중요 */}
+                  <td>
+                    {notice.isImportant ? (
+                      <span className="badge bg-danger">
+                        중요
+                      </span>
+                    ) : (
+                      <span className="text-muted">
+                        -
+                      </span>
+                    )}
+                  </td>
+                  {/* 상단 고정 */}
+                  <td>
+                    {notice.isPinned ? (
+                      <span className="badge bg-dark">
+                        고정
+                      </span>
+                    ) : (
+                      <span className="text-muted">
+                        -
+                      </span>
+                    )}
+                  </td>
+                  {/* 첨부파일 */}
+                  <td>
+                    {notice.attachments.length > 0 ? (
+                      <span>
+                        📎 {notice.attachments.length}개
+                      </span>
+                    ) : (
+                      <span className="text-muted">
+                        없음
+                      </span>
+                    )}
+                  </td>
+                  {/* 작성자 */}
+                  <td>
+                    {notice.writer}
+                  </td>
+                  {/* 작성일 */}
+                  <td>
+                    {notice.createdAt}
+                  </td>
+                  {/* 조회수 */}
+                  <td>
+                    {notice.views}
+                  </td>
+                  {/* 관리 */}
+                  <td>
+                    <button
+                      type="button"
+                      className="
+                        btn
+                        btn-sm
+                        btn-outline-secondary
+                        me-1
+                      "
+                    >
+                      수정
+                    </button>
+                    <button
+                      type="button"
+                      className="
+                        btn
+                        btn-sm
+                        btn-outline-danger
+                      "
+                    >
+                      삭제
+                    </button>
+                  </td>
+                </tr>
+              )
+            )}
+            {/* 검색 결과 없음 */}
             {sortedNoticeList.length === 0 && (
               <tr>
                 <td
                   colSpan={10}
-                  className="text-center text-muted py-4"
+                  className="
+                    text-center
+                    text-muted
+                    py-4
+                  "
                 >
                   검색 결과가 없습니다.
                 </td>
