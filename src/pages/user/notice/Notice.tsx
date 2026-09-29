@@ -1,319 +1,256 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { noticeListMock } from '../../../mock/noticeMock';
 import useAgent from '../../../hooks/useAgent';
-
-/**
- * 사용자 공지사항 페이지 (/user/notice)
- *
- * - PC에서는 Table 형태
- * - 모바일에서는 Card 형태
- * - 공지 유형 필터 기능
- * - 제목 검색 기능
- * - 상단 고정 공지는 먼저 출력
- */
 export default function Notice() {
+  // 모바일 여부 확인
   const { isMobile } = useAgent();
-
-  /**
-   * category
-   * 현재 선택한 공지 유형을 저장
-   * 기본값은 '전체'
-   */
-  const [category, setCategory] = useState('전체');
-
-  /**
-   * searchKeyword
-   * 사용자가 제목 검색창에 입력한 검색어를 저장
-   */
-  const [searchKeyword, setSearchKeyword] = useState('');
-
-  /**
-   * 1단계
-   * 공지 유형 + 제목을 기준으로 검색
-   */
-  const filteredNoticeList = noticeListMock.filter((notice) => {
-    /**
-     * 공지 유형 검색
-     *
-     * category가 '전체'이면 모든 공지를 허용
-     * 그 외에는 선택된 category와 같은 공지만 허용
-     */
-    const categoryMatch =
-      category === '전체' || notice.category === category;
-
-    /**
-     * 제목 검색
-     *
-     * includes()를 사용해서
-     * 제목에 검색어가 포함되어 있는지 확인
-     */
-    const titleMatch = notice.title
-      .toLowerCase()
-      .includes(searchKeyword.toLowerCase());
-
-    /**
-     * 공지 유형과 제목 검색 조건을
-     * 둘 다 만족하는 공지만 남김
-     */
-    return categoryMatch && titleMatch;
-  });
-  /**
-   * 2단계
-   * 검색된 공지 중 상단 고정 공지만 따로 가져옴
-   *
-   * notice.isPinned이 true인 공지만
-   * pinnedNoticeList에 저장
-   */
-  const pinnedNoticeList = filteredNoticeList.filter(
-    (notice) => notice.isPinned
-  );
-
-  /**
-   * 3단계
-   * 검색된 공지 중 일반 공지만 따로 가져옴
-   *
-   * !notice.isPinned은
-   * isPinned이 false인 공지를 의미
-   */
-  const normalNoticeList = filteredNoticeList.filter(
-    (notice) => !notice.isPinned
-  );
-
-  /**
-   * 4단계
-   * 상단 고정 공지를 먼저 넣고
-   * 일반 공지를 그 뒤에 넣어서 하나의 배열로 합침
-   */
-  const sortedNoticeList = [
-    ...pinnedNoticeList,
-    ...normalNoticeList,
+  // 공지 유형 필터
+  const [selectedCategory, setSelectedCategory] =
+    useState('전체');
+  // 검색어
+  const [searchKeyword, setSearchKeyword] =
+    useState('');
+  // 공지 유형 목록
+  const categories = [
+    '전체',
+    '시설점검',
+    '이용안내',
+    '주차요금',
   ];
-
-  /**
-   * 공지 유형별 Bootstrap 배지 색상
-   */
-  const getCategoryBadge = (category: string) => {
-    switch (category) {
-      case '이용안내':
-        return 'bg-primary';
-      case '시설점검':
-        return 'bg-warning text-dark';
-      case '주차요금':
-        return 'bg-success';
-      case '긴급공지':
-        return 'bg-danger';
-      case '정기권':
-        return 'bg-info text-dark';
-      default:
-        return 'bg-secondary';
-    }
-  };
-
+  // 공지 유형 + 제목 검색
+  const filteredNoticeList =
+    noticeListMock.filter((notice) => {
+      // 공지 유형 필터
+      const categoryMatch =
+        selectedCategory === '전체' ||
+        notice.category === selectedCategory;
+      // 제목 검색
+      const titleMatch =
+        notice.title
+          .toLowerCase()
+          .includes(
+            searchKeyword.toLowerCase()
+          );
+      return categoryMatch && titleMatch;
+    });
+  // 상단 고정 공지를 먼저 표시
+  const sortedNoticeList =
+    [...filteredNoticeList].sort((a, b) => {
+      if (a.isPinned === b.isPinned) {
+        return 0;
+      }
+      return a.isPinned ? -1 : 1;
+    });
   return (
     <div className="container py-4">
-      {/* ==============================
-          페이지 제목
-         ============================== */}
-      <h2 className="page-title">공지사항</h2>
-
-      <p className="page-description">
-        주차관제 서비스의 공지사항을 확인하세요.
-      </p>
-
-      {/* ==============================
-          검색 영역
-         ============================== */}
-      <div className="d-flex gap-2 mb-3">
-        {/* 공지 유형 선택 */}
-        <select
-          className="form-select"
-          style={{ width: '160px' }}
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          <option value="전체">전체</option>
-          <option value="이용안내">이용안내</option>
-          <option value="시설점검">시설점검</option>
-          <option value="주차요금">주차요금</option>
-          <option value="긴급공지">긴급공지</option>
-          <option value="정기권">정기권</option>
-        </select>
-
-        {/* 제목 검색 */}
-        <input
-          type="text"
-          className="form-control"
-          placeholder="제목을 검색하세요."
-          value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
-        />
-      </div>
-
-      {isMobile ? (
-        /* ==============================
-            모바일 화면
-            공지사항을 카드 형태로 출력
-           ============================== */
-        <div className="d-flex flex-column gap-2">
-          {sortedNoticeList.map((notice) => (
-            <div key={notice.id} className="card p-3">
-              {/* 공지 유형 / 중요 / 고정 */}
-              <div className="d-flex gap-1 mb-2">
-                {/* 공지 유형 */}
-                <span
-                  className={`badge ${getCategoryBadge(notice.category)}`}
-                >
-                  {notice.category}
-                </span>
-
-                {/* 중요 공지 */}
-                {notice.isImportant && (
-                  <span className="badge bg-danger">중요</span>
-                )}
-
-                {/* 상단 고정 공지 */}
-                {notice.isPinned && (
-                  <span className="badge bg-dark">고정</span>
-                )}
-              </div>
-
-              {/* 제목 */}
-              <div className="fw-bold mb-2">
-                {/* 상단 고정이면 핀 아이콘 표시 */}
-                {notice.isPinned && (
-                  <span className="me-1">📌</span>
-                )}
-
-                {/* 중요 공지이면 [중요] 표시 */}
-                {notice.isImportant && (
-                  <span className="text-danger me-1">
-                    [중요]
-                  </span>
-                )}
-
-                {notice.title}
-              </div>
-
-              {/* 작성자 / 작성일 */}
-              <div className="d-flex justify-content-between text-secondary small">
-                <span>{notice.writer}</span>
-                <span>{notice.createdAt}</span>
-              </div>
-
-              {/* 조회수 */}
-              <div className="text-secondary small mb-2">
-                조회수 {notice.views}
-              </div>
-
-              {/* 첨부파일 */}
-              {notice.attachmentName && notice.attachmentUrl && (
-                <div className="small">
-                  <a
-                    href={notice.attachmentUrl}
-                    className="text-decoration-none"
-                  >
-                    📎 {notice.attachmentName}
-                  </a>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {/* 검색 결과가 없을 때 */}
-          {sortedNoticeList.length === 0 && (
-            <div className="card p-4 text-center text-muted">
-              검색 결과가 없습니다.
-            </div>
-          )}
+      {/* 페이지 제목 */}
+      <h2 className="page-title">
+        공지사항
+      </h2>
+      {/* 검색 / 필터 */}
+      <div className="row g-2 mt-3 mb-4">
+        {/* 공지 유형 */}
+        <div className="col-md-3">
+          <select
+            className="form-select"
+            value={selectedCategory}
+            onChange={(e) =>
+              setSelectedCategory(
+                e.target.value
+              )
+            }
+          >
+            {categories.map((category) => (
+              <option
+                key={category}
+                value={category}
+              >
+                {category}
+              </option>
+            ))}
+          </select>
         </div>
-      ) : (
-        /* ==============================
-            PC 화면
-            공지사항을 Table 형태로 출력
-           ============================== */
-        <table className="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>번호</th>
-              <th>공지 유형</th>
-              <th>제목</th>
-              <th>첨부파일</th>
-              <th>작성자</th>
-              <th>작성일</th>
-              <th>조회수</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {sortedNoticeList.map((notice, index) => (
-              <tr key={notice.id}>
-                {/* 번호 */}
-                <td>{sortedNoticeList.length - index}</td>
-
+        {/* 제목 검색 */}
+        <div className="col-md-9">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="제목을 검색하세요."
+            value={searchKeyword}
+            onChange={(e) =>
+              setSearchKeyword(
+                e.target.value
+              )
+            }
+          />
+        </div>
+      </div>
+      {/* 검색 결과가 없는 경우 */}
+      {sortedNoticeList.length === 0 ? (
+        <div className="text-center py-5 text-muted">
+          검색 결과가 없습니다.
+        </div>
+      ) : isMobile ? (
+        /* =========================
+           모바일 화면
+        ========================= */
+        <div>
+          {sortedNoticeList.map((notice) => (
+            <div
+              key={notice.id}
+              className="card mb-3"
+            >
+              <div className="card-body">
                 {/* 공지 유형 */}
-                <td>
-                  <span
-                    className={`badge ${getCategoryBadge(notice.category)}`}
-                  >
+                <div className="mb-2">
+                  <span className="badge bg-secondary me-2">
                     {notice.category}
                   </span>
-                </td>
-
-                {/* 제목 */}
-                <td>
-                  {/* 상단 고정 표시 */}
+                  {/* 상단 고정 */}
                   {notice.isPinned && (
-                    <span className="me-1">📌</span>
-                  )}
-
-                  {/* 중요 공지 표시 */}
-                  {notice.isImportant && (
-                    <span className="text-danger fw-bold me-1">
-                      [중요]
+                    <span className="badge bg-dark">
+                      고정
                     </span>
                   )}
-
-                  {notice.title}
-                </td>
-
+                </div>
+                {/* 공지 제목 */}
+                <h5 className="card-title">
+                  <Link
+                    to={`/user/notice/${notice.id}`}
+                    className="text-decoration-none text-dark"
+                  >
+                    {/* 중요 공지 */}
+                    {notice.isImportant && (
+                      <span className="text-danger me-1">
+                        [중요]
+                      </span>
+                    )}
+                    {notice.title}
+                  </Link>
+                </h5>
+                {/* 작성 정보 */}
+                <div className="text-muted small">
+                  {notice.writer}
+                  {' | '}
+                  {notice.createdAt}
+                  {' | '}
+                  조회 {notice.views}
+                </div>
                 {/* 첨부파일 */}
-                <td>
-                  {notice.attachmentName && notice.attachmentUrl ? (
-                    <a
-                      href={notice.attachmentUrl}
-                      className="text-decoration-none"
-                    >
-                      📎 {notice.attachmentName}
-                    </a>
-                  ) : (
-                    <span className="text-muted">없음</span>
-                  )}
-                </td>
-
-                {/* 작성자 */}
-                <td>{notice.writer}</td>
-
-                {/* 작성일 */}
-                <td>{notice.createdAt}</td>
-
-                {/* 조회수 */}
-                <td>{notice.views}</td>
-              </tr>
-            ))}
-
-            {/* PC 검색 결과 없음 */}
-            {sortedNoticeList.length === 0 && (
+                {notice.attachments.length > 0 && (
+                  <div className="mt-2">
+                    {notice.attachments.map(
+                      (file) => (
+                        <a
+                          key={file.id}
+                          href={file.url}
+                          className="badge bg-light text-dark text-decoration-none me-1"
+                        >
+                          📎 {file.name}
+                        </a>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* =========================
+           PC 화면
+        ========================= */
+        <div className="table-responsive">
+          <table className="table table-hover align-middle">
+            <thead className="table-light">
               <tr>
-                <td
-                  colSpan={7}
-                  className="text-center text-muted py-4"
-                >
-                  검색 결과가 없습니다.
-                </td>
+                <th style={{ width: '80px' }}>
+                  번호
+                </th>
+                <th style={{ width: '120px' }}>
+                  유형
+                </th>
+                <th>
+                  제목
+                </th>
+                <th style={{ width: '120px' }}>
+                  작성자
+                </th>
+                <th style={{ width: '130px' }}>
+                  작성일
+                </th>
+                <th style={{ width: '80px' }}>
+                  조회
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sortedNoticeList.map(
+                (notice, index) => (
+                  <tr key={notice.id}>
+                    {/* 화면 표시 번호 */}
+                    <td>
+                      {sortedNoticeList.length - index}
+                    </td>
+                    {/* 공지 유형 */}
+                    <td>
+                      <span className="badge bg-secondary">
+                        {notice.category}
+                      </span>
+                    </td>
+                    {/* 제목 */}
+                    <td>
+                      {/* 상단 고정 */}
+                      {notice.isPinned && (
+                        <span className="me-1">
+                          📌
+                        </span>
+                      )}
+                      <Link
+                        to={`/user/notice/${notice.id}`}
+                        className="text-decoration-none text-dark"
+                      >
+                        {/* 중요 공지 */}
+                        {notice.isImportant && (
+                          <span className="text-danger me-1">
+                            [중요]
+                          </span>
+                        )}
+                        {notice.title}
+                      </Link>
+                      {/* 첨부파일 */}
+                      {notice.attachments.length > 0 && (
+                        <div className="mt-1">
+                          {notice.attachments.map(
+                            (file) => (
+                              <a
+                                key={file.id}
+                                href={file.url}
+                                className="badge bg-light text-dark text-decoration-none me-1"
+                              >
+                                📎 {file.name}
+                              </a>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      {notice.writer}
+                    </td>
+                    <td>
+                      {notice.createdAt}
+                    </td>
+                    <td>
+                      {notice.views}
+                    </td>
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
