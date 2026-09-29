@@ -7,6 +7,7 @@ import Notice from '../pages/user/notice/Notice';
 import Reservation from '../pages/user/reservation/Reservation';
 import UserSignUp from '../pages/user/login/UserSignUp';
 import MyPage from '../pages/user/mypage/MyPage';
+import NoticeDetail from '../pages/user/notice/NoticeDetail';
 
 /**
  * UserRoutes
@@ -36,6 +37,7 @@ export default function UserRoutes() {
         <Route path="notice" element={<Notice />} />
         <Route path="reservation" element={<Reservation />} />
         <Route path="mypage" element={<MyPage />} />
+        <Route path="notice/:id" element={<NoticeDetail />} />
       </Route>
     </>
   );
