@@ -1,0 +1,211 @@
+/* =========================
+   알파카 챗봇 전체 영역
+   ========================= */
+.alpaca-chatbot {
+    width: 100%;
+    max-width: 760px;
+    margin-top: 24px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* =========================
+   챗봇 상단 Header
+   ========================= */
+.alpaca-chat-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #ffffff;
+}
+
+/* 알파카 프로필 영역 */
+.alpaca-chat-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* 알파카 아이콘 */
+.alpaca-profile-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f5f9;
+    border-radius: 50%;
+    font-size: 22px;
+}
+
+/* =========================
+   채팅 메시지 영역
+   ========================= */
+.alpaca-chat-messages {
+    height: 420px;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+}
+
+/* 메시지 한 줄 */
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+/* =========================
+   알파카 메시지
+   ========================= */
+.assistant-message {
+    justify-content: flex-start;
+}
+
+/* 알파카 작은 프로필 */
+.message-profile {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 8px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 50%;
+    font-size: 18px;
+}
+
+/* 기본 말풍선 */
+.message-bubble {
+    max-width: 70%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+/* 알파카 말풍선 */
+.assistant-message .message-bubble {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    color: #212529;
+    border-top-left-radius: 4px;
+}
+
+/* =========================
+   사용자 메시지
+   ========================= */
+.user-message {
+    justify-content: flex-end;
+}
+
+/* 사용자 말풍선 */
+.user-message .message-bubble {
+    background-color: #0d6efd;
+    color: #ffffff;
+    border-top-right-radius: 4px;
+}
+
+/* =========================
+   빠른 질문
+   ========================= */
+.quick-question-area {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 20px;
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6;
+}
+
+/* 빠른 질문 버튼 */
+.quick-question-button {
+    padding: 7px 12px;
+    background-color: #ffffff;
+    color: #495057;
+    border: 1px solid #ced4da;
+    border-radius: 18px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+/* 빠른 질문 마우스 올렸을 때 */
+.quick-question-button:hover {
+    background-color: #f1f5f9;
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+/* =========================
+   메시지 입력 영역
+   ========================= */
+.alpaca-chat-input-area {
+    display: flex;
+    gap: 8px;
+    padding: 16px 20px;
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6;
+}
+
+/* 입력창 */
+.alpaca-chat-input-area .form-control {
+    height: 42px;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+/* 전송 버튼 */
+.alpaca-chat-input-area .btn {
+    min-width: 70px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* =========================
+   스크롤바
+   ========================= */
+.alpaca-chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.alpaca-chat-messages::-webkit-scrollbar-thumb {
+    background-color: #ced4da;
+    border-radius: 10px;
+}
+
+.alpaca-chat-messages::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* =========================
+   모바일
+   ========================= */
+@media (max-width: 768px) {
+    .alpaca-chatbot {
+        margin-top: 16px;
+        border-radius: 10px;
+    }
+
+    .alpaca-chat-messages {
+        height: 380px;
+        padding: 16px;
+    }
+
+    .message-bubble {
+        max-width: 82%;
+        font-size: 13px;
+    }
+
+    .quick-question-area {
+        padding: 10px 16px;
+    }
+
+    .alpaca-chat-input-area {
+        padding: 12px 16px;
+    }
+}

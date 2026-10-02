@@ -18,6 +18,28 @@ export default function Notice() {
     '이용안내',
     '주차요금',
   ];
+  // 공지 유형별 색상
+  const getCategoryBadge = (category: string) => {
+    switch (category) {
+      case '이용안내':
+        return 'bg-primary';
+
+      case '시설점검':
+        return 'bg-warning text-dark';
+
+      case '주차요금':
+        return 'bg-success';
+
+      case '긴급공지':
+        return 'bg-danger';
+
+      case '정기권':
+        return 'bg-info text-dark';
+
+      default:
+        return 'bg-secondary';
+    }
+  };
   // 공지 유형 + 제목 검색
   const filteredNoticeList =
     noticeListMock.filter((notice) => {
@@ -92,9 +114,7 @@ export default function Notice() {
           검색 결과가 없습니다.
         </div>
       ) : isMobile ? (
-        /* =========================
-           모바일 화면
-        ========================= */
+        /* 모바일 화면 */
         <div>
           {sortedNoticeList.map((notice) => (
             <div
@@ -104,7 +124,9 @@ export default function Notice() {
               <div className="card-body">
                 {/* 공지 유형 */}
                 <div className="mb-2">
-                  <span className="badge bg-secondary me-2">
+                  <span
+                    className={`badge ${getCategoryBadge(notice.category)} me-2`}
+                  >
                     {notice.category}
                   </span>
                   {/* 상단 고정 */}
@@ -137,30 +159,18 @@ export default function Notice() {
                   {' | '}
                   조회 {notice.views}
                 </div>
-                {/* 첨부파일 */}
+                {/* 첨부파일있을 시*/}
                 {notice.attachments.length > 0 && (
-                  <div className="mt-2">
-                    {notice.attachments.map(
-                      (file) => (
-                        <a
-                          key={file.id}
-                          href={file.url}
-                          className="badge bg-light text-dark text-decoration-none me-1"
-                        >
-                          📎 {file.name}
-                        </a>
-                      )
-                    )}
-                  </div>
+                  <span className="ms-2" title="첨부파일 있음">
+                    📎
+                  </span>
                 )}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        /* =========================
-           PC 화면
-        ========================= */
+        /* PC 화면 */
         <div className="table-responsive">
           <table className="table table-hover align-middle">
             <thead className="table-light">
@@ -195,7 +205,9 @@ export default function Notice() {
                     </td>
                     {/* 공지 유형 */}
                     <td>
-                      <span className="badge bg-secondary">
+                      <span
+                        className={`badge ${getCategoryBadge(notice.category)}`}
+                      >
                         {notice.category}
                       </span>
                     </td>
@@ -204,7 +216,6 @@ export default function Notice() {
                       {/* 상단 고정 */}
                       {notice.isPinned && (
                         <span className="me-1">
-                          📌
                         </span>
                       )}
                       <Link
@@ -221,19 +232,12 @@ export default function Notice() {
                       </Link>
                       {/* 첨부파일 */}
                       {notice.attachments.length > 0 && (
-                        <div className="mt-1">
-                          {notice.attachments.map(
-                            (file) => (
-                              <a
-                                key={file.id}
-                                href={file.url}
-                                className="badge bg-light text-dark text-decoration-none me-1"
-                              >
-                                📎 {file.name}
-                              </a>
-                            )
-                          )}
-                        </div>
+                        <span
+                          className="ms-1"
+                          title="첨부파일 있음"
+                        >
+                          📎
+                        </span>
                       )}
                     </td>
                     <td>

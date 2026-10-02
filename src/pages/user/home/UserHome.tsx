@@ -38,6 +38,14 @@ export default function UserHome() {
             </p>
           </Link>
         </div>
+        <div className="col-12 col-md-4">
+          <Link to="/user/chatbot" className="user-menu-card d-block p-4 h-100">
+            <h5 className="fw-bold mb-2">💬 1:1 문의</h5>
+            <p className="mb-0 text-secondary small">
+              AI 주차 도우미 알파카에게 문의할 수 있습니다.
+            </p>
+          </Link>
+        </div>
       </div>
     </div>
   );
