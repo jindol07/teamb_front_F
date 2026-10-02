@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import useAgent from '../../../hooks/useAgent';
-import PasswordChange from '../../../components/mypage/PasswordChange';
-import VehicleManagement from '../../../components/mypage/VehicleManagement';
-import ParkingHistory from '../../../components/mypage/ParkingHistory';
-import AccountManagement from '../../../components/mypage/AccountManagement';
+
+import AccountManagement from './AccountManagement';
+import ParkingHistory from './ParkingHistory';
+import PasswordChange from './PasswordChange';
+import VehicleManagement from './VehicleManagement';
 // 마이페이지 메뉴 타입
 type MenuType =
     | 'password'

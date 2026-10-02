@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { noticeListMock } from '../../../mock/noticeMock';
+import { Link } from 'react-router-dom'; //0929
 export default function AdminNotice() {
   const [category, setCategory] = useState('전체');
   /*
@@ -556,21 +557,19 @@ export default function AdminNotice() {
                   <td>
                     {notice.isPinned && (
                       <span className="me-1">
-                        📌
                       </span>
                     )}
                     {notice.isImportant && (
-                      <span
-                        className="
-                          text-danger
-                          fw-bold
-                          me-1
-                        "
-                      >
+                      <span className="text-danger fw-bold me-1">
                         [중요]
                       </span>
                     )}
-                    {notice.title}
+                    <Link
+                      to={`/admin/notice/${notice.id}`}
+                      className="text-decoration-none text-dark"
+                    >
+                      {notice.title}
+                    </Link>
                   </td>
                   {/* 중요 */}
                   <td>
