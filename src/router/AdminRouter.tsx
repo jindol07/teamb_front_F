@@ -8,6 +8,7 @@ import ParkingStatusAdmin from '../pages/admin/parking/status/ParkingStatusAdmin
 import VehicleManage from '../pages/admin/vehicle/VehicleManage';
 import History from '../pages/admin/history/History';
 import AdminSignup from '../pages/admin/login/AdminSignUp';
+import AdminNoticeDetail from '../pages/admin/notice/AdminNoticeDetail';
 
 /**
  * AdminRoutes
@@ -36,6 +37,7 @@ export default function AdminRoutes() {
         <Route path="parking/status" element={<ParkingStatusAdmin />} />
         <Route path="vehicle" element={<VehicleManage />} />
         <Route path="history" element={<History />} />
+        <Route path="notice/:id" element={<AdminNoticeDetail/>} />
       </Route>
     </>
   );

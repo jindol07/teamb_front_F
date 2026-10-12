@@ -8,6 +8,7 @@ import Reservation from '../pages/user/reservation/Reservation';
 import UserSignUp from '../pages/user/login/UserSignUp';
 import MyPage from '../pages/user/mypage/MyPage';
 import NoticeDetail from '../pages/user/notice/NoticeDetail';
+import AlpacaChatbot from '../pages/user/chatbot/AlpacaChatbot';
 
 /**
  * UserRoutes
@@ -38,6 +39,7 @@ export default function UserRoutes() {
         <Route path="reservation" element={<Reservation />} />
         <Route path="mypage" element={<MyPage />} />
         <Route path="notice/:id" element={<NoticeDetail />} />
+        <Route path="chatbot" element={<AlpacaChatbot />} />
       </Route>
     </>
   );
