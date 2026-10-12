@@ -1,0 +1,146 @@
+/* ==========================================================================
+   주차 관제 대시보드 및 도면 컴포넌트 스타일시트
+   ========================================================================== */
+
+/* 1. 메인 레이아웃 (도면 영역 + 상세 패널) */
+/* 학습 해설: 전체 영역을 flex로 나눔 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.dashboard-layout {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 학습 해설: 지도 표시 영역 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.map-section {
+  flex: 3;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* 학습 해설: 영역 제목 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.section-title {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  color: #2d3748;
+}
+
+/* 2. 주차 도면 컨테이너 및 층 선택 버튼 */
+/* 학습 해설: 지도 정렬 컨테이너 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.parking-map-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 학습 해설: 층 선택 버튼 그룹 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.floor-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* 학습 해설: 층 선택 버튼 기본형 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.floor-btn {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e0;
+  background-color: #ffffff;
+  color: #4a5568;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 학습 해설: 이 선택자에 해당하는 요소의 표시 형태를 지정합니다. 중괄호 내부는 CSS 속성: 값 형태입니다. — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.floor-btn:hover {
+  background-color: #edf2f7;
+}
+
+/* 학습 해설: 선택된 층의 강조형 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.floor-btn.active {
+  background-color: #3182ce;
+  color: #ffffff;
+  border-color: #3182ce;
+}
+
+/* 3. 우측 상세 컨트롤 패널 */
+/* 학습 해설: 관리 패널 영역 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.panel-section {
+  flex: 1;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  height: fit-content;
+}
+
+/* 학습 해설: 패널 제목 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.panel-title {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  color: #1a202c;
+  border-bottom: 2px solid #edf2f7;
+  padding-bottom: 8px;
+}
+
+/* 학습 해설: 보조 제목 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.panel-subtitle {
+  margin-top: 16px;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  color: #2d3748;
+}
+
+/* 학습 해설: 정보 행/묶음 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.info-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  color: #4a5568;
+}
+
+/* 학습 해설: 구분선 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.divider {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 16px 0;
+}
+
+/* 4. 버튼 및 안내 텍스트 */
+/* 학습 해설: 공용 동작 버튼 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.btn-action {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #cbd5e0;
+  background-color: #edf2f7;
+  color: #2d3748;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* 학습 해설: 이 선택자에 해당하는 요소의 표시 형태를 지정합니다. 중괄호 내부는 CSS 속성: 값 형태입니다. — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.btn-action:hover {
+  background-color: #e2e8f0;
+}
+
+/* 학습 해설: 빈 상태 안내 — 현재 수정본 TSX에서 이 CSS를 import하는지 확인해야 적용됩니다. */
+.placeholder-text {
+  color: #a0aec0;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 40px 0;
+}
