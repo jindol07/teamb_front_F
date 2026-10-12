@@ -487,3 +487,6 @@ Spring Boot API
 --0916
 yarn add react-konva@18
 yarn add konva react-konva bootstrap
+
+--1012
+npm install lucide-react
