@@ -25,7 +25,11 @@ export default function UserHeader() {
           <span className="text-secondary d-none d-sm-inline">
             {currentUserMock.name}님
           </span>
-          <button type="button" className="btn btn-sm btn-outline-secondary">
+          <button
+           type="button" 
+           className="btn btn-sm btn-outline-secondary"
+           onClick={() => navigate('/user/mypage')}
+           >
             마이페이지
           </button>
           <button
