@@ -1,458 +1,421 @@
-// src/pages/user/reservation/Reservation.tsx
-import { FormEvent, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { myVehiclesMock } from '../../../mock/userMock';
+import { useEffect, useState, useCallback } from 'react';
+import MyBookingModal from './MyBookingModal'; // <-- 기존 BookingModal 대신 MyBookingModal 임포트
+import RecommendationModal from './RecommendationModal';
+import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
+import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import './Reservation.css';
 
-// ==========================================
-// 1. 타입 및 데이터, API 함수 정의
-// ==========================================
-export interface ParkingSpace {
-  id: number;
-  number: string;
-  status: 'available' | 'reserved';
+interface Reservation {
+  date?: string;
+  hour?: string | number;
+  minute?: string | number;
+  startDate?: string;
+  endDate?: string;
+  vehicleType?: 'my' | 'visitor';
+  vehicleId?: string | null;
+  vehicleLabel?: string;
+  spaceId?: string | number | null;
+  spaceNumber?: string;
+  floor?: number;
+  createdAt?: string;
+  status?: string;
 }
 
-const USE_MOCK = true;
+const RESERVATION_KEY = 'myReservation';
 
-/**
- * 주차장 현황 조회 함수
- */
-export const fetchParkingSpaces = async (): Promise<ParkingSpace[]> => {
-  if (USE_MOCK) {
-    return new Promise((resolve) => {
-      // 추후 API 연동 시 실제 데이터를 받아올 부분
-      setTimeout(() => resolve([]), 200);
-    });
-  }
-  return [];
-};
-
-/**
- * 주차 예약 요청 페이로드 타입
- */
-export interface ReservationPayload {
-  date: string;
-  hour: string;
-  minute: string;
-  vehicleType: 'my' | 'visitor';
-  vehicleId: string | null;
-  vehicleLabel: string;
-  spaceId: number | null;
-}
-
-/**
- * 주차 예약 제출 함수
- */
-export const submitReservation = async (data: ReservationPayload) => {
-  if (USE_MOCK) {
-    console.log('[Mock API] 예약 데이터 전송 성공:', data);
-    
-    const reservationData = {
-      ...data,
-      createdAt: new Date().toISOString(),
-      status: 'reserved',
-    };
-    sessionStorage.setItem('myReservation', JSON.stringify(reservationData));
-
-    return { success: true, message: '예약이 완료되었습니다.' };
-  }
-};
-
-
-// ==========================================
-// 2. React 메인 컴포넌트 (Default Export)
-// ==========================================
 export default function Reservation() {
-  const navigate = useNavigate();
+  const [reservation, setReservation] = useState<Reservation | null>(null);
+  const slots = useParkingStore((state) => state.slots);
 
-  // --- 주차장 현황 상태 (2/3 영역) ---
-  const [spaces, setSpaces] = useState<ParkingSpace[]>([]);
-  const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
+  const [now, setNow] = useState(new Date());
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [reservationExpired, setReservationExpired] = useState(false);
 
-  // --- 예약 정보 입력 상태 (1/3 영역) ---
-  const [date, setDate] = useState('');
-  const [hour, setHour] = useState('');
-  const [minute, setMinute] = useState('');
-  const [vehicleId, setVehicleId] = useState('');
-  const [message, setMessage] = useState('');
-  const [vehicleType, setVehicleType] = useState<'my' | 'visitor'>('my');
-  const [visitorNumber, setVisitorNumber] = useState('');
-  const [selectedVisitorVehicle, setSelectedVisitorVehicle] = useState<{
-    id: number;
-    number: string;
-  } | null>(null);
+  // MyBookingModal 전용 상태 관리 (슬롯 정보 포함)
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingSlot, setBookingSlot] = useState<ExtendedParkingSlot | null>(null);
 
-  // 페이지 진입 시 주차장 현황 불러오기
-  useEffect(() => {
-    loadParkingStatus();
+  // RecommendationModal 전용 상태 관리
+  const [isRecommendationModalOpen, setIsRecommendationModalOpen] = useState(false);
+
+  const isValidReservation = (data: unknown): data is Reservation => {
+    if (!data || typeof data !== 'object') {
+      return false;
+    }
+
+    const item = data as Reservation;
+
+    return Boolean(
+      (item.date && typeof item.date === 'string') ||
+      (item.startDate &&
+        typeof item.startDate === 'string' &&
+        item.endDate &&
+        typeof item.endDate === 'string'),
+    );
+  };
+
+  const loadReservation = useCallback(() => {
+    const saved = sessionStorage.getItem(RESERVATION_KEY);
+
+    if (!saved) {
+      setReservation(null);
+      return;
+    }
+
+    try {
+      const parsed: unknown = JSON.parse(saved);
+
+      if (!isValidReservation(parsed)) {
+        setReservation(null);
+        return;
+      }
+
+      setReservation(parsed);
+    } catch (error) {
+      console.error('예약 정보 불러오기 실패:', error);
+      setReservation(null);
+    }
   }, []);
 
-  const loadParkingStatus = async () => {
-    const data = await fetchParkingSpaces();
-    setSpaces(data);
-  };
+  useEffect(() => {
+    loadReservation();
 
-  // 오늘 날짜 계산
-  const today = new Date();
-  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const timer = window.setInterval(() => {
+      loadReservation();
+    }, 1000);
 
-  const selectedVehicle = myVehiclesMock.find((v) => String(v.id) === vehicleId);
-  const hourList = Array.from({ length: 24 }, (_, index) => index);
-  const minuteList = Array.from({ length: 60 }, (_, index) => index);
-
-  const isToday = () => date === todayString;
-
-  const isValidReservationTime = () => {
-    if (!date || hour === '' || minute === '') return false;
-    const reservationDate = new Date(`${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`);
-    const minimumReservationTime = new Date(Date.now() + 5 * 60 * 1000);
-    return reservationDate >= minimumReservationTime;
-  };
-
-  const isHourDisabled = (selectedHour: number) => {
-    if (!date || !isToday()) return false;
-    const minimumHour = new Date(Date.now() + 5 * 60 * 1000).getHours();
-    return selectedHour < minimumHour;
-  };
-
-  const isMinuteDisabled = (selectedMinute: number) => {
-    if (!date || hour === '' || !isToday()) return false;
-    const selectedHour = Number(hour);
-    const minTime = new Date(Date.now() + 5 * 60 * 1000);
-    if (selectedHour < minTime.getHours()) return true;
-    if (selectedHour > minTime.getHours()) return false;
-    return selectedMinute < minTime.getMinutes();
-  };
-
-  const handleVisitorSearch = () => {
-    if (visitorNumber.length !== 4) return;
-    setSelectedVisitorVehicle({ id: 999, number: `12가${visitorNumber}` });
-    setMessage('');
-  };
-
-  // 예약 제출 처리
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!date || hour === '' || minute === '' || selectedSpaceId === null || (vehicleType === 'my' && !vehicleId) || (vehicleType === 'visitor' && !selectedVisitorVehicle)) {
-      setMessage('주차 자리, 날짜, 시간, 차량 정보를 모두 선택해주세요.');
-      return;
-    }
-
-    if (!isValidReservationTime()) {
-      setMessage('현재 시간보다 최소 5분 이후의 시간만 예약할 수 있습니다.');
-      return;
-    }
-
-    const payload = {
-      date,
-      hour,
-      minute,
-      vehicleType,
-      vehicleId: vehicleType === 'my' ? vehicleId : null,
-      vehicleLabel: vehicleType === 'my' ? selectedVehicle?.label ?? '' : selectedVisitorVehicle?.number ?? '',
-      spaceId: selectedSpaceId,
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === RESERVATION_KEY || event.key === null) {
+        loadReservation();
+      }
     };
 
-    await submitReservation(payload);
-    navigate('/user/myreservation');
+    window.addEventListener('storage', handleStorageChange);
+
+    const handleFocus = () => loadReservation();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadReservation]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!reservation) {
+      setRemainingTime(null);
+      setReservationExpired(false);
+      return;
+    }
+
+    let expirationDate: Date;
+
+    if (reservation.startDate && reservation.endDate) {
+      const [year, month, day] = reservation.endDate.split('-').map(Number);
+      expirationDate = new Date(year, month - 1, day, 23, 59, 59);
+    } else if (reservation.date) {
+      const hour = Number(reservation.hour ?? 0);
+      const minute = Number(reservation.minute ?? 0);
+
+      const baseDate = new Date(
+        `${reservation.date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(
+          2,
+          '0',
+        )}:00`,
+      );
+      expirationDate = new Date(baseDate.getTime() + 10 * 60 * 1000);
+    } else {
+      setRemainingTime(null);
+      setReservationExpired(false);
+      return;
+    }
+
+    const expirationTime = expirationDate.getTime() - now.getTime();
+
+    if (Number.isNaN(expirationTime) || expirationTime <= 0) {
+      setRemainingTime(0);
+      setReservationExpired(true);
+      return;
+    }
+
+    setReservationExpired(false);
+    setRemainingTime(expirationTime);
+  }, [reservation, now]);
+
+  const formatTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (value: number) => String(value).padStart(2, '0');
+
+    if (days > 0) {
+      return `${days}일 ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   };
 
+  const handleCancelReservation = () => {
+    if (!reservation) {
+      return;
+    }
+
+    if (!window.confirm('예약을 취소하시겠습니까?')) {
+      return;
+    }
+
+    sessionStorage.removeItem(RESERVATION_KEY);
+
+    setReservation(null);
+    setRemainingTime(null);
+    setReservationExpired(false);
+
+    setIsBookingModalOpen(false);
+  };
+
+  const reservationDateLabel = reservation
+    ? reservation.startDate && reservation.endDate
+      ? `${reservation.startDate} ~ ${reservation.endDate}`
+      : reservation.date || ''
+    : '';
+
+  const reservationTimeLabel = reservation
+    ? reservation.date
+      ? `${String(reservation.hour ?? '').padStart(2, '0')}:${String(
+          reservation.minute ?? '',
+        ).padStart(2, '0')}`
+      : reservation.startDate && reservation.endDate
+        ? '기간 예약'
+        : ''
+    : '';
+
+  const currentSlot = reservation?.spaceId
+    ? (slots.find((s) => String(s.id) === String(reservation.spaceId)) ?? null)
+    : reservation?.spaceNumber
+      ? (slots.find((s) => s.slotNumber === reservation.spaceNumber) ?? null)
+      : null;
+
+  const currentFloor = currentSlot?.floor ?? reservation?.floor ?? 1;
+  const selectedSlotId = currentSlot?.id ?? null;
+
   return (
-    <div className="container py-4 reservation-page">
-      {/* 페이지 헤더 */}
+    <div className="myreservation-page">
       <div className="reservation-header">
-        <h2 className="page-title">주차예약</h2>
-        <p className="page-description">
-          원하는 날짜와 시간을 선택해 주차를 예약하세요.
-        </p>
+        <h2 className="page-title">&nbsp;주차 확인</h2>
+        <p className="page-description">주차 현황과 예약 정보를 확인하세요.</p>
       </div>
 
-      {/* 2:1 그리드 레이아웃 (좌측 2: 주차 현황 / 우측 1: 예약 정보 입력) */}
-      <div className="reservation-layout-grid mt-4">
-        
-        {/* =================================================================
-            [2/3 영역] 주차장 실시간 현황 (하드코딩 더미 좌석 데이터 제거됨)
-        ================================================================= */}
-        <div className="parking-status-section">
-          <div className="section-title-box">
-            <h5>🚗 주차장 실시간 현황</h5>
-            <span className="badge bg-secondary">실시간 연동</span>
+      <div className="myreservation-grid">
+        <div className="parking-status-area">
+          <div className="parking-status-header">
+            <div>
+              <h4>&nbsp;주차 현황</h4>
+              <p>
+                {reservation
+                  ? '현재 주차장의 주차 현황을 확인하세요.'
+                  : '예약 후 주차 현황을 확인할 수 있습니다.'}
+              </p>
+            </div>
           </div>
-          <p className="section-desc">원하는 주차 자리를 먼저 선택해주세요.</p>
 
-          <div className="parking-seat-grid">
-            {spaces.length === 0 ? (
-              <div className="col-span-full py-5 text-center text-muted w-100">
-                해당 부분은 이제 현황표(실시간)와 연동해야 합니다.
-              </div>
-            ) : (
-              spaces.map((space) => {
-                const isSelected = space.id === selectedSpaceId;
-                const isReserved = space.status === 'reserved';
+          <div className="parking-status-board">
+            {!reservation ? (
+              <div className="text-center py-5">
+                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🚗</div>
+                <h4 className="fw-bold mb-2">주차 정보를 찾을 수 없습니다 :(</h4>
+                <p className="text-muted mb-4">
+                  현재 진행 중인 주차 예약이 없습니다.
+                  <br />
+                  원하는 방식으로 예약을 진행해 보세요.
+                </p>
 
-                return (
+                <div className="d-flex justify-content-center gap-2 flex-wrap">
                   <button
-                    key={space.id}
                     type="button"
-                    disabled={isReserved}
-                    className={`parking-seat-item ${isReserved ? 'reserved' : isSelected ? 'selected' : 'available'}`}
+                    className="btn btn-primary px-4 py-2"
                     onClick={() => {
-                      setSelectedSpaceId(space.id);
-                      setMessage('');
+                      setBookingSlot(null); // 일반 예약은 지정 슬롯 없이 오픈
+                      setIsBookingModalOpen(true);
                     }}
                   >
-                    <div className="seat-number">{space.number}</div>
-                    <div className="seat-state-text">
-                      {isReserved ? '예약됨' : isSelected ? '선택됨' : '빈 자리'}
-                    </div>
+                    바로 예약하기
                   </button>
-                );
-              })
+                  <button
+                    type="button"
+                    className="btn btn-outline-success px-4 py-2"
+                    onClick={() => setIsRecommendationModalOpen(true)}
+                  >
+                    AI 추천받기
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="parking-reservation-map">
+                <ParkingMapView
+                  mode="user"
+                  slots={slots}
+                  currentFloor={currentFloor}
+                  onFloorChange={() => {}}
+                  onSlotClick={() => {}}
+                  selectedSlotId={selectedSlotId}
+                />
+              </div>
             )}
           </div>
         </div>
 
-
-        {/* =================================================================
-            [1/3 영역] 예약하기 박스 (유지됨)
-        ================================================================= */}
-        <div className="reservation-card">
-
-          <div className="reservation-card-header">
-            <span className="reservation-number">01</span>
+        {/* 오른쪽: 예약 정보 */}
+        <div className="reservation-summary-area">
+          <div className="reservation-summary-header">
             <div>
-              <h5>예약하기</h5>
-              <p>
-                선택된 자리: <strong>{selectedSpaceId ? spaces.find(s => s.id === selectedSpaceId)?.number : '없음'}</strong>
-              </p>
+              <h4>&nbsp;예약 확인</h4>
+              <p>예약 정보를 확인하세요.</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-
-            {/* 예약 날짜 */}
-            <div className="mb-3">
-              <label htmlFor="date" className="form-label">
-                예약 날짜
-              </label>
-              <input
-                type="date"
-                id="date"
-                className="form-control"
-                value={date}
-                min={todayString}
-                onChange={(e) => {
-                  setDate(e.target.value);
-                  setHour('');
-                  setMinute('');
-                  setMessage('');
-                }}
-              />
-            </div>
-
-            {/* 예약 시간 */}
-            <div className="mb-3">
-              <label className="form-label">
-                예약 시간
-              </label>
-              <div className="time-select-wrapper">
-                {/* 시간 */}
-                <select
-                  className="form-select"
-                  value={hour}
-                  disabled={!date}
-                  onChange={(e) => {
-                    setHour(e.target.value);
-                    setMinute('');
-                    setMessage('');
-                  }}
-                >
-                  <option value="">시간 선택</option>
-                  {hourList.map((item) => (
-                    <option
-                      key={item}
-                      value={item}
-                      disabled={isHourDisabled(item)}
-                    >
-                      {String(item).padStart(2, '0')}시
-                    </option>
-                  ))}
-                </select>
-
-                {/* 분 */}
-                <select
-                  className="form-select"
-                  value={minute}
-                  disabled={!date || hour === ''}
-                  onChange={(e) => {
-                    setMinute(e.target.value);
-                    setMessage('');
-                  }}
-                >
-                  <option value="">분 선택</option>
-                  {minuteList.map((item) => (
-                    <option
-                      key={item}
-                      value={item}
-                      disabled={isMinuteDisabled(item)}
-                    >
-                      {String(item).padStart(2, '0')}분
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <small className="form-text text-muted">
-                현재 시간 기준 최소 5분 이후부터 예약할 수 있습니다.
-              </small>
-            </div>
-
-            {/* 예약 차량 */}
-            <div className="mb-3 reservation-vehicle">
-              <label className="form-label">
-                예약 차량
-              </label>
-              <p className="vehicle-description">
-                주차할 차량을 선택해주세요.
-              </p>
-
-              {/* 내 차량 / 방문 차량 탭 */}
-              <div className="vehicle-type-tabs">
-                <button
-                  type="button"
-                  className={`vehicle-type-tab ${
-                    vehicleType === 'my' ? 'active' : ''
-                  }`}
-                  onClick={() => {
-                    setVehicleType('my');
-                    setSelectedVisitorVehicle(null);
-                    setVisitorNumber('');
-                    setMessage('');
-                  }}
-                >
-                  <span className="vehicle-type-icon">🚗</span>
-                  <span>
-                    <strong>내 차량</strong>
-                    <small>등록된 차량 선택</small>
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  className={`vehicle-type-tab ${
-                    vehicleType === 'visitor' ? 'active' : ''
-                  }`}
-                  onClick={() => {
-                    setVehicleType('visitor');
-                    setVehicleId('');
-                    setMessage('');
-                  }}
-                >
-                  <span className="vehicle-type-icon">👤</span>
-                  <span>
-                    <strong>방문 차량</strong>
-                    <small>차량번호로 검색</small>
-                  </span>
-                </button>
-              </div>
-
-              {/* 내 차량 목록 */}
-              {vehicleType === 'my' && (
-                <div className="my-vehicle-list">
-                  {myVehiclesMock.map((v) => (
-                    <button
-                      type="button"
-                      key={v.id}
-                      className={`my-vehicle-item ${
-                        String(v.id) === vehicleId ? 'selected' : ''
-                      }`}
-                      onClick={() => {
-                        setVehicleId(String(v.id));
-                        setMessage('');
-                      }}
-                    >
-                      <span className="vehicle-icon">🚗</span>
-                      <span className="vehicle-name">{v.label}</span>
-                      {String(v.id) === vehicleId && (
-                        <span className="vehicle-check">✓</span>
-                      )}
-                    </button>
-                  ))}
+          {reservation && (
+            <div className="reservation-detail">
+              {/* 예약 정보 카드 */}
+              <div className="reservation-card">
+                <div className="reservation-card-header">
+                  <div>
+                    <h5>&nbsp;예약 정보</h5>
+                    <p>현재 예약 내용을 확인하세요.</p>
+                  </div>
                 </div>
-              )}
 
-              {/* 방문 차량 검색 */}
-              {vehicleType === 'visitor' && (
-                <div className="visitor-vehicle">
-                  <div className="visitor-search">
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="차량번호 뒷자리 4자리"
-                      value={visitorNumber}
-                      maxLength={4}
-                      onChange={(e) => {
-                        setVisitorNumber(
-                          e.target.value.replace(/\D/g, '')
-                        );
-                        setSelectedVisitorVehicle(null);
-                        setMessage('');
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-outline-primary"
-                      onClick={handleVisitorSearch}
-                      disabled={visitorNumber.length !== 4}
-                    >
-                      차량 검색
-                    </button>
+                <div className="reservation-info">
+                  <div className="info-item">
+                    <span>주차 자리</span>
+                    <strong>{reservation.spaceNumber || '지정석 없음'}</strong>
                   </div>
 
-                  {selectedVisitorVehicle && (
-                    <div className="selected-visitor-vehicle mt-2">
-                      <span>✓</span>
-                      <div>
-                        <strong>방문 차량 선택 완료</strong>
-                        <p>
-                          {selectedVisitorVehicle.number.slice(0, -4)}••••
-                        </p>
-                      </div>
+                  <div className="info-item">
+                    <span>예약 날짜</span>
+                    <strong>{reservationDateLabel}</strong>
+                  </div>
+
+                  <div className="info-item">
+                    <span>차량</span>
+                    <div>
+                      <strong>
+                        {reservation.vehicleLabel
+                          ? reservation.vehicleType === 'visitor' &&
+                            reservation.vehicleLabel.length > 4
+                            ? `${reservation.vehicleLabel.slice(0, -4)}••••`
+                            : reservation.vehicleLabel
+                          : ''}
+                      </strong>
+                      {reservation.vehicleType && (
+                        <small className="vehicle-type-label">
+                          {reservation.vehicleType === 'my' ? '내 차량' : '방문 차량'}
+                        </small>
+                      )}
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 남은 시간 카드 */}
+              <div className="reservation-card timer-card">
+                <div className="reservation-card-header">
+                  <div>
+                    <h5>
+                      {reservation.startDate
+                        ? '이용 만료까지 남은 시간'
+                        : '예약 취소까지 남은 시간'}
+                    </h5>
+                    <p>
+                      {reservation.startDate
+                        ? '종료일 23:59:59까지 주차 가능합니다.'
+                        : '예약 시간 이후 10분까지 입차할 수 있습니다.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="timer-content">
+                  {reservationExpired ? (
+                    <>
+                      <div className="timer-expired">00:00:00</div>
+                      <p>
+                        {reservation.startDate
+                          ? '주차 이용 기간이 만료되었습니다.'
+                          : '예약 시간이 지나 자동 취소되었습니다.'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>{reservation.startDate ? '남은 이용 시간' : '예약 취소까지'}</p>
+                      <div className="timer-value">
+                        {remainingTime !== null ? formatTime(remainingTime) : '--:--:--'}
+                      </div>
+                      <small className="timer-warning">
+                        {reservation.startDate
+                          ? '종료일시 전까지 출차해주세요.'
+                          : '마감 전까지 입차해주세요.'}
+                      </small>
+                    </>
                   )}
                 </div>
-              )}
-            </div>
 
-            {/* 예약 버튼 */}
-            <button
-              type="submit"
-              className="btn btn-primary w-100 reservation-button"
-              disabled={
-                !date ||
-                hour === '' ||
-                minute === '' ||
-                selectedSpaceId === null ||
-                (vehicleType === 'my' && !vehicleId) ||
-                (vehicleType === 'visitor' && !selectedVisitorVehicle) ||
-                !isValidReservationTime()
-              }
-            >
-              주차 예약하기
-            </button>
+                <div className="timer-date">
+                  <span>{reservation.startDate ? '예약 기간' : '예약 시간'}</span>
+                  <strong>
+                    {reservationDateLabel}
+                    {reservation.date && ` ${reservationTimeLabel}`}
+                  </strong>
+                </div>
 
-            {message && (
-              <div className="alert alert-info mt-3 mb-0">
-                {message}
+                {!reservationExpired && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-danger w-100 mt-2"
+                    onClick={handleCancelReservation}
+                  >
+                    예약 취소
+                  </button>
+                )}
               </div>
-            )}
-
-          </form>
-
+            </div>
+          )}
         </div>
-
       </div>
+
+      {/* MyBookingModal (일반 예약 및 AI 추천 예약 연동) */}
+      {isBookingModalOpen && (
+        <MyBookingModal
+          slot={bookingSlot}
+          onClose={() => {
+            setIsBookingModalOpen(false);
+            setBookingSlot(null);
+            loadReservation();
+          }}
+        />
+      )}
+
+      {/* RecommendationModal */}
+      <RecommendationModal
+        isOpen={isRecommendationModalOpen}
+        onClose={() => setIsRecommendationModalOpen(false)}
+        slots={slots}
+        onSelectAndBook={(selectedSlot) => {
+          setBookingSlot(selectedSlot); // AI가 추천한 슬롯을 주입
+          setIsBookingModalOpen(true); // MyBookingModal 오픈
+        }}
+      />
     </div>
   );
 }

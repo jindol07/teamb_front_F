@@ -4,8 +4,10 @@ import UserLogin from '../pages/user/login/UserLogin';
 import UserHome from '../pages/user/home/UserHome';
 import ParkingStatus from '../pages/user/parking-status/ParkingStatus';
 import Notice from '../pages/user/notice/Notice';
-import Reservation from '../pages/user/reservation/Reservation';
 import UserSignUp from '../pages/user/login/UserSignUp';
+import MyPage from '../pages/user/mypage/MyPage';
+import NoticeDetail from '../pages/user/notice/NoticeDetail';
+import Reservation from '../pages/user/reservation/Reservation';
 
 /**
  * UserRoutes
@@ -29,10 +31,12 @@ export default function UserRoutes() {
       <Route path="/user/signup" element={<UserSignUp />} />
 
       {/* 아래 화면들은 모두 UserLayout(Header + Footer)을 함께 사용합니다 */}
-      <Route path="/user" element={<UserLayout />}>
+      <Route path="/user/*" element={<UserLayout />}>
         <Route index element={<UserHome />} />
         <Route path="parking-status" element={<ParkingStatus />} />
         <Route path="notice" element={<Notice />} />
+        <Route path="notice/:id" element={<NoticeDetail />} />
+        <Route path="mypage" element={<MyPage />} />
         <Route path="reservation" element={<Reservation />} />
       </Route>
     </>

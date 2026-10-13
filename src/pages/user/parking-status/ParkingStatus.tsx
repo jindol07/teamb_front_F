@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { parkingSummaryMock, allParkingSlotsMock, ParkingSlot } from '../../../mock/parkingMock';
+import {
+  parkingSummaryMock,
+  allParkingSlotsMock,
+  ParkingSlot,
+} from '../../../mock/parkingMock';
 import useAgent from '../../../hooks/useAgent';
 import ParkingMapCanvasCore from './ParkingMapCanvasCore'; // 경로에 맞게 수정해주세요 (예: ./ParkingMapCanvasCore)
 
@@ -31,7 +35,9 @@ export default function ParkingStatus() {
   // 예약 확정 버튼 클릭 시
   const handleConfirmReservation = () => {
     if (!selectedSlot) return;
-    alert(`[예약 완료] ${selectedSlot.floor}층 ${selectedSlot.slotNumber} 구획이 예약되었습니다.`);
+    alert(
+      `[예약 완료] ${selectedSlot.floor}층 ${selectedSlot.slotNumber} 구획이 예약되었습니다.`,
+    );
     setIsModalOpen(false);
     setSelectedSlot(null);
   };
@@ -62,7 +68,9 @@ export default function ParkingStatus() {
         <div className="col-12 col-md-4">
           <div className="card summary-card text-center p-3 shadow-sm">
             <div className="text-secondary small mb-1">잔여 주차면</div>
-            <div className="summary-value fs-4 fw-bold text-success">{availableSpots}</div>
+            <div className="summary-value fs-4 fw-bold text-success">
+              {availableSpots}
+            </div>
           </div>
         </div>
       </div>
@@ -92,7 +100,16 @@ export default function ParkingStatus() {
         </div>
 
         {/* Konva 캔버스 맵 영역 */}
-        <div style={{ width: '100%', height: '625px', background: '#f8f9fa', overflow: 'auto', position: 'relative', borderRadius: '6px' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '625px',
+            background: '#f8f9fa',
+            overflow: 'auto',
+            position: 'relative',
+            borderRadius: '6px',
+          }}
+        >
           <ParkingMapCanvasCore
             floor={currentFloor}
             showPath={showPath}
@@ -104,20 +121,47 @@ export default function ParkingStatus() {
 
       {/* 예약 확인 모달 (팝업창) */}
       {isModalOpen && selectedSlot && (
-        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header bg-dark text-white">
                 <h5 className="modal-title fs-6">🅿️ 주차 구획 예약 확인</h5>
-                <button type="button" className="btn-close btn-close-white" onClick={() => setIsModalOpen(false)}></button>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setIsModalOpen(false)}
+                ></button>
               </div>
               <div className="modal-body">
-                <p className="mb-2">선택하신 구획: <strong className="text-primary">{selectedSlot.floor}층 {selectedSlot.slotNumber}</strong></p>
-                <p className="text-muted small mb-0">예약을 진행하시겠습니까? (예약 후 30분 내 입차해야 합니다.)</p>
+                <p className="mb-2">
+                  선택하신 구획:{' '}
+                  <strong className="text-primary">
+                    {selectedSlot.floor}층 {selectedSlot.slotNumber}
+                  </strong>
+                </p>
+                <p className="text-muted small mb-0">
+                  예약을 진행하시겠습니까? (예약 후 30분 내 입차해야 합니다.)
+                </p>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsModalOpen(false)}>취소</button>
-                <button type="button" className="btn btn-primary btn-sm" onClick={handleConfirmReservation}>예약 확정하기</button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleConfirmReservation}
+                >
+                  예약 확정하기
+                </button>
               </div>
             </div>
           </div>

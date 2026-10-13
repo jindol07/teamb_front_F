@@ -32,9 +32,9 @@ export default function UserHome() {
         </div>
         <div className="col-12 col-md-4">
           <Link to="/user/reservation" className="user-menu-card d-block p-4 h-100">
-            <h5 className="fw-bold mb-2">📅 주차예약</h5>
+            <h5 className="fw-bold mb-2">📅 예약확인</h5>
             <p className="mb-0 text-secondary small">
-              원하는 날짜와 시간에 주차를 예약할 수 있습니다.
+              예약된 주차 내역을 확인할 수 있습니다.
             </p>
           </Link>
         </div>
