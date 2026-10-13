@@ -38,7 +38,7 @@ export default function ChatMessages({
                     {message.role === 'assistant' && (
                         <div className="message-profile">
                             <img
-                                src="/image/alpha1.png"
+                                src="/images/alpha1.png"
                                 alt="알파카"
                             />
                         </div>
