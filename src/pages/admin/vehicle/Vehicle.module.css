@@ -1,28 +1,20 @@
 /* =====================================================
-   차량관리 페이지
-   Clean Admin Dashboard
+   차량 관리 페이지
 ===================================================== */
 
 .vehiclePage {
   width: 100%;
   min-width: 0;
-
   margin: 0 auto;
   padding: 0 32px;
-
   box-sizing: border-box;
 }
 
-
-/* =====================================================
-   페이지 제목
-===================================================== */
+/* 페이지 제목 */
 
 .pageTitle {
   margin: 0;
-
   color: #111827;
-
   font-size: 26px;
   font-weight: 700;
   line-height: 1.35;
@@ -31,85 +23,57 @@
 
 .pageDescription {
   margin: 6px 0 26px;
-
   color: #7a8494;
-
   font-size: 14px;
   line-height: 1.5;
 }
 
-
-/* =====================================================
-   상단 메뉴
-===================================================== */
+/* 상단 메뉴 */
 
 .vehicleMenu {
   display: flex;
   flex-direction: row;
   align-items: center;
-
+  flex-wrap: nowrap;
+  gap: 2px;
   width: 100%;
   min-width: 0;
-
-  gap: 2px;
-
   margin-bottom: 18px;
   padding: 4px;
-
   box-sizing: border-box;
-
-  background: #ffffff;
-
-  border: 1px solid #e3e7ed;
-  border-radius: 8px;
-
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.03);
-
   overflow-x: auto;
   overflow-y: hidden;
-
-  flex-wrap: nowrap;
-
   white-space: nowrap;
+  background: #ffffff;
+  border: 1px solid #e3e7ed;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
 }
 
 .vehicleMenu button {
   display: inline-flex;
+  flex: 0 0 auto;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-
-  flex: 0 0 auto;
-
   width: auto;
   min-width: 118px;
   height: 38px;
-
   padding: 0 18px;
-
   box-sizing: border-box;
-
+  overflow: hidden;
   border: 0;
   border-radius: 6px;
-
   background: transparent;
-
   color: #667085;
-
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
-
-  cursor: pointer;
-
   white-space: nowrap;
   word-break: keep-all;
-
   writing-mode: horizontal-tb !important;
   text-orientation: mixed;
-
-  overflow: hidden;
+  cursor: pointer;
 }
 
 .vehicleMenu button:hover {
@@ -120,57 +84,42 @@
 .vehicleMenu button.active {
   background: #172b4d;
   color: #ffffff;
-
   font-weight: 600;
 }
 
-
-/* =====================================================
-   공통 콘텐츠
-===================================================== */
+/* 공통 콘텐츠 */
 
 .vehicleContent {
   width: 100%;
   min-width: 0;
   max-width: none;
-
   margin: 0 auto;
   padding: 0;
-
   box-sizing: border-box;
 }
 
-
-/* =====================================================
-   콘텐츠 Header
-===================================================== */
+/* 콘텐츠 헤더 */
 
 .contentHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
+  gap: 20px;
   width: 100%;
   min-width: 0;
-
-  gap: 20px;
-
   margin-bottom: 22px;
   padding-bottom: 18px;
-
   border-bottom: 1px solid #edf0f3;
 }
 
 .contentHeader > div:first-child {
-  min-width: 0;
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .contentHeader h3 {
   margin: 0 0 5px;
-
   color: #111827;
-
   font-size: 18px;
   font-weight: 700;
   line-height: 1.4;
@@ -179,88 +128,58 @@
 
 .contentHeader p {
   margin: 0;
-
   color: #7a8494;
-
   font-size: 13px;
   line-height: 1.5;
 }
 
-
-/* =====================================================
-   Header Count
-===================================================== */
+/* 헤더 카운트 */
 
 .headerCount {
   display: inline-flex;
-  align-items: center;
-
   flex: 0 0 auto;
-
+  align-items: center;
   height: 32px;
-
   padding: 0 12px;
-
   box-sizing: border-box;
-
   background: #f8fafc;
-
   border: 1px solid #e4e7ec;
   border-radius: 6px;
-
   color: #667085;
-
   font-size: 12px;
   font-weight: 500;
-
   white-space: nowrap;
 }
 
 .headerCount strong {
   margin: 0 3px;
-
   color: #2563eb;
-
   font-size: 14px;
   font-weight: 700;
 }
 
-
-/* =====================================================
-   공통 버튼
-===================================================== */
+/* 공통 버튼 */
 
 .primaryButton,
 .secondaryButton,
 .deleteButton {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-
-  flex: 0 0 auto;
-
   min-height: 36px;
-
   margin: 0;
   padding: 0 14px;
-
   box-sizing: border-box;
-
   border-radius: 6px;
-
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-
   line-height: 1;
-
   white-space: nowrap;
-
-  cursor: pointer;
-
   appearance: none;
   -webkit-appearance: none;
-
+  cursor: pointer;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -269,18 +188,12 @@
     opacity 0.15s ease;
 }
 
-
-/* =====================================================
-   Primary Button
-===================================================== */
+/* 기본 버튼 */
 
 .primaryButton {
   min-width: 96px;
-
   border: 1px solid #2563eb;
-
   background: #2563eb;
-
   color: #ffffff;
 }
 
@@ -296,123 +209,82 @@
 
 .primaryButton:focus-visible {
   outline: none;
-
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.16);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
 
-
-/* =====================================================
-   Secondary Button
-===================================================== */
+/* 보조 버튼 */
 
 .secondaryButton {
   border: 1px solid #d0d5dd;
-
   background: #ffffff;
-
   color: #344054;
 }
 
 .secondaryButton:hover {
   background: #f8fafc;
-
   border-color: #98a2b3;
 }
 
 .secondaryButton:focus-visible {
   outline: none;
-
-  box-shadow:
-    0 0 0 3px rgba(98, 115, 135, 0.12);
+  box-shadow: 0 0 0 3px rgba(98, 115, 135, 0.12);
 }
 
-
-/* =====================================================
-   Delete Button
-===================================================== */
+/* 삭제 버튼 */
 
 .deleteButton {
   border: 1px solid #f0b4b4;
-
   background: #ffffff;
-
   color: #d92d20;
 }
 
 .deleteButton:hover {
   background: #fff5f5;
-
   border-color: #e88b8b;
 }
 
 .deleteButton:focus-visible {
   outline: none;
-
-  box-shadow:
-    0 0 0 3px rgba(217, 45, 32, 0.1);
+  box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.1);
 }
 
-
-/* =====================================================
-   Disabled
-===================================================== */
+/* 비활성화 버튼 */
 
 .primaryButton:disabled,
 .secondaryButton:disabled,
 .deleteButton:disabled {
   opacity: 0.5;
-
   cursor: not-allowed;
-
   pointer-events: none;
 }
 
-
-/* =====================================================
-   차량 현황 요약
-===================================================== */
+/* 차량 현황 요약 */
 
 .vehicleSummary {
   display: grid;
-
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr));
-
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
   max-width: 100%;
-
   margin: 0 auto 20px;
-
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #ffffff;
   border: 1px solid #e4e7ec;
   border-radius: 8px;
-
-  overflow: hidden;
-
-  background: #ffffff;
-
-  box-sizing: border-box;
 }
 
 .summaryItem {
   display: flex;
   flex-direction: column;
-
   justify-content: center;
-
   width: 100%;
   min-width: 0;
   min-height: 82px;
-
   padding: 16px 20px;
-
   box-sizing: border-box;
-
-  background: #ffffff;
-
-  border-right: 1px solid #edf0f3;
-
   overflow: hidden;
+  background: #ffffff;
+  border-right: 1px solid #edf0f3;
 }
 
 .summaryItem:last-child {
@@ -421,37 +293,27 @@
 
 .summaryItem > span {
   display: block;
-
   margin-bottom: 6px;
-
+  overflow: hidden;
   color: #667085;
-
   font-size: 12px;
   font-weight: 500;
-
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .summaryItem > strong {
   display: block;
-
   color: #101828;
-
   font-size: 22px;
   font-weight: 700;
-
   line-height: 1.2;
-
   white-space: nowrap;
 }
 
 .summaryItem > strong small {
   margin-left: 3px;
-
   color: #667085;
-
   font-size: 12px;
   font-weight: 500;
 }
@@ -463,45 +325,32 @@
 .summaryStopped {
   color: #b42318 !important;
 }
-
-
 /* =====================================================
-   검색 / 필터
+   검색 및 필터
 ===================================================== */
 
 .vehicleToolbar {
   display: flex;
   align-items: center;
-
   width: 100%;
   max-width: 100%;
   min-width: 0;
-
   gap: 8px;
-
   margin: 0 auto 14px;
-
   box-sizing: border-box;
 }
 
 .searchBox {
   display: flex;
-  align-items: center;
-
   flex: 1 1 auto;
-
+  align-items: center;
   min-width: 0;
   height: 40px;
-
   padding: 0 11px;
-
   box-sizing: border-box;
-
   background: #ffffff;
-
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -509,20 +358,14 @@
 
 .searchBox:focus-within {
   border-color: #2563eb;
-
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
 .searchBox > span {
   flex: 0 0 auto;
-
   margin-right: 7px;
-
   color: #98a2b3;
-
   font-size: 18px;
-
   line-height: 1;
 }
 
@@ -530,16 +373,11 @@
   width: 100%;
   min-width: 0;
   height: 100%;
-
   padding: 0;
-
   border: 0;
   outline: none;
-
   background: transparent;
-
   color: #101828;
-
   font-family: inherit;
   font-size: 13px;
 }
@@ -548,33 +386,21 @@
   color: #98a2b3;
 }
 
-
-/* =====================================================
-   필터 Select
-===================================================== */
+/* 필터 Select */
 
 .vehicleToolbar > select {
   flex: 0 0 110px;
-
   width: 110px;
   height: 40px;
-
   padding: 0 10px;
-
   box-sizing: border-box;
-
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-
   background: #ffffff;
-
   color: #344054;
-
   font-family: inherit;
   font-size: 13px;
-
   outline: none;
-
   cursor: pointer;
 }
 
@@ -584,261 +410,230 @@
 
 .vehicleToolbar > select:focus {
   border-color: #2563eb;
-
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-
-/* =====================================================
-   차량 테이블
-   ★ 불필요한 열 사이 공백 제거
-   ★ 강제 % 열 너비 제거
-   ★ table-layout: auto 사용
-===================================================== */
+/* 차량 테이블 영역 */
 
 .vehicleTableWrap {
   width: 100%;
   min-width: 0;
-
   box-sizing: border-box;
-
-  border: 1px solid #e4e7ec;
-  border-radius: 8px;
-
   overflow-x: auto;
   overflow-y: hidden;
-
   background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
 }
 
 .vehicleTable {
   width: max-content;
   min-width: 100%;
-
   border-collapse: collapse;
   border-spacing: 0;
-
   table-layout: auto;
-
   background: #ffffff;
 }
 
-
-/* =====================================================
-   테이블 Header
-===================================================== */
+/* 테이블 헤더 */
 
 .vehicleTable thead th {
   height: 38px;
-
   padding: 0 8px;
-
   box-sizing: border-box;
-
   background: #f8fafc;
-
   border-bottom: 1px solid #e4e7ec;
-
   color: #667085;
-
   font-size: 12px;
   font-weight: 600;
-
   text-align: center;
-
   white-space: nowrap;
-
   letter-spacing: -0.2px;
 }
 
+/* 테이블 본문 */
 
-/* =====================================================
-   테이블 Body
-===================================================== */
+.vehicleTable tbody tr {
+  background: #ffffff;
+  transition: background 0.15s ease;
+}
 
 .vehicleTable tbody td {
   height: 50px;
-
   padding: 0 8px;
-
   box-sizing: border-box;
-
-  border-bottom: 1px solid #edf0f3;
-
   background: #ffffff;
-
+  border-bottom: 1px solid #edf0f3;
   color: #475467;
-
   font-size: 13px;
   font-weight: 400;
-
   line-height: 1.4;
-
   vertical-align: middle;
-
-  white-space: nowrap;
-
   text-align: center;
-
+  white-space: nowrap;
+  letter-spacing: -0.2px;
   transition:
     background 0.15s ease,
     color 0.15s ease;
-
-  letter-spacing: -0.2px;
 }
 
 .vehicleTable tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.vehicleTable tbody tr {
-  background: #ffffff;
-
-  transition:
-    background 0.15s ease;
-}
-
 .vehicleTable tbody tr:hover td {
   background: #f8fafc;
 }
 
-
-/* =====================================================
-   차량번호
-===================================================== */
+/* 차량번호 */
 
 .vehicleTable tbody td .vehicleNumber {
   display: inline-block;
-
   color: #101828;
-
   font-size: 13px;
   font-weight: 600;
-
   line-height: 1.4;
-
   white-space: nowrap;
 }
 
 .vehicleNumber {
   color: #101828;
-
   font-size: 13px;
   font-weight: 700;
-
   letter-spacing: -0.2px;
 }
 
-
-/* =====================================================
-   차주
-===================================================== */
+/* 차주 */
 
 .vehicleTable tbody td .ownerName {
   color: #344054;
-
   font-size: 13px;
   font-weight: 400;
 }
 
 .ownerName {
   color: #344054;
-
   font-size: 13px;
 }
 
-
-/* =====================================================
-   세대 / 등록일
-===================================================== */
+/* 세대 및 등록일 */
 
 .vehicleTable tbody td .unitInfo,
 .vehicleTable tbody td .registeredDate {
   color: #667085;
-
   font-size: 12px;
-
   line-height: 1.4;
 }
 
 .unitInfo {
   color: #667085;
-
   font-size: 12px;
 }
 
 .registeredDate {
   color: #667085;
-
   font-size: 12px;
-
   font-variant-numeric: tabular-nums;
 }
 
-
-/* =====================================================
-   차량 종류
-===================================================== */
+/* 차량 종류 */
 
 .vehicleTable .vehicleType {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   min-width: 48px;
   height: 24px;
-
   padding: 0 7px;
-
   box-sizing: border-box;
-
   background: #f2f4f7;
-
   border: 1px solid #eaecf0;
-
   border-radius: 4px;
-
   color: #475467;
-
   font-size: 11px;
   font-weight: 600;
-
   line-height: 1;
-
   white-space: nowrap;
 }
 
-
-/* =====================================================
-   테이블 Footer
-===================================================== */
+/* 테이블 하단 카운트 */
 
 .tableFooter {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-
+  justify-content: flex-end;
   min-height: 42px;
-
   padding-top: 10px;
-
   box-sizing: border-box;
-
   color: #98a2b3;
-
   font-size: 12px;
 }
 
 .tableFooter strong {
   margin: 0 3px;
-
   color: #475467;
-
   font-weight: 700;
 }
 
+/* 마지막 관리 컬럼 */
 
+.vehicleTable th:last-child,
+.vehicleTable td:last-child {
+  width: 100px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+}
+
+/* 차량 상세 보기 */
+
+.vehicleDetailLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.vehicleDetailLink:hover {
+  color: #2563eb;
+}
+
+.vehicleDetail {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #e5e7eb;
+}
+
+.vehicleDetailRow {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.vehicleDetailRow span {
+  width: 160px;
+  color: #6b7280;
+}
+
+.vehicleDetailRow strong {
+  color: #111827;
+}
+
+.vehicleDetailActions,
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.vehicleDetailActions {
+  margin-top: 24px;
+}
 /* =====================================================
    검색 결과 없음
 ===================================================== */
@@ -846,91 +641,62 @@
 .emptySearch {
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
-
   width: 100%;
   min-width: 0;
-
   min-height: 220px;
-
   padding: 40px 20px;
-
   box-sizing: border-box;
-
   background: #fafbfc;
-
   border: 1px dashed #d0d5dd;
-
   border-radius: 8px;
-
   text-align: center;
 }
 
 .emptySearch strong {
   color: #475467;
-
   font-size: 14px;
   font-weight: 600;
 }
 
 .emptySearch p {
   margin: 8px 0 18px;
-
   color: #98a2b3;
-
   font-size: 13px;
-
   line-height: 1.6;
 }
 
-
-/* =====================================================
-   빈 상태
-===================================================== */
+/* 빈 상태 */
 
 .emptyVehicle,
 .emptyParkingEvent {
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
-
   width: 100%;
   min-width: 0;
-
   min-height: 240px;
-
   padding: 40px 20px;
-
   box-sizing: border-box;
-
   background: #fafbfc;
-
   border: 1px dashed #d0d5dd;
-
   border-radius: 8px;
-
   text-align: center;
 }
 
 .emptyVehicle p,
 .emptyParkingEvent p {
   margin: 8px 0 18px;
-
   color: #98a2b3;
-
   font-size: 13px;
-
   line-height: 1.7;
 }
 
 .emptyVehicle strong,
 .emptyParkingEvent strong {
   color: #475467;
-
   font-size: 14px;
   font-weight: 600;
 }
@@ -939,122 +705,78 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   width: 46px;
   height: 46px;
-
   margin-bottom: 12px;
-
   background: #f2f4f7;
-
   border-radius: 50%;
-
   font-size: 21px;
 }
 
-
-/* =====================================================
-   차량 등록 Layout
-===================================================== */
+/* 차량 등록 레이아웃 */
 
 .registerLayout {
   display: grid;
-
   width: 100%;
   max-width: 100%;
   min-width: 0;
-
-  grid-template-columns:
-    minmax(0, 1fr)
-    minmax(300px, 360px);
-
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   gap: 24px;
-
   align-items: start;
-
   box-sizing: border-box;
 }
 
-
-/* =====================================================
-   아파트 지도
-===================================================== */
+/* 아파트 지도 */
 
 .apartmentMapArea {
   width: 100%;
   min-width: 0;
   min-height: 520px;
-
   padding: 16px;
-
   box-sizing: border-box;
-
   background: #f8fafc;
-
   border: 1px solid #e3e7ed;
-
   border-radius: 8px;
-
   overflow: hidden;
 }
 
 .apartmentMapArea > * {
   width: 100%;
   max-width: 100%;
-
   box-sizing: border-box;
 }
 
-
-/* =====================================================
-   차량 등록 Form
-===================================================== */
+/* 차량 등록 폼 */
 
 .vehicleForm {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-
   padding: 24px;
-
   box-sizing: border-box;
-
   background: #ffffff;
-
   border: 1px solid #e3e7ed;
-
   border-radius: 8px;
-
   overflow: hidden;
 }
 
 .vehicleForm::before {
   content: "차량 정보";
-
   display: block;
-
   margin-bottom: 22px;
-
   color: #111827;
-
   font-size: 16px;
   font-weight: 700;
 }
 
-
-/* =====================================================
-   Form Group
-===================================================== */
+/* 폼 그룹 */
 
 .formGroup {
   display: flex;
   flex-direction: column;
-
   width: 100%;
   min-width: 0;
-
   gap: 7px;
-
   margin-bottom: 18px;
 }
 
@@ -1064,45 +786,29 @@
 
 .formGroup label {
   display: block;
-
   margin: 0;
-
   color: #344054;
-
   font-size: 13px;
   font-weight: 600;
 }
 
-
-/* =====================================================
-   Input / Select
-===================================================== */
+/* 입력창 및 Select */
 
 .formGroup input,
 .formGroup select {
   display: block;
-
   width: 100%;
   min-width: 0;
   height: 40px;
-
   padding: 0 11px;
-
   box-sizing: border-box;
-
   border: 1px solid #d0d5dd;
-
   border-radius: 6px;
-
   background: #ffffff;
-
   color: #101828;
-
   font-family: inherit;
   font-size: 13px;
-
   outline: none;
-
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -1120,114 +826,75 @@
 .formGroup input:focus,
 .formGroup select:focus {
   border-color: #2563eb;
-
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-
-/* =====================================================
-   선택 세대
-===================================================== */
+/* 선택된 세대 */
 
 .selectedUnit {
   display: flex;
   align-items: center;
-
   width: 100%;
   min-width: 0;
   min-height: 40px;
-
   padding: 0 11px;
-
   box-sizing: border-box;
-
   background: #f8fafc;
-
   border: 1px solid #e3e7ed;
-
   border-radius: 6px;
-
   color: #667085;
-
   font-size: 13px;
-
   overflow: hidden;
 }
 
 .selectedUnit strong {
   margin-right: 5px;
-
   color: #2563eb;
-
   font-weight: 700;
-
   white-space: nowrap;
 }
 
 .selectedUnit span {
   color: #98a2b3;
-
   white-space: nowrap;
-
   overflow: hidden;
-
   text-overflow: ellipsis;
 }
 
-
-/* =====================================================
-   Input + Button
-===================================================== */
+/* 입력창 + 버튼 */
 
 .inputWithButton {
   display: flex;
   align-items: center;
-
   width: 100%;
   min-width: 0;
-
   gap: 6px;
 }
 
 .inputWithButton input {
   flex: 1 1 auto;
-
   width: auto;
   min-width: 0;
 }
 
 .inputWithButton button {
   flex: 0 0 auto;
-
   min-width: 60px;
 }
 
-
-/* =====================================================
-   차량 번호 조회 결과
-===================================================== */
+/* 차량 번호 조회 결과 */
 
 .predictionResult {
   width: 100%;
   min-width: 0;
-
   margin-top: 7px;
-
   padding: 9px 11px;
-
   box-sizing: border-box;
-
   background: #f0fdf4;
-
   border: 1px solid #bbf7d0;
-
   border-radius: 6px;
-
   color: #166534;
-
   font-size: 12px;
-
   line-height: 1.5;
 }
 
@@ -1235,62 +902,40 @@
   font-weight: 700;
 }
 
-
-/* =====================================================
-   등록 버튼
-===================================================== */
+/* 등록 버튼 */
 
 .vehicleForm > .primaryButton {
   display: flex;
-
   width: 100%;
-
   min-height: 42px;
-
   margin-top: 4px;
 }
 
-
-/* =====================================================
-   수정 / 삭제 목록
-===================================================== */
+/* 수정 및 삭제 목록 */
 
 .editVehicleList {
   display: flex;
   flex-direction: column;
-
   width: 100%;
   max-width: 100%;
   min-width: 0;
-
   gap: 8px;
 }
 
-
-/* =====================================================
-   수정 Row
-===================================================== */
+/* 수정 목록 행 */
 
 .editVehicleRow {
   display: flex;
   align-items: center;
-
   width: 100%;
   min-width: 0;
   min-height: 76px;
-
   padding: 14px 16px;
-
   box-sizing: border-box;
-
   background: #ffffff;
-
   border: 1px solid #e4e7ec;
-
   border-radius: 8px;
-
   gap: 50px;
-
   transition:
     background 0.15s ease,
     border-color 0.15s ease;
@@ -1298,18 +943,13 @@
 
 .editVehicleRow:hover {
   background: #fbfcfd;
-
   border-color: #cfd5dc;
 }
 
-
-/* =====================================================
-   수정 차량 정보
-===================================================== */
+/* 수정 차량 정보 */
 
 .editVehicleInfo {
   flex: 1 1 auto;
-
   min-width: 0;
 }
 
@@ -1317,15 +957,12 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-
   gap: 8px;
-
   margin-bottom: 6px;
 }
 
 .editVehicleTitle strong {
   color: #101828;
-
   font-size: 14px;
   font-weight: 700;
 }
@@ -1334,117 +971,75 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-
   gap: 4px 18px;
 }
 
 .editVehicleMeta span {
   position: relative;
-
   color: #667085;
-
   font-size: 12px;
 }
 
 .editVehicleMeta span + span::before {
   content: "";
-
   position: absolute;
-
   left: -10px;
   top: 50%;
-
   width: 2px;
   height: 2px;
-
   transform: translateY(-50%);
-
   background: #c4c9d1;
-
   border-radius: 50%;
 }
 
-
-/* =====================================================
-   수정 / 삭제 버튼
-===================================================== */
+/* 수정 및 삭제 버튼 */
 
 .editButtons {
   display: flex;
   align-items: center;
-
   flex: 0 0 auto;
-
   gap: 6px;
-
   margin-left: 30px;
 }
-
 
 .editButtons button {
   width: 58px;
   min-width: 58px;
   height: 34px;
-
   padding: 0 10px;
-
   border-radius: 5px;
-
   font-size: 12px;
 }
 
-
-/* =====================================================
-   주정차 / 벌칙금 관리
-===================================================== */
+/* 주정차 및 벌칙금 관리 목록 */
 
 .statusList {
   display: flex;
   flex-direction: column;
-
   width: 100%;
   max-width: 100%;
   min-width: 0;
-
+  background: #ffffff;
   border: 1px solid #e4e7ec;
   border-radius: 10px;
-
   overflow: hidden;
-
-  background: #ffffff;
 }
 
-
-/* =====================================================
-   차량 Row
-===================================================== */
+/* 차량 행 */
 
 .statusRow {
   display: grid;
   align-items: center;
-
   width: 100%;
   min-width: 0;
   min-height: 86px;
-
-  grid-template-columns:
-    minmax(0, 1fr)
-    120px
-    90px
-    150px;
-
+  grid-template-columns: minmax(0, 1fr) 120px 90px 150px;
   gap: 20px;
-
   padding: 16px 20px;
-
   box-sizing: border-box;
-
   background: #ffffff;
-
   border-bottom: 1px solid #edf0f3;
-
-  transition:
-    background 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .statusRow:last-child {
@@ -1455,10 +1050,7 @@
   background: #f8fafc;
 }
 
-
-/* =====================================================
-   차량 정보
-===================================================== */
+/* 차량 정보 */
 
 .statusInfo {
   min-width: 0;
@@ -1467,24 +1059,17 @@
 .statusVehicleMain {
   display: flex;
   align-items: center;
-
-  gap: 8px;
-
-  margin-bottom: 7px;
-
   min-width: 0;
+  gap: 8px;
+  margin-bottom: 7px;
 }
 
 .statusVehicleMain strong {
   overflow: hidden;
-
   color: #101828;
-
   font-size: 15px;
   font-weight: 700;
-
   line-height: 1.4;
-
   white-space: nowrap;
   text-overflow: ellipsis;
 }
@@ -1493,26 +1078,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   height: 23px;
-
   padding: 0 8px;
-
   box-sizing: border-box;
-
   background: #f2f4f7;
-
   border: 1px solid #eaecf0;
-
   border-radius: 5px;
-
   color: #475467;
-
   font-size: 11px;
   font-weight: 600;
-
   white-space: nowrap;
 }
 
@@ -1520,122 +1095,85 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-
   gap: 4px 18px;
 }
 
 .statusVehicleDetail span {
   position: relative;
-
   color: #667085;
-
   font-size: 12px;
-
   line-height: 1.5;
 }
 
 .statusVehicleDetail span + span::before {
   content: "";
-
   position: absolute;
-
   left: -10px;
   top: 50%;
-
   width: 3px;
   height: 3px;
-
   transform: translateY(-50%);
-
   background: #c4c9d1;
-
   border-radius: 50%;
 }
 
-
-/* =====================================================
-   벌칙금
-===================================================== */
+/* 벌칙금 정보 */
 
 .penaltyInfo {
   display: flex;
   flex-direction: column;
-
   justify-content: center;
-
   min-width: 0;
-
   padding-left: 20px;
-
   border-left: 1px solid #edf0f3;
 }
 
 .penaltyLabel {
   margin-bottom: 4px;
-
   color: #98a2b3;
-
   font-size: 11px;
   font-weight: 500;
 }
 
 .penaltyInfo strong {
   color: #d92d20;
-
   font-size: 16px;
   font-weight: 700;
-
   line-height: 1.3;
-
   white-space: nowrap;
 }
 
-
-/* =====================================================
-   위반 횟수
-===================================================== */
+/* 위반 횟수 */
 
 .violationInfo {
   display: flex;
   flex-direction: column;
-
   justify-content: center;
-
   min-width: 0;
-
   padding-left: 20px;
-
   border-left: 1px solid #edf0f3;
 }
 
 .violationInfo span {
   margin-bottom: 4px;
-
   color: #98a2b3;
-
   font-size: 11px;
   font-weight: 500;
 }
 
 .violationInfo strong {
   color: #344054;
-
   font-size: 15px;
   font-weight: 700;
 }
 
-
-/* =====================================================
-   상태 / 버튼
-===================================================== */
+/* 상태 및 버튼 */
 
 .statusControl {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-
   min-width: 0;
-
   gap: 8px;
 }
 
@@ -1644,40 +1182,27 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   height: 27px;
-
   padding: 0 9px;
-
   box-sizing: border-box;
-
   border-radius: 5px;
-
   font-size: 11px;
   font-weight: 600;
-
   white-space: nowrap;
 }
 
 .statusNormal {
   background: #ecfdf3;
-
   border: 1px solid #abefc6;
-
   color: #027a48;
 }
 
 .statusStopped {
   background: #fef3f2;
-
   border: 1px solid #fecdca;
-
   color: #b42318;
 }
-
-
 /* =====================================================
    벌칙금 등록 버튼
 ===================================================== */
@@ -1686,28 +1211,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   height: 34px;
-
   padding: 0 11px;
-
   box-sizing: border-box;
-
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-
   background: #ffffff;
-
   color: #344054;
-
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-
   white-space: nowrap;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -1716,9 +1231,7 @@
 
 .penaltyButton:hover {
   background: #fff8f7;
-
   border-color: #f0a5a0;
-
   color: #b42318;
 }
 
@@ -1726,45 +1239,29 @@
   background: #fef3f2;
 }
 
-
-/* =====================================================
-   벌칙금 요약
-===================================================== */
+/* 벌칙금 요약 */
 
 .fineSummary {
   display: grid;
-
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr));
-
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
   max-width: 100%;
   min-width: 0;
-
   margin: 0 auto 20px;
-
   border: 1px solid #e4e7ec;
   border-radius: 8px;
-
   overflow: hidden;
-
   background: #ffffff;
-
   box-sizing: border-box;
 }
 
 .fineSummaryItem {
   min-width: 0;
   min-height: 82px;
-
   padding: 16px 20px;
-
   box-sizing: border-box;
-
-  background: #fff;
-
+  background: #ffffff;
   border-right: 1px solid #edf0f3;
-
   overflow: hidden;
 }
 
@@ -1774,13 +1271,9 @@
 
 .fineSummaryItem span {
   display: block;
-
   margin-bottom: 6px;
-
   color: #667085;
-
   font-size: 12px;
-
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1788,9 +1281,7 @@
 
 .fineSummaryItem strong {
   color: #101828;
-
   font-size: 22px;
-
   white-space: nowrap;
 }
 
@@ -1801,6 +1292,7 @@
 .finePaid {
   color: #027a48 !important;
 }
+
 /* =====================================================
    파일 선택 영역
 ===================================================== */
@@ -1808,53 +1300,36 @@
 .fileUpload {
   width: 100%;
   min-width: 0;
-
-  box-sizing: border-box;
-
   margin-top: 4px;
+  box-sizing: border-box;
 }
 
 .fileUpload input[type="file"] {
   position: absolute;
-
   width: 1px;
   height: 1px;
-
   padding: 0;
   margin: -1px;
-
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
-
   white-space: nowrap;
-
   border: 0;
 }
 
-
-/* =====================================================
-   파일 선택 박스
-===================================================== */
+/* 파일 선택 박스 */
 
 .fileUploadLabel {
   display: flex;
   align-items: center;
-
   width: 100%;
   min-width: 0;
   min-height: 72px;
-
   padding: 12px 14px;
-
   box-sizing: border-box;
-
   background: #ffffff;
-
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
-
   cursor: pointer;
-
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -1863,109 +1338,73 @@
 
 .fileUploadLabel:hover {
   background: #f8fafc;
-
   border-color: #2563eb;
 }
 
 .fileUploadLabel:focus-within {
   border-color: #2563eb;
-
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-
-/* =====================================================
-   파일 아이콘
-===================================================== */
+/* 파일 아이콘 */
 
 .fileUploadIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   width: 42px;
   height: 42px;
-
   margin-right: 12px;
-
   background: #eff6ff;
-
   border: 1px solid #dbeafe;
-
   border-radius: 7px;
-
   color: #2563eb;
-
   font-size: 20px;
 }
 
-
-/* =====================================================
-   파일 설명
-===================================================== */
+/* 파일 설명 */
 
 .fileUploadText {
   display: flex;
   flex-direction: column;
-
   min-width: 0;
-
   gap: 3px;
 }
 
 .fileUploadTitle {
   color: #344054;
-
   font-size: 13px;
   font-weight: 600;
-
   line-height: 1.4;
 }
 
 .fileUploadDescription {
   color: #98a2b3;
-
   font-size: 11px;
-
   line-height: 1.4;
 }
 
-
-/* =====================================================
-   파일 선택 버튼
-===================================================== */
+/* 파일 선택 버튼 */
 
 .fileUploadButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   min-width: 72px;
   height: 32px;
-
   margin-left: auto;
   padding: 0 11px;
-
   box-sizing: border-box;
-
   background: #ffffff;
-
   border: 1px solid #d0d5dd;
   border-radius: 5px;
-
   color: #344054;
-
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
-
   white-space: nowrap;
-
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
@@ -1974,32 +1413,22 @@
 
 .fileUploadLabel:hover .fileUploadButton {
   background: #eff6ff;
-
   border-color: #93c5fd;
-
   color: #1d4ed8;
 }
 
-
-/* =====================================================
-   선택된 파일
-===================================================== */
+/* 선택된 파일 */
 
 .fileSelected {
   display: flex;
   align-items: center;
-
   width: 100%;
   min-width: 0;
   min-height: 48px;
-
   margin-top: 8px;
   padding: 9px 11px;
-
   box-sizing: border-box;
-
   background: #f8fafc;
-
   border: 1px solid #e4e7ec;
   border-radius: 6px;
 }
@@ -2008,99 +1437,67 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   width: 28px;
   height: 28px;
-
   margin-right: 9px;
-
   background: #ecfdf3;
-
   border-radius: 5px;
-
   color: #027a48;
-
   font-size: 14px;
 }
 
 .fileSelectedInfo {
-  min-width: 0;
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .fileSelectedName {
   display: block;
-
   overflow: hidden;
-
   color: #344054;
-
   font-size: 12px;
   font-weight: 600;
-
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .fileSelectedType {
   display: block;
-
   margin-top: 2px;
-
   color: #98a2b3;
-
   font-size: 10px;
 }
 
-
-/* =====================================================
-   파일 삭제 버튼
-===================================================== */
+/* 파일 삭제 버튼 */
 
 .fileRemoveButton {
   display: flex;
   align-items: center;
   justify-content: center;
-
   flex: 0 0 auto;
-
   width: 28px;
   height: 28px;
-
   margin-left: 8px;
-
   padding: 0;
-
   border: 0;
   border-radius: 5px;
-
   background: transparent;
-
   color: #98a2b3;
-
   font-size: 15px;
-
   cursor: pointer;
 }
 
 .fileRemoveButton:hover {
   background: #fef3f2;
-
   color: #d92d20;
 }
 
-
-/* =====================================================
-   Excel 파일
-===================================================== */
+/* Excel 파일 */
 
 .fileUpload.excel .fileUploadIcon {
   background: #ecfdf3;
-
   border-color: #bbf7d0;
-
   color: #15803d;
 }
 
@@ -2110,12 +1507,9 @@
 
 .fileUpload.excel .fileUploadLabel:hover .fileUploadButton {
   background: #f0fdf4;
-
   border-color: #86efac;
-
   color: #15803d;
 }
-
 
 /* =====================================================
    공통 최종 정렬
@@ -2136,56 +1530,37 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-
   box-sizing: border-box;
 }
 
-
 /* =====================================================
    테이블 최종 보정
-   ★ 열 사이 강제 공백 제거
-   ★ 600px 강제 최소 너비 제거
-   ★ table-layout fixed 제거
 ===================================================== */
 
 .vehicleTableWrap {
   width: 100%;
   min-width: 0;
-
   box-sizing: border-box;
-
   border: 1px solid #e4e7ec;
   border-radius: 8px;
-
   overflow-x: auto;
   overflow-y: hidden;
-
   background: #ffffff;
 }
 
 .vehicleTable {
   width: max-content;
   min-width: 100%;
-
   border-collapse: collapse;
   border-spacing: 0;
-
   table-layout: auto;
-
   background: #ffffff;
 }
 
-.vehicleTable thead th {
-  padding-left: 8px;
-  padding-right: 8px;
-
-  letter-spacing: -0.2px;
-}
-
+.vehicleTable thead th,
 .vehicleTable tbody td {
   padding-left: 8px;
   padding-right: 8px;
-
   letter-spacing: -0.2px;
 }
 
@@ -2194,16 +1569,9 @@
 ===================================================== */
 
 @media (max-width: 900px) {
-
   .statusRow {
-    grid-template-columns:
-      minmax(0, 1fr)
-      120px
-      90px
-      150px;
-
+    grid-template-columns: minmax(0, 1fr) 120px 90px 150px;
     gap: 20px;
-
     padding: 16px 20px;
   }
 
@@ -2217,76 +1585,54 @@
   }
 
   .registerLayout {
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(300px, 360px);
-
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
     gap: 24px;
   }
 }
-
 
 /* =====================================================
    모바일
 ===================================================== */
 
 @media (max-width: 700px) {
-
   .vehiclePage {
     width: 100%;
     max-width: 100%;
-
     margin: 0 auto;
     padding: 0 16px;
-
     box-sizing: border-box;
   }
 
   .vehicleContent {
     width: 100%;
     max-width: 100%;
-
     margin: 0;
     padding: 0;
-
     box-sizing: border-box;
   }
 
   .statusRow {
-    display: grid;
-
-    grid-template-columns:
-      minmax(0, 1fr)
-      120px
-      90px
-      150px;
-
+    grid-template-columns: minmax(0, 1fr) 120px 90px 150px;
     gap: 20px;
-
     padding: 16px 20px;
   }
 
-  .statusInfo {
+  .statusInfo,
+  .statusControl,
+  .penaltyInfo {
     grid-column: auto;
+    grid-row: auto;
   }
 
   .statusControl {
-    grid-column: auto;
-    grid-row: auto;
-
     flex-direction: row;
-
     align-items: center;
     justify-content: flex-end;
-
     flex-wrap: nowrap;
   }
 
   .penaltyInfo {
-    grid-column: auto;
-
     padding: 0 0 0 20px;
-
     border-top: 0;
     border-left: 1px solid #edf0f3;
   }
@@ -2296,18 +1642,13 @@
   }
 
   .registerLayout {
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(300px, 360px);
-
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
     gap: 24px;
   }
 
-  /* 테이블은 화면보다 넓을 경우 가로 스크롤 */
   .vehicleTableWrap {
     width: 100%;
     min-width: 0;
-
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -2315,79 +1656,51 @@
   .vehicleTable {
     width: max-content;
     min-width: 0;
-
     table-layout: auto;
   }
 }
-
 
 /* =====================================================
    작은 모바일
 ===================================================== */
 
 @media (max-width: 480px) {
-
   .vehiclePage {
     width: 100%;
     max-width: 100%;
-
     margin: 0 auto;
     padding: 0 12px;
-
     box-sizing: border-box;
   }
 
   .vehicleContent {
     width: 100%;
     max-width: 100%;
-
     margin: 0;
     padding: 0;
-
     box-sizing: border-box;
   }
 
-  .vehicleSummary {
-    grid-template-columns:
-      repeat(3, minmax(0, 1fr));
-  }
-
-  .summaryItem {
-    min-height: 82px;
-
-    border-right: 1px solid #edf0f3;
-    border-bottom: 0;
-  }
-
-  .summaryItem:last-child {
-    border-right: 0;
-  }
-
+  .vehicleSummary,
   .fineSummary {
-    grid-template-columns:
-      repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .summaryItem,
   .fineSummaryItem {
     min-height: 82px;
-
     border-right: 1px solid #edf0f3;
     border-bottom: 0;
   }
 
+  .summaryItem:last-child,
   .fineSummaryItem:last-child {
     border-right: 0;
   }
 
   .statusRow {
-    grid-template-columns:
-      minmax(0, 1fr)
-      120px
-      90px
-      150px;
-
+    grid-template-columns: minmax(0, 1fr) 120px 90px 150px;
     gap: 20px;
-
     padding: 16px 20px;
   }
 
@@ -2400,16 +1713,13 @@
 
   .statusControl {
     flex-direction: row;
-
     align-items: center;
     justify-content: flex-end;
-
     flex-wrap: nowrap;
   }
 
   .penaltyInfo {
     padding: 0 0 0 20px;
-
     border-top: 0;
     border-left: 1px solid #edf0f3;
   }
@@ -2419,17 +1729,13 @@
   }
 
   .registerLayout {
-    grid-template-columns:
-      minmax(0, 1fr)
-      minmax(300px, 360px);
-
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
     gap: 24px;
   }
 
   .vehicleTableWrap {
     width: 100%;
     min-width: 0;
-
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -2437,7 +1743,6 @@
   .vehicleTable {
     width: max-content;
     min-width: 0;
-
     table-layout: auto;
   }
 
@@ -2448,14 +1753,594 @@
   }
 }
 /* =====================================================
-   관리 컬럼 위치 보정
-   ★ 테이블 전체 폭은 유지
-   ★ 관리 영역만 적당히 좁힘
+   차량 추가 등록 관리
+   Vehicle.module.css
 ===================================================== */
 
-.vehicleTable th:last-child,
-.vehicleTable td:last-child {
-  width: 100px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
+/* 공통 변수 */
+
+.vehicleContent {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-surface: #ffffff;
+  --color-background: #f8fafc;
+
+  width: 100%;
+  min-width: 0;
+  padding: 28px;
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid #edf0f5;
+  border-radius: 16px;
+  box-sizing: border-box;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Noto Sans KR",
+    sans-serif;
+}
+
+/* 페이지 헤더 */
+
+.contentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.contentHeader h3 {
+  margin: 0 0 9px;
+  color: #0f172a;
+  font-size: 23px;
+  font-weight: 750;
+  letter-spacing: -0.7px;
+  line-height: 1.4;
+}
+
+.contentHeader p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 요약 카드 */
+
+.vehicleSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.summaryItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 112px;
+  padding: 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  box-sizing: border-box;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.summaryItem:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 18px rgb(15 23 42 / 5%);
+}
+
+.summaryItem > span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.summaryItem strong {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 15px;
+  color: #1e293b;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+
+.summaryItem strong small {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.summaryItem .summaryStopped {
+  color: #d97706;
+}
+
+.summaryItem .summaryNormal {
+  color: #16a34a;
+}
+
+/* 검색 및 필터 */
+
+.vehicleToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 380px);
+  min-height: 44px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.searchBox:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
+}
+
+.searchBox > span {
+  flex-shrink: 0;
+  color: #94a3b8;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.searchBox input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 0;
+  color: #1e293b;
+  background: transparent;
+  border: none;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+}
+
+.searchBox input::placeholder {
+  color: #a0aab8;
+}
+
+.vehicleToolbar select {
+  min-width: 145px;
+  min-height: 44px;
+  padding: 0 34px 0 13px;
+  color: #334155;
+  background-color: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.vehicleToolbar select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
+}
+
+/* 테이블 영역 */
+
+.vehicleTableWrap {
+  width: 100%;
+  overflow-x: auto;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.vehicleTable {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: center;
+  font-size: 13px;
+}
+
+.vehicleTable thead {
+  background: #f8fafc;
+}
+
+.vehicleTable th {
+  height: 52px;
+  padding: 0 15px;
+  color: #64748b;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.vehicleTable td {
+  height: 65px;
+  padding: 12px 15px;
+  color: #475569;
+  border-bottom: 1px solid #edf1f5;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.vehicleTable tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.vehicleTable tbody tr:hover {
+  background: #f8fbff;
+}
+
+.vehicleTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* 차량번호 */
+
+.vehicleTable tbody td:first-child {
+  color: #1e293b;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+
+/* 차주 */
+
+.vehicleTable tbody td:nth-child(3) {
+  color: #334155;
+  font-weight: 600;
+}
+
+/* 승인 및 반려 버튼 */
+
+.formActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.formActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 58px;
+  min-height: 34px;
+  padding: 7px 13px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.formActions button:active {
+  transform: scale(0.97);
+}
+
+.formActions button:focus-visible {
+  outline: 3px solid rgb(37 99 235 / 25%);
+  outline-offset: 2px;
+}
+
+.primaryButton {
+  color: #ffffff;
+  background: var(--color-primary, #2563eb);
+  border-color: var(--color-primary, #2563eb) !important;
+}
+
+.primaryButton:hover {
+  background: var(--color-primary-hover, #1d4ed8);
+  box-shadow: 0 3px 8px rgb(37 99 235 / 18%);
+}
+
+.secondaryButton {
+  color: #dc2626;
+  background: #ffffff;
+  border-color: #fecaca !important;
+}
+
+.secondaryButton:hover {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fca5a5 !important;
+}
+
+/* 신청 상태 */
+
+.vehicleTable td:nth-child(6) {
+  font-weight: 650;
+}
+
+/* 빈 목록 */
+
+.emptyVehicle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 270px;
+  padding: 40px 20px;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 18px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  font-size: 29px;
+}
+
+.emptyVehicle > strong {
+  color: #334155;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.emptyVehicle > p {
+  margin: 9px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* 반려 사유 입력 영역 */
+
+.vehicleContent > .vehicleContent {
+  margin-top: 24px;
+  padding: 25px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+}
+
+.vehicleContent > .vehicleContent h3 {
+  margin: 0 0 15px;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.vehicleContent > .vehicleContent > p {
+  margin: 0 0 22px;
+  padding: 13px 15px;
+  color: #334155;
+  background: #f8fafc;
+  border: 1px solid #edf1f5;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 22px;
+}
+
+.formGroup label {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.formGroup textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 13px 14px;
+  color: #1e293b;
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  box-sizing: border-box;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.formGroup textarea::placeholder {
+  color: #a0aab8;
+}
+
+.formGroup textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
+}
+
+/* 반려 창 하단 버튼 */
+
+.vehicleContent > .vehicleContent > .formActions {
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+/* 태블릿 반응형 */
+
+@media (max-width: 1024px) {
+  .vehicleContent {
+    padding: 22px;
+  }
+
+  .vehicleSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .summaryItem {
+    min-height: 100px;
+    padding: 18px;
+  }
+
+  .summaryItem strong {
+    font-size: 27px;
+  }
+}
+
+/* 모바일 반응형 */
+
+@media (max-width: 600px) {
+  .vehicleContent {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .contentHeader {
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .contentHeader h3 {
+    font-size: 19px;
+  }
+
+  .contentHeader p {
+    font-size: 12px;
+  }
+
+  .vehicleSummary {
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .summaryItem {
+    min-height: 90px;
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  .summaryItem > span {
+    font-size: 12px;
+  }
+
+  .summaryItem strong {
+    margin-top: 12px;
+    font-size: 24px;
+  }
+
+  .vehicleToolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .searchBox {
+    width: 100%;
+  }
+
+  .vehicleToolbar select {
+    width: 100%;
+  }
+
+  .vehicleTable {
+    min-width: 760px;
+  }
+
+  .vehicleTable th {
+    height: 46px;
+    padding: 0 12px;
+  }
+
+  .vehicleTable td {
+    height: 58px;
+    padding: 10px 12px;
+  }
+
+  .formActions {
+    gap: 6px;
+  }
+
+  .formActions button {
+    min-width: 52px;
+    min-height: 32px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .emptyVehicle {
+    min-height: 230px;
+    padding: 28px 16px;
+  }
+
+  .vehicleContent > .vehicleContent {
+    margin-top: 20px;
+    padding: 18px;
+  }
+
+  .vehicleContent > .vehicleContent h3 {
+    font-size: 16px;
+  }
+
+  .vehicleContent > .vehicleContent > .formActions {
+    gap: 8px;
+  }
+}
+
+/* 모션 최소화 설정 */
+
+@media (prefers-reduced-motion: reduce) {
+  .summaryItem,
+  .searchBox,
+  .vehicleToolbar select,
+  .vehicleTable tbody tr,
+  .formActions button,
+  .formGroup textarea {
+    transition: none;
+  }
 }
