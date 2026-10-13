@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { vehicleListMock } from "../../../../mock/vehicleMock";
 import "./ApartmentMap.css";
 
 type Vehicle = {
@@ -35,53 +36,6 @@ interface ApartmentMapProps {
 }
 
 /**
- * 테스트용 차량 데이터
- *
- * key 규칙
- * 10101 = 101동 101호
- * 10103 = 101동 103호
- * 10202 = 102동 102호
- * 10204 = 102동 104호
- * 10301 = 103동 101호
- */
-const vehicleMock: Record<string, Vehicle> = {
-  "101-101": {
-    vehicleNumber: "12가 3456",
-    vehicleType: "현대 아반떼",
-    ownerName: "김민수",
-    registeredAt: "2026-08-10",
-  },
-
-  "101-103": {
-    vehicleNumber: "34나 5678",
-    vehicleType: "기아 쏘렌토",
-    ownerName: "이서연",
-    registeredAt: "2026-08-15",
-  },
-
-  "102-102": {
-    vehicleNumber: "56다 7890",
-    vehicleType: "테슬라 Model 3",
-    ownerName: "박지훈",
-    registeredAt: "2026-08-20",
-  },
-
-  "102-104": {
-    vehicleNumber: "78라 1234",
-    vehicleType: "현대 그랜저",
-    ownerName: "최유진",
-    registeredAt: "2026-08-22",
-  },
-
-  "103-101": {
-    vehicleNumber: "90마 4567",
-    vehicleType: "기아 카니발",
-    ownerName: "정우성",
-    registeredAt: "2026-08-25",
-  },
-};
-
-/**
  * 층 / 호수 생성
  */
 const createFloors = (
@@ -94,7 +48,6 @@ const createFloors = (
 
       return {
         floor,
-
         units: Array.from(
           { length: 4 },
           (_, unitIndex) => {
@@ -103,13 +56,21 @@ const createFloors = (
               unitIndex +
               1;
 
-            const unitKey =
-              `${buildingId}-${no}`;
-
             return {
               no,
               vehicle:
-                vehicleMock[unitKey] ?? null,
+                vehicleListMock.find(
+                  (vehicle) =>
+                    String(
+                      vehicle.building,
+                    ) ===
+                      String(
+                        buildingId,
+                      ) &&
+                    String(
+                      vehicle.unit,
+                    ) === String(no),
+                ) ?? null,
             };
           },
         ),
@@ -118,34 +79,17 @@ const createFloors = (
   );
 
 /**
- * 아파트 동
+ * 상가 건물
+ *
+ * 나중에 건물이 여러 개가 되면
+ * 이 배열에 추가하면 됩니다.
  */
 const buildings: Building[] = [
   {
     id: 101,
-    x: 70,
+    x: 50,
     y: 120,
     floors: createFloors(101),
-  },
-
-  {
-    id: 102,
-    x: 250,
-    y: 100,
-    floors: createFloors(102),
-  },
-
-  {
-    id: 103,
-    x: 600,
-    y: 150,
-    floors: createFloors(103),
-  },
-  {
-    id: 104,
-    x: 800,
-    y: 130,
-    floors: createFloors(104),
   },
 ];
 
@@ -157,22 +101,30 @@ export default function ApartmentMap({
   const [
     internalSelectedBuilding,
     setInternalSelectedBuilding,
-  ] = useState<Building | null>(null);
+  ] = useState<Building | null>(
+    null,
+  );
 
   const [
     selectedFloor,
     setSelectedFloor,
-  ] = useState<Floor | null>(null);
+  ] = useState<Floor | null>(
+    null,
+  );
 
   const [
     internalSelectedUnit,
     setInternalSelectedUnit,
-  ] = useState<Unit | null>(null);
+  ] = useState<Unit | null>(
+    null,
+  );
 
   const [
     hoveredUnit,
     setHoveredUnit,
-  ] = useState<Unit | null>(null);
+  ] = useState<Unit | null>(
+    null,
+  );
 
   /**
    * 현재 선택된 동
@@ -181,12 +133,13 @@ export default function ApartmentMap({
     internalSelectedBuilding ??
     (selectedBuilding
       ? buildings.find(
-        (building) =>
-          String(building.id) ===
-          selectedBuilding,
-      ) ?? null
+          (building) =>
+            String(
+              building.id,
+            ) ===
+            selectedBuilding,
+        ) ?? null
       : null);
-
 
   /**
    * 현재 선택된 호수
@@ -194,18 +147,59 @@ export default function ApartmentMap({
   const currentUnit =
     internalSelectedUnit ??
     (selectedUnit &&
-      currentBuilding
+    currentBuilding
       ? currentBuilding.floors
-        .flatMap(
-          (floor) => floor.units,
-        )
-        .find(
-          (unit) =>
-            String(unit.no) ===
-            selectedUnit,
-        ) ?? null
+          .flatMap(
+            (floor) =>
+              floor.units,
+          )
+          .find(
+            (unit) =>
+              String(
+                unit.no,
+              ) ===
+              selectedUnit,
+          ) ?? null
       : null);
 
+  /**
+   * 현재 선택된 동의
+   * 등록 차량 수
+   */
+  const registeredVehicleCount =
+    currentBuilding
+      ? currentBuilding.floors
+          .flatMap(
+            (floor) =>
+              floor.units,
+          )
+          .filter(
+            (unit) =>
+              unit.vehicle !== null,
+          ).length
+      : 0;
+
+  /**
+   * 현재 선택된 동의
+   * 전체 호수
+   */
+  const totalUnitCount =
+    currentBuilding
+      ? currentBuilding.floors.reduce(
+          (total, floor) =>
+            total +
+            floor.units.length,
+          0,
+        )
+      : 0;
+
+  /**
+   * 현재 선택된 동의
+   * 미등록 호수
+   */
+  const emptyUnitCount =
+    totalUnitCount -
+    registeredVehicleCount;
 
   /**
    * 동 선택
@@ -221,7 +215,10 @@ export default function ApartmentMap({
       building.floors[0],
     );
 
-    setInternalSelectedUnit(null);
+    setInternalSelectedUnit(
+      null,
+    );
+
     setHoveredUnit(null);
   };
 
@@ -241,7 +238,10 @@ export default function ApartmentMap({
 
     setSelectedFloor(floor);
 
-    setInternalSelectedUnit(null);
+    setInternalSelectedUnit(
+      null,
+    );
+
     setHoveredUnit(null);
   };
 
@@ -251,14 +251,18 @@ export default function ApartmentMap({
   const handleUnitClick = (
     unit: Unit,
   ) => {
-    setInternalSelectedUnit(unit);
+    setInternalSelectedUnit(
+      unit,
+    );
 
     if (
       currentBuilding &&
       onUnitSelect
     ) {
       onUnitSelect(
-        String(currentBuilding.id),
+        String(
+          currentBuilding.id,
+        ),
         String(unit.no),
       );
     }
@@ -269,29 +273,29 @@ export default function ApartmentMap({
    */
   const handleClosePanel = () => {
     setSelectedFloor(null);
-    setInternalSelectedUnit(null);
+    setInternalSelectedUnit(
+      null,
+    );
     setHoveredUnit(null);
   };
 
   return (
     <div className="apartment-container">
-      {/* =========================
-          헤더
-      ========================= */}
-
+      {/* 헤더 */}
       <div className="apartment-header">
         <div>
-          <h2>OO 아파트 차량관리</h2>
+          <h2>OO 상가 차량관리</h2>
 
           <p>
-            단지 배치도에서 세대별 차량 등록
-            현황을 확인합니다.
+            상가 배치도에서 상가별
+            차량 등록 현황을
+            확인합니다.
           </p>
         </div>
 
         {currentBuilding && (
           <div className="breadcrumb">
-            <span>OO 아파트</span>
+            <span>OO 상가</span>
 
             <span>›</span>
 
@@ -304,7 +308,8 @@ export default function ApartmentMap({
                 <span>›</span>
 
                 <strong>
-                  {selectedFloor.floor}층
+                  {selectedFloor.floor}
+                  층
                 </strong>
               </>
             )}
@@ -323,187 +328,390 @@ export default function ApartmentMap({
       </div>
 
       <div className="map-wrapper">
-        {/* =========================
-            아파트 배치도
+                {/* =========================
+            상가 배치도
         ========================= */}
 
         <svg
-          viewBox="0 0 1000 600"
+          viewBox="0 0 1000 700"
           className="apartment-map"
         >
           {/* 단지 배경 */}
-
           <rect
             x="0"
             y="0"
             width="1000"
-            height="600"
-            rx="20"
+            height="700"
+            rx="24"
             className="complex-background"
           />
 
           {/* 도로 */}
-
           <path
             d="M 0 480 L 1000 480"
             className="road"
           />
 
           <path
-            d="M 500 0 L 500 600"
+            d="M 350 0 L 700 700"
             className="road"
           />
 
           {/* 공원 */}
-
           <rect
             x="30"
             y="550"
-            width="400"
-            height="100"
-            rx="20"
+            width="550"
+            height="140"
+            rx="24"
             className="park"
           />
 
           <text
-            x="240"
-            y="600"
+            x="305"
+            y="628"
             textAnchor="middle"
             className="park-text"
           >
-            중앙공원
+            00 한강 공원
           </text>
 
           {/* =========================
-              아파트 동
+              상가 건물
           ========================= */}
 
           {buildings.map(
-            (building) => (
-              <g
-                key={building.id}
-                className={`building ${currentBuilding?.id ===
-                  building.id
-                  ? "selected"
-                  : ""
+            (building) => {
+              const isSelected =
+                currentBuilding?.id ===
+                building.id;
+
+              return (
+                <g
+                  key={building.id}
+                  className={`building ${
+                    isSelected
+                      ? "selected"
+                      : ""
                   }`}
-                transform={`translate(${building.x}, ${building.y})`}
-                onMouseEnter={() => {
-                  setInternalSelectedBuilding(
-                    building,
-                  );
+                  transform={`translate(${building.x}, ${building.y})`}
+                  onMouseEnter={() => {
+                    setInternalSelectedBuilding(
+                      building,
+                    );
 
-                  setSelectedFloor(null);
-                  setInternalSelectedUnit(
-                    null,
-                  );
+                    setSelectedFloor(
+                      null,
+                    );
 
-                  setHoveredUnit(null);
-                }}
-                onClick={() =>
-                  handleBuildingClick(
-                    building,
-                  )
-                }
-              >
-                {/* 건물 */}
+                    setInternalSelectedUnit(
+                      null,
+                    );
 
-                <rect
-                  x="0"
-                  y="0"
-                  width="120"
-                  height="270"
-                  rx="8"
-                  className="building-body"
-                />
+                    setHoveredUnit(
+                      null,
+                    );
+                  }}
+                  onClick={() =>
+                    handleBuildingClick(
+                      building,
+                    )
+                  }
+                >
+                  {/* 건물 그림자 */}
+                  <rect
+                    x="8"
+                    y="8"
+                    width="400"
+                    height="310"
+                    rx="12"
+                    className="building-shadow"
+                  />
 
-                {/* 층 */}
+                  {/* 건물 외벽 */}
+                  <rect
+                    x="0"
+                    y="0"
+                    width="400"
+                    height="310"
+                    rx="12"
+                    className="building-body"
+                  />
 
-                {building.floors.map(
-                  (
-                    floor,
-                    index,
-                  ) => {
-                    const floorHeight =
-                      24;
+                  {/* 건물 상단 */}
+                  <rect
+                    x="0"
+                    y="0"
+                    width="400"
+                    height="52"
+                    rx="12"
+                    className="building-roof"
+                  />
 
-                    return (
-                      <g
-                        key={
-                          floor.floor
-                        }
-                        className="floor"
-                        transform={`translate(10, ${245 -
-                          index *
-                          floorHeight
-                          })`}
-                        onMouseEnter={(
-                          e,
-                        ) => {
-                          e.stopPropagation();
+                  {/* 상단 간판 */}
+                  <rect
+                    x="24"
+                    y="12"
+                    width="352"
+                    height="28"
+                    rx="6"
+                    className="building-sign"
+                  />
 
-                          setInternalSelectedBuilding(
-                            building,
-                          );
+                  <text
+                    x="200"
+                    y="31"
+                    textAnchor="middle"
+                    className="building-sign-text"
+                  >
+                    OO 상가
+                  </text>
 
-                          setSelectedFloor(
-                            floor,
-                          );
+                  {/* 층 */}
+                  {building.floors.map(
+                    (
+                      floor,
+                      index,
+                    ) => {
+                      const floorHeight =
+                        24;
 
-                          setInternalSelectedUnit(
+                      const floorY =
+                        275 -
+                        index *
+                          floorHeight;
+
+                      const isFloorSelected =
+                        selectedFloor?.floor ===
+                        floor.floor;
+
+                      const floorRegistered =
+                        floor.units.filter(
+                          (unit) =>
+                            unit.vehicle !==
                             null,
-                          );
+                        ).length;
 
-                          setHoveredUnit(
-                            null,
-                          );
-                        }}
-                        onClick={(e) =>
-                          handleFloorClick(
-                            e,
-                            building,
-                            floor,
-                          )
-                        }
-                      >
-                        <rect
-                          x="0"
-                          y="0"
-                          width="100"
-                          height="20"
-                          rx="2"
-                        />
-
-                        <text
-                          x="50"
-                          y="14"
-                          textAnchor="middle"
-                        >
-                          {
+                      return (
+                        <g
+                          key={
                             floor.floor
                           }
-                          F
-                        </text>
-                      </g>
-                    );
-                  },
-                )}
+                          className={`floor ${
+                            isFloorSelected
+                              ? "selected"
+                              : ""
+                          }`}
+                          transform={`translate(10, ${floorY})`}
+                          onMouseEnter={(
+                            e,
+                          ) => {
+                            e.stopPropagation();
 
-                {/* 동 번호 */}
+                            setInternalSelectedBuilding(
+                              building,
+                            );
 
-                <text
-                  x="60"
-                  y="-15"
-                  textAnchor="middle"
-                  className="building-label"
-                >
-                  {building.id}동
-                </text>
-              </g>
-            ),
+                            setSelectedFloor(
+                              floor,
+                            );
+
+                            setInternalSelectedUnit(
+                              null,
+                            );
+
+                            setHoveredUnit(
+                              null,
+                            );
+                          }}
+                          onClick={(
+                            e,
+                          ) =>
+                            handleFloorClick(
+                              e,
+                              building,
+                              floor,
+                            )
+                          }
+                        >
+                          {/* 층 배경 */}
+                          <rect
+                            x="0"
+                            y="-20"
+                            width="380"
+                            height="20"
+                            rx="4"
+                            className="floor-background"
+                          />
+
+                          {/* 창문 */}
+                          <rect
+                            x="52"
+                            y="-16"
+                            width="34"
+                            height="12"
+                            rx="2"
+                            className="floor-window"
+                          />
+
+                          <rect
+                            x="96"
+                            y="-16"
+                            width="34"
+                            height="12"
+                            rx="2"
+                            className="floor-window"
+                          />
+
+                          <rect
+                            x="140"
+                            y="-16"
+                            width="34"
+                            height="12"
+                            rx="2"
+                            className="floor-window"
+                          />
+
+                          <rect
+                            x="184"
+                            y="-16"
+                            width="34"
+                            height="12"
+                            rx="2"
+                            className="floor-window"
+                          />
+
+                          <rect
+                            x="228"
+                            y="-16"
+                            width="34"
+                            height="12"
+                            rx="2"
+                            className="floor-window"
+                          />
+
+                          <rect
+                            x="272"
+                            y="-16"
+                            width="34"
+                            height="12"
+                            rx="2"
+                            className="floor-window"
+                          />
+
+                          {/* 층 번호 */}
+                          <text
+                            x="20"
+                            y="-6"
+                            textAnchor="middle"
+                            className="floor-number"
+                          >
+                            {
+                              floor.floor
+                            }
+                            F
+                          </text>
+
+                          {/* 차량 등록 표시 */}
+                          <circle
+                            cx="350"
+                            cy="-10"
+                            r="5"
+                            className={
+                              floorRegistered >
+                              0
+                                ? "floor-status active"
+                                : "floor-status"
+                            }
+                          />
+                        </g>
+                      );
+                    },
+                  )}
+
+                  {/* 건물 하단 출입구 */}
+                  <rect
+                    x="150"
+                    y="278"
+                    width="100"
+                    height="32"
+                    rx="6"
+                    className="building-entrance"
+                  />
+
+                  <rect
+                    x="162"
+                    y="286"
+                    width="76"
+                    height="24"
+                    rx="3"
+                    className="building-door"
+                  />
+
+                  <text
+                    x="200"
+                    y="303"
+                    textAnchor="middle"
+                    className="building-entrance-text"
+                  >
+                    MAIN
+                  </text>
+
+                  {/* 건물 번호 */}
+                  <text
+                    x="200"
+                    y="-18"
+                    textAnchor="middle"
+                    className="building-label"
+                  >
+                    {building.id}동
+                  </text>
+                </g>
+              );
+            },
           )}
         </svg>
 
+        {/* 현재 건물 정보 */}
+        {currentBuilding && (
+          <div className="building-info-card">
+            <div className="building-info-title">
+              <strong>
+                {currentBuilding.id}동
+              </strong>
+
+              <span>
+                차량 등록 현황
+              </span>
+            </div>
+
+            <div className="building-info-stats">
+              <div>
+                <strong>
+                  {registeredVehicleCount}
+                </strong>
+
+                <span>등록</span>
+              </div>
+
+              <div>
+                <strong>
+                  {emptyUnitCount}
+                </strong>
+
+                <span>미등록</span>
+              </div>
+
+              <div>
+                <strong>
+                  {totalUnitCount}
+                </strong>
+
+                <span>전체</span>
+              </div>
+            </div>
+          </div>
+        )}
         {/* =========================
             층 / 호수 차량 상세
         ========================= */}
@@ -512,16 +720,22 @@ export default function ApartmentMap({
           selectedFloor && (
             <div className="floor-panel">
               {/* 패널 헤더 */}
-
               <div className="floor-panel-header">
                 <div>
                   <div className="floor-title">
-                    {currentBuilding.id}동{" "}
-                    {selectedFloor.floor}층
+                    {
+                      currentBuilding.id
+                    }
+                    동{" "}
+                    {
+                      selectedFloor.floor
+                    }
+                    층
                   </div>
 
                   <span>
-                    세대별 차량 등록 현황
+                    상가 호수별 차량
+                    등록 현황
                   </span>
                 </div>
 
@@ -537,10 +751,7 @@ export default function ApartmentMap({
                 </button>
               </div>
 
-              {/* =========================
-                  호수 목록
-              ========================= */}
-
+              {/* 호수 목록 */}
               <div className="units">
                 {selectedFloor.units.map(
                   (unit) => {
@@ -555,13 +766,15 @@ export default function ApartmentMap({
                     return (
                       <div
                         key={unit.no}
-                        className={`unit ${isRegistered
-                          ? "registered"
-                          : "empty"
-                          } ${isSelected
+                        className={`unit ${
+                          isRegistered
+                            ? "registered"
+                            : "empty"
+                        } ${
+                          isSelected
                             ? "selected"
                             : ""
-                          }`}
+                        }`}
                         onMouseEnter={() =>
                           setHoveredUnit(
                             unit,
@@ -591,55 +804,62 @@ export default function ApartmentMap({
                             }
                           >
                             <i />
+
                             {isRegistered
                               ? "등록됨"
                               : "미등록"}
                           </small>
                         </div>
 
-                        {/* 호버 툴팁 */}
+                        {isRegistered &&
+                          unit.vehicle && (
+                            <div className="unit-vehicle">
+                              <span>
+                                {
+                                  unit
+                                    .vehicle
+                                    .vehicleNumber
+                                }
+                              </span>
+
+                              <small>
+                                {
+                                  unit
+                                    .vehicle
+                                    .ownerName
+                                }
+                              </small>
+                            </div>
+                          )}
 
                         {hoveredUnit?.no ===
-                          unit.no && (
+                          unit.no &&
+                          isRegistered &&
+                          unit.vehicle && (
                             <div className="unit-tooltip">
                               <strong>
-                                {unit.no}호
+                                {
+                                  unit
+                                    .vehicle
+                                    .vehicleNumber
+                                }
                               </strong>
 
-                              {unit.vehicle ? (
-                                <>
-                                  <span>
-                                    🚗{" "}
-                                    {
-                                      unit
-                                        .vehicle
-                                        .vehicleNumber
-                                    }
-                                  </span>
+                              <span>
+                                {
+                                  unit
+                                    .vehicle
+                                    .ownerName
+                                }
+                              </span>
 
-                                  <span>
-                                    {
-                                      unit
-                                        .vehicle
-                                        .vehicleType
-                                    }
-                                  </span>
-
-                                  <span>
-                                    차주:{" "}
-                                    {
-                                      unit
-                                        .vehicle
-                                        .ownerName
-                                    }
-                                  </span>
-                                </>
-                              ) : (
-                                <span>
-                                  등록된 차량이
-                                  없습니다.
-                                </span>
-                              )}
+                              <span>
+                                {
+                                  unit
+                                    .vehicle
+                                    .vehicleType
+                                }
+                              </span>
                             </div>
                           )}
                       </div>
@@ -648,47 +868,31 @@ export default function ApartmentMap({
                 )}
               </div>
 
-              {/* =========================
-                  선택한 호수 차량 상세
-              ========================= */}
-
+              {/* 선택된 호수 정보 */}
               {currentUnit && (
-                <div className="vehicle-detail">
-                  <div className="vehicle-detail-header">
-                    <div>
-                      <div className="vehicle-location">
-                        {currentBuilding.id}동 ·{" "}
-                        {currentUnit.no}호
-                      </div>
-
-                      <h3>
-                        차량 등록 정보
-                      </h3>
-                    </div>
-
-                    <span
-                      className={
-                        currentUnit.vehicle
-                          ? "vehicle-status registered"
-                          : "vehicle-status empty"
-                      }
-                    >
-                      {currentUnit.vehicle
-                        ? "등록됨"
-                        : "미등록"}
+                <div className="selected-unit-detail">
+                  <div>
+                    <span>
+                      선택 호수
                     </span>
+
+                    <strong>
+                      {
+                        currentBuilding.id
+                      }
+                      동{" "}
+                      {currentUnit.no}호
+                    </strong>
                   </div>
 
                   {currentUnit.vehicle ? (
-                    <div className="vehicle-info">
-                      {/* 차량번호 */}
-
-                      <div className="vehicle-info-row">
-                        <span className="vehicle-label">
+                    <div className="selected-vehicle">
+                      <div>
+                        <span>
                           차량번호
                         </span>
 
-                        <strong className="vehicle-value vehicle-number">
+                        <strong>
                           {
                             currentUnit
                               .vehicle
@@ -697,30 +901,12 @@ export default function ApartmentMap({
                         </strong>
                       </div>
 
-                      {/* 차종 */}
-
-                      <div className="vehicle-info-row">
-                        <span className="vehicle-label">
-                          차종
-                        </span>
-
-                        <strong className="vehicle-value">
-                          {
-                            currentUnit
-                              .vehicle
-                              .vehicleType
-                          }
-                        </strong>
-                      </div>
-
-                      {/* 차주 */}
-
-                      <div className="vehicle-info-row">
-                        <span className="vehicle-label">
+                      <div>
+                        <span>
                           차주
                         </span>
 
-                        <strong className="vehicle-value">
+                        <strong>
                           {
                             currentUnit
                               .vehicle
@@ -729,57 +915,53 @@ export default function ApartmentMap({
                         </strong>
                       </div>
 
-                      {/* 등록일 */}
-
-                      <div className="vehicle-info-row">
-                        <span className="vehicle-label">
-                          등록일
+                      <div>
+                        <span>
+                          차종
                         </span>
 
-                        <strong className="vehicle-value">
+                        <strong>
                           {
                             currentUnit
                               .vehicle
-                              .registeredAt
+                              .vehicleType
                           }
                         </strong>
                       </div>
                     </div>
                   ) : (
-                    <div className="empty-vehicle">
-                      <div className="empty-icon">
-                        🚘
-                      </div>
-
-                      <strong>
-                        등록된 차량이 없습니다.
-                      </strong>
-
-                      <span>
-                        해당 세대에 등록된 차량
-                        정보가 없습니다.
-                      </span>
-                    </div>
+                    <p className="no-vehicle">
+                      등록된 차량이
+                      없습니다.
+                    </p>
                   )}
                 </div>
               )}
             </div>
           )}
-      </div>
 
-      {/* =========================
-          범례
-      ========================= */}
+        {/* 범례 */}
+        <div className="map-legend">
+          <div>
+            <i className="legend-dot registered" />
+            <span>
+              차량 등록
+            </span>
+          </div>
 
-      <div className="legend">
-        <div>
-          <i className="registered" />
-          차량 등록
-        </div>
+          <div>
+            <i className="legend-dot empty" />
+            <span>
+              차량 미등록
+            </span>
+          </div>
 
-        <div>
-          <i className="empty" />
-          차량 미등록
+          <div>
+            <i className="legend-dot selected" />
+            <span>
+              선택됨
+            </span>
+          </div>
         </div>
       </div>
     </div>
