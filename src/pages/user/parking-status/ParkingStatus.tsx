@@ -10,7 +10,7 @@ import React, { useCallback, useState } from 'react';
 import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
 import { useParkingStore } from '../../admin/parking/status/useParkingStore';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
-import ParkingReservationModal from './ParkingReservationModal';
+import ParkingReservationModal from '../reservation/ParkingReservationModal';
 
 /** 사용자 주차현황: 관리자와 동일한 구획 상태를 읽되, 변경 기능은 제공하지 않습니다. */
 /** 학습 해설: 사용자 조회용 페이지로, 관리자의 편집 패널을 가져오지 않습니다. */

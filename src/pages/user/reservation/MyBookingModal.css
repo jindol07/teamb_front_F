@@ -1,0 +1,291 @@
+/* =========================================================
+   MyBookingModal Backdrop & Layout
+   ========================================================= */
+.reservation-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1040;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.reservation-modal {
+    width: 100%;
+    max-width: 1100px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+    box-sizing: border-box;
+}
+
+.reservation-modal-content {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.reservation-modal-body {
+    width: 100%;
+    padding: 1.5rem;
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   전체 레이아웃 (주차 현황 2 : 예약 폼 1)
+   ========================================================= */
+.reservation-layout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    width: 100%;
+    align-items: stretch;
+}
+
+/* =========================================================
+   공통 카드
+   ========================================================= */
+.parking-status-section,
+.reservation-card {
+    width: 100%;
+    min-width: 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box;
+}
+
+/* =========================================================
+   주차장 현황
+   ========================================================= */
+.parking-status-section {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.section-title-box {
+    margin-bottom: 0.75rem;
+}
+
+.section-title-box h5 {
+    margin: 0;
+    color: #212529;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.section-desc {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* =========================================================
+   주차장 맵
+   ========================================================= */
+.parking-map {
+    flex: 1 1 auto;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =========================================================
+   예약 정보 카드 및 폼
+   ========================================================= */
+.reservation-card {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.reservation-card-header {
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eef0f2;
+}
+
+.reservation-card-header h5 {
+    margin: 0 0 0.35rem;
+    color: #212529;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.reservation-card-header p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.selected-space-text {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e7f1ff;
+    border: 1px solid #b6d4fe;
+    border-radius: 5px;
+    color: #0d6efd;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.reservation-form-section {
+    width: 100%;
+    margin-bottom: 1.25rem;
+}
+
+.date-range-display {
+    width: 100%;
+    padding: 0.7rem;
+    margin-bottom: 0.75rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+/* =========================================================
+   캘린더 디자인 및 날짜 범위 색상 적용 (일~토 시작)
+   ========================================================= */
+.calendar-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 0.5rem;
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+
+.react-calendar {
+    width: 100% !important;
+    max-width: 100%;
+    border: none !important;
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.react-calendar__navigation {
+    display: flex;
+    height: 40px;
+    margin-bottom: 0.5rem;
+}
+
+.react-calendar__navigation button {
+    min-width: 40px;
+    background: none;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #212529;
+    border-radius: 6px;
+}
+
+.react-calendar__navigation button:hover {
+    background-color: #f1f3f5;
+}
+
+.react-calendar__month-view__weekdays {
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #6c757d;
+    padding-bottom: 4px;
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+    text-decoration: none;
+}
+
+.react-calendar__tile {
+    max-width: initial !important;
+    padding: 12px 6px !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 8px;
+    margin: 2px 0;
+}
+
+.react-calendar__tile:hover {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+.react-calendar__tile--now {
+    background: #f8f9fa;
+    font-weight: 700;
+    color: #212529;
+}
+
+/* 날짜 범위 선택 스타일 */
+.react-calendar__tile--active,
+.range-single {
+    background: #0d6efd !important;
+    color: white !important;
+    font-weight: 700;
+    border-radius: 8px !important;
+}
+
+.range-start {
+    background: #0d6efd !important;
+    color: white !important;
+    font-weight: 700;
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.range-end {
+    background: #0d6efd !important;
+    color: white !important;
+    font-weight: 700;
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+.range-middle {
+    background: #e7f1ff !important;
+    color: #0d6efd !important;
+    font-weight: 600;
+    border-radius: 0 !important;
+}
+
+.visitor-search {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.reservation-button {
+    width: 100%;
+    min-height: 44px;
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+/* =========================================================
+   반응형 모바일 대응
+   ========================================================= */
+@media (max-width: 992px) {
+    .reservation-layout-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

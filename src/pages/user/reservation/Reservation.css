@@ -1,324 +1,446 @@
-/* src/pages/user/reservation/Reservation.css */
-
-.reservation-page {
-  max-width: 1300px;
-  margin: 0 auto;
-}
-
-.page-title {
-  font-weight: 700;
-  color: #333;
-}
-
-.page-description {
-  color: #6c757d;
-  font-size: 14px;
-}
-
-/* ==========================================================================
-   ★ [핵심] 2:1 그리드 레이아웃 및 높낮이 일치 설정
-   - align-items: stretch (기본값) 덕분에 좌우 두 박스의 높이가 자동으로 똑같이 맞춰집니다.
-========================================================================== */
-.reservation-layout-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr; /* 좌측 2/3, 우측 1/3 비율 고정 */
-  gap: 24px;
+/* =========================================================
+   내 예약 페이지 전체 레이아웃
+   ========================================================= */
+.myreservation-page {
   width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 30px 20px 40px;
+  box-sizing: border-box;
 }
 
-/* 모바일 화면(992px 이하)에서는 세로로 쌓이도록 반응형 처리 */
-@media (max-width: 992px) {
-  .reservation-layout-grid {
-    grid-template-columns: 1fr;
-  }
+/* =========================================================
+   페이지 헤더
+   ========================================================= */
+.reservation-header {
+  margin-bottom: 24px;
 }
 
-
-/* ==========================================================================
-   [2/3 영역] 주차장 실시간 현황 카드 (예약하기 박스와 동일한 흰색 배경 & 디자인)
-========================================================================== */
-.parking-status-section {
-  background: #ffffff; /* 예약하기 박스와 똑같은 흰색 배경 */
-  border: 1px solid #dee2e6;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  display: flex;
-  flex-direction: column;
-}
-
-.section-title-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.section-title-box h5 {
-  margin: 0;
+.reservation-header .page-title {
+  margin: 0 0 8px;
+  color: #212529;
+  font-size: 28px;
   font-weight: 700;
-  color: #333;
 }
 
-.section-desc {
+.reservation-header .page-description {
+  margin: 0;
+  color: #8a94a6;
   font-size: 14px;
-  color: #6c757d;
-  margin-bottom: 20px;
 }
 
-/* 좌석 배치 그리드 (영화관 좌석 스타일) */
-.parking-seat-grid {
+/* =========================================================
+   전체 그리드 (좌 2 : 우 1)
+   ========================================================= */
+.myreservation-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  flex-grow: 1; /* 내부 공간을 채우며 늘어나도록 설정 */
-}
-
-@media (max-width: 768px) {
-  .parking-seat-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* 좌석 버튼 스타일 */
-.parking-seat-item {
-  padding: 18px 12px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  font-weight: bold;
-}
-
-/* 빈 자리 (선택 가능) */
-.parking-seat-item.available {
-  background-color: #e6fcf5;
-  color: #0ca678;
-  border-color: #c3fae8;
-}
-.parking-seat-item.available:hover {
-  background-color: #c3fae8;
-  transform: translateY(-2px);
-}
-
-/* 내가 선택한 자리 */
-.parking-seat-item.selected {
-  background-color: #0d6efd;
-  color: #ffffff;
-  border-color: #0b5ed7;
-  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
-}
-
-/* 이미 예약 완료된 자리 */
-.parking-seat-item.reserved {
-  background-color: #f1f3f5;
-  color: #adb5bd;
-  border-color: #e9ecef;
-  cursor: not-allowed;
-}
-
-.seat-number {
-  font-size: 16px;
-  margin-bottom: 4px;
-}
-
-.seat-state-text {
-  font-size: 12px;
-  font-weight: normal;
-}
-
-
-/* ==========================================================================
-   [1/3 영역] 예약하기 카드 (가장 오른쪽 배치)
-========================================================================== */
-.reservation-card {
-  background: #ffffff;
-  border: 1px solid #dee2e6;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
+  align-items: stretch;
+  gap: 20px;
   width: 100%;
   box-sizing: border-box;
 }
 
-.reservation-card-header {
+/* =========================================================
+   왼쪽: 주차 현황 영역
+   ========================================================= */
+.parking-status-area {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid #f1f3f5;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  padding: 24px;
+  box-sizing: border-box;
+  border: 1px solid #e2e6ea;
+  border-radius: 14px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
-.reservation-number {
-  background: #0d6efd;
-  color: #fff;
-  font-weight: bold;
-  font-size: 16px;
-  width: 36px;
-  height: 36px;
+.parking-status-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.parking-status-header h4 {
+  margin: 0 0 5px;
+  color: #212529;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.parking-status-header p {
+  margin: 0;
+  color: #8a94a6;
+  font-size: 13px;
+}
+
+.parking-status-board {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #edf0f2;
+  border-radius: 12px;
+  background-color: #f8f9fa;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
+  overflow: visible;
+}
+
+/* 실시간 도면 영역 */
+.parking-reservation-map {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding-top: 16px;
+  padding-bottom: 16px;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+/* 구획 클릭 안내 문구 및 하단 알림 숨김 */
+.parking-reservation-map .alert,
+.parking-reservation-map .alert-primary,
+.parking-reservation-map .parking-map-notice,
+.parking-reservation-map .parking-map-guide,
+.parking-reservation-map .click-guide,
+.parking-reservation-map .slot-guide-text,
+.parking-reservation-map p.text-muted,
+.parking-reservation-map div[class*="notice"],
+.parking-reservation-map div[class*="guide"],
+.parking-reservation-map div[class*="bottom-info"],
+.parking-reservation-map div[class*="bottom-notice"],
+.parking-status-board .alert,
+.parking-status-board p.text-muted {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+.parking-reservation-map::-webkit-scrollbar,
+.parking-status-board::-webkit-scrollbar {
+  display: none;
+}
+
+.parking-reservation-map,
+.parking-status-board {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* =========================================================
+   오른쪽: 예약 확인 박스
+   ========================================================= */
+.reservation-summary-area {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 24px;
+  gap: 16px;
+  box-sizing: border-box;
+  border: 1px solid #e2e6ea;
+  border-radius: 14px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.reservation-summary-header {
+  margin: 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.reservation-summary-header h4 {
+  margin: 0 0 4px;
+  color: #212529;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.reservation-summary-header p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* =========================================================
+   내부 예약 카드 및 타이머 영역
+   ========================================================= */
+.reservation-detail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+  width: 100%;
+  overflow: visible;
+}
+
+.reservation-card {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  overflow: visible;
+}
+
+.timer-card {
+  background-color: #f8f9fa;
+  border-color: #dee2e6;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: visible;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.timer-card .btn-outline-danger {
+  margin-top: 14px !important;
+  margin-bottom: 2px;
   border-radius: 8px;
-  flex-shrink: 0;
+  min-height: 40px;
+  font-weight: 600;
+}
+
+.reservation-card-header {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eef0f2;
 }
 
 .reservation-card-header h5 {
-  margin: 0;
+  margin: 0 0 0.35rem;
+  color: #212529;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #333;
 }
 
 .reservation-card-header p {
-  margin: 2px 0 0 0;
-  font-size: 13px;
-  color: #6c757d;
-}
-
-.time-select-wrapper {
-  display: flex;
-  gap: 8px;
-}
-
-/* 차량 선택 탭 스타일 */
-.vehicle-description {
-  font-size: 13px;
-  color: #6c757d;
-  margin-bottom: 10px;
-}
-
-.vehicle-type-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.vehicle-type-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid #ced4da;
-  background: #f8f9fa;
-  border-radius: 8px;
-  cursor: pointer;
-  text-align: left;
-  transition: 0.2s;
-}
-
-.vehicle-type-tab.active {
-  background: #e7f1ff;
-  color: #0d6efd;
-  border-color: #0d6efd;
-}
-
-.vehicle-type-icon {
-  font-size: 18px;
-}
-
-.vehicle-type-tab span:last-child {
-  display: flex;
-  flex-direction: column;
-}
-
-.vehicle-type-tab strong {
-  font-size: 13px;
-  color: #333;
-}
-.vehicle-type-tab.active strong {
-  color: #0d6efd;
-}
-
-.vehicle-type-tab small {
-  font-size: 11px;
-  color: #6c757d;
-}
-
-/* 내 차량 리스트 스타일 */
-.my-vehicle-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.my-vehicle-item {
-  display: flex;
-  align-items: center;
-  padding: 10px 14px;
-  border: 1px solid #dee2e6;
-  background: #fff;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  text-align: left;
-  transition: 0.2s;
-}
-
-.my-vehicle-item:hover {
-  background: #f8f9fa;
-}
-
-.my-vehicle-item.selected {
-  border-color: #0d6efd;
-  background: #e7f1ff;
-  color: #0d6efd;
-  font-weight: bold;
-}
-
-.vehicle-icon {
-  margin-right: 8px;
-}
-
-.vehicle-name {
-  flex-grow: 1;
-}
-
-.vehicle-check {
-  color: #0d6efd;
-  font-weight: bold;
-}
-
-/* 방문 차량 검색 스타일 */
-.visitor-search {
-  display: flex;
-  gap: 8px;
-}
-
-.selected-visitor-vehicle {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #e6fcf5;
-  border: 1px solid #c3fae8;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #0ca678;
-}
-
-.selected-visitor-vehicle span {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.selected-visitor-vehicle strong {
-  display: block;
-}
-
-.selected-visitor-vehicle p {
   margin: 0;
-  font-size: 12px;
+  color: #6c757d;
+  font-size: 0.9rem;
 }
 
-.reservation-button {
-  padding: 12px;
-  font-weight: bold;
-  font-size: 16px;
-  margin-top: 15px;
+/* 예약 정보 항목 리스트 */
+.reservation-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #f1f3f5;
+  font-size: 0.9rem;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item span {
+  color: #6c757d;
+}
+
+.info-item strong {
+  color: #212529;
+  font-weight: 600;
+  text-align: right;
+}
+
+.vehicle-type-label {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  background: #e7f1ff;
+  border: 1px solid #b6d4fe;
+  color: #0d6efd;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* 타이머 영역 */
+.timer-content {
+  text-align: center;
+  padding: 6px 0;
+}
+
+.timer-expired {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #dc3545;
+}
+
+.timer-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0d6efd;
+  margin: 4px 0;
+  letter-spacing: 0.5px;
+}
+
+.timer-warning {
+  color: #dc3545;
+  font-size: 0.85rem;
+}
+
+.timer-date {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px dashed #dee2e6;
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.timer-date strong {
+  color: #212529;
+}
+
+/* =========================================================
+   AI 스마트 추천 모달 스타일 (통일된 톤)
+   ========================================================= */
+.ai-recommend-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.ai-recommend-modal {
+  width: 100%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.ai-recommend-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.ai-recommend-header h3 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.ai-recommend-header p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.ai-recommend-content {
+  padding: 24px;
+}
+
+.ai-recommend-hint {
+  margin: 0 0 16px;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.ai-recommend-results {
+  margin-top: 20px;
+}
+
+.ai-recommend-results h4 {
+  margin-bottom: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.ai-recommend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #f8f9fa;
+}
+
+.ai-recommend-item strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #212529;
+}
+
+.ai-recommend-item p {
+  margin: 0 0 4px;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.ai-recommend-item small {
+  color: #6c757d;
+}
+
+.ai-recommend-disclaimer {
+  margin: 16px 0 0;
+  color: #6c757d;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   반응형 모바일 대응
+   ========================================================= */
+@media (max-width: 992px) {
+  .myreservation-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .parking-status-area,
+  .reservation-summary-area {
+    padding: 18px;
+    height: auto;
+  }
 }
