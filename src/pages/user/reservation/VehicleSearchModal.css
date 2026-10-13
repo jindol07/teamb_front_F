@@ -1,0 +1,135 @@
+/* 모달 배경 */
+.vehicle-search-backdrop {
+    z-index: 9998;
+}
+
+/* 모달 */
+.vehicle-search-modal {
+    z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* 모달 컨텐츠 */
+.vehicle-search-content {
+    padding: 1.5rem;
+    border: 0;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* 검색 영역 */
+.vehicle-search-input-wrapper {
+    margin-bottom: 1rem;
+}
+
+.vehicle-search-input-wrapper .form-control {
+    min-height: 42px;
+}
+
+/* 차량 목록 */
+.vehicle-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* 차량 목록 아이템 */
+.vehicle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 1rem 0.75rem;
+    margin-bottom: 0.5rem;
+
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+
+    background-color: #fff;
+
+    cursor: pointer;
+
+    transition:
+            background-color 0.15s ease,
+            box-shadow 0.15s ease,
+            transform 0.15s ease;
+}
+
+.vehicle-item:hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.vehicle-item:active {
+    transform: scale(0.99);
+}
+
+/* 즐겨찾기 차량 */
+.vehicle-item-favorite {
+    background-color: #fffdf0;
+}
+
+.vehicle-item-favorite:hover {
+    background-color: #fffbea;
+}
+
+/* 차량 정보 */
+.vehicle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* 방문일시 */
+.vehicle-visit-date {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+/* 차량번호 */
+.vehicle-number {
+    color: #212529;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* 즐겨찾기 버튼 */
+.vehicle-favorite-button {
+    padding: 0.25rem;
+
+    border: 0;
+    background: transparent;
+
+    color: #6c757d;
+    font-size: 1.5rem;
+    line-height: 1;
+
+    cursor: pointer;
+}
+
+.vehicle-favorite-button:hover {
+    color: #ffc107;
+}
+
+.vehicle-favorite-button.is-favorite {
+    color: #ffc107;
+}
+
+/* 검색 결과 없음 */
+.vehicle-empty {
+    padding: 2rem 0;
+
+    color: #6c757d;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+/* 모바일 */
+@media (max-width: 576px) {
+    .vehicle-search-content {
+        padding: 1rem;
+    }
+
+    .vehicle-list-container {
+        max-height: 250px;
+    }
+}
