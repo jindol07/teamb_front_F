@@ -10,7 +10,8 @@ import React, { useCallback, useState } from 'react';
 import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
 import { useParkingStore } from '../../admin/parking/status/useParkingStore';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
-import ParkingReservationModal from './ParkingReservationModal';
+// 작성하신 모달 컴포넌트 파일 경로에 맞게 임포트 경로를 확인해주세요.
+import BookingModal from '../reservation/BookingModal'; // 또는 ParkingReservationModal
 
 /** 사용자 주차현황: 관리자와 동일한 구획 상태를 읽되, 변경 기능은 제공하지 않습니다. */
 /** 학습 해설: 사용자 조회용 페이지로, 관리자의 편집 패널을 가져오지 않습니다. */
@@ -29,11 +30,17 @@ export default function ParkingStatus() {
   /** 학습 해설: 현재 층 구획 개수입니다. */
   const total = floorSlots.length;
   /** 학습 해설: 사용중이면서 사용불가 유형이 아닌 구획만 계산합니다. */
-  const occupied = floorSlots.filter((slot) => slot.status === 'OCCUPIED' && slot.slotType !== 'DISABLED').length;
+  const occupied = floorSlots.filter(
+    (slot) => slot.status === 'OCCUPIED' && slot.slotType !== 'DISABLED',
+  ).length;
   /** 학습 해설: 실제 예약 신청 자격/시간 충돌 검사와는 별개의 UI 표시 수치입니다. */
-  const available = floorSlots.filter((slot) => slot.status === 'EMPTY' && slot.slotType !== 'DISABLED').length;
+  const available = floorSlots.filter(
+    (slot) => slot.status === 'EMPTY' && slot.slotType !== 'DISABLED',
+  ).length;
   /** 학습 해설: 예약 상태로 표시된 구획 수입니다. */
-  const reserved = floorSlots.filter((slot) => slot.status === 'RESERVED' && slot.slotType !== 'DISABLED').length;
+  const reserved = floorSlots.filter(
+    (slot) => slot.status === 'RESERVED' && slot.slotType !== 'DISABLED',
+  ).length;
 
   /** 학습 해설: 예약 불가 상태이면 return, 그 외에는 선택 구획을 지정해 모달을 엽니다. */
   const handleSlotClick = (slot: ExtendedParkingSlot) => {
@@ -45,7 +52,9 @@ export default function ParkingStatus() {
   return (
     <div className="container py-4">
       <h2 className="page-title">주차현황 및 예약</h2>
-      <p className="page-description">주차구획 현황을 확인하고 구획을 선택하여 예약 화면을 열 수 있습니다.</p>
+      <p className="page-description">
+        주차구획 현황을 확인하고 구획을 선택하여 예약 화면을 열 수 있습니다.
+      </p>
       <div className="row g-3 mb-4">
         {[
           { label: '전체 주차면', value: total },
@@ -66,13 +75,27 @@ export default function ParkingStatus() {
           mode="user"
           slots={slots}
           currentFloor={currentFloor}
-          onFloorChange={(floor) => { setCurrentFloor(floor); closeModal(); }}
+          onFloorChange={(floor) => {
+            setCurrentFloor(floor);
+            closeModal();
+          }}
           onSlotClick={handleSlotClick}
           selectedSlotId={selectedSlot?.id ?? null}
         />
-        {floorSlots.length > 0 && <p className="text-secondary small mt-3 mb-0">빈 구획을 선택하면 예약 모달이 열립니다. 실제 예약 가능 여부는 예약 서비스에서 확인해야 합니다.</p>}
+        {floorSlots.length > 0 && (
+          <p className="text-secondary small mt-3 mb-0">
+            빈 구획을 선택하면 예약 모달이 열립니다. 실제 예약 가능 여부는 예약 서비스에서
+            확인해야 합니다.
+          </p>
+        )}
       </div>
-      <ParkingReservationModal isOpen={selectedSlot !== null} slot={selectedSlot} onClose={closeModal} />
+
+      {/*
+        연동 포인트:
+        작성하신 모달 컴포넌트(BookingModal)가 slot 객체와 onClose 함수를 받을 수 있도록 연결합니다.
+        (만약 모달 내부에서 조건부로 렌더링 처리를 하고 있다면 slot !== null 여부로 열고 닫기를 제어합니다.)
+      */}
+      {selectedSlot !== null && <BookingModal slot={selectedSlot} onClose={closeModal} />}
     </div>
   );
 }
