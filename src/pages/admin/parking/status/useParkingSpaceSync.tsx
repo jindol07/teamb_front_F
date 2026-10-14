@@ -22,6 +22,8 @@ export function useParkingSpaceSync() {
     } catch (error) {
       if (signal?.aborted) return;
       failSync(error instanceof Error ? error.message : String(error));
+      // 호출부에서도 재조회 실패를 알 수 있도록 전달합니다.
+      throw error;
     }
   }, [startSync, failSync, replaceFromServer]);
 
@@ -32,6 +34,7 @@ export function useParkingSpaceSync() {
       if (inFlight) return;
       inFlight = true;
       try { await refresh(controller.signal); }
+      catch { /* 오류 정보는 Zustand syncError에 기록됩니다. */ }
       finally { inFlight = false; }
     };
     void load();

@@ -50,6 +50,7 @@ export function mergeParkingSpaces(rows: ParkingSpaceDto[]): {
       status: parseStatus(row.spaceStatusCode), slotType: parseType(row.spaceTypeCode),
       rawStatusCode: row.spaceStatusCode, rawTypeCode: row.spaceTypeCode,
       zoneCode: row.zoneCode, memo: row.memo ?? undefined,
+      vehicleNumber: row.spaceStatusCode === 'OCCUPIED' ? (row.vehicleNumber ?? undefined) : undefined,
       updatedAt: row.updatedAt ?? undefined,
     };
   });

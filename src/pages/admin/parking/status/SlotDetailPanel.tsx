@@ -5,21 +5,24 @@
  * 사용불가 DISABLED 선택 시 상태를 DISABLED로 고정.
  * 예약 담당자의 사용자 모달과 무관하므로 이 파일을 예약 UI로 사용하면 안 됨.
  */
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 import { ExtendedParkingSlot, SlotStatusType, ExtendedSlotType } from './parking';
 
 /** 학습 해설: 부모가 선택 구획, 닫기 함수, 저장 콜백을 전달하기 위한 계약입니다. */
 interface SlotDetailPanelProps {
   slot: ExtendedParkingSlot | null;
-  onSave: (updatedSlot: ExtendedParkingSlot) => void;
+  onSave: (input: { spaceStatusCode: string; spaceTypeCode: string; memo: string; changeReason: string }) => Promise<void>;
+  saving?: boolean;
   onClose: () => void;
 }
 
 /** 학습 해설: 폼 편집에 사용할 독립된 로컬 state를 가지므로 저장 전에는 공용 상태를 변경하지 않습니다. */
-export const SlotDetailPanel: React.FC<SlotDetailPanelProps> = ({
+export const SlotDetailPanel: FC<SlotDetailPanelProps> = ({
   slot,
   onSave,
   onClose,
+  saving = false,
 }) => {
   /** 학습 해설: 사용자에게 선택된 구획 용도 값을 기억합니다. */
   const [selectedType, setSelectedType] = useState<ExtendedSlotType>('NORMAL');
@@ -27,28 +30,32 @@ export const SlotDetailPanel: React.FC<SlotDetailPanelProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<SlotStatusType>('EMPTY');
   /** 학습 해설: textarea에 입력 중인 메모를 제어 컴포넌트 형태로 관리합니다. */
   const [memoInput, setMemoInput] = useState<string>('');
+  const [changeReason, setChangeReason] = useState('');
 
   /** 학습 해설: slot이 바뀌면 이전 구획에서 편집하던 값 대신 새 구획 정보를 폼에 복원합니다. */
   useEffect(() => {
     if (slot) {
-      setSelectedType(slot.slotType || 'NORMAL');
-      setSelectedStatus(slot.status || 'EMPTY');
+      setSelectedType(slot.slotType && slot.slotType !== 'UNKNOWN' ? slot.slotType : 'NORMAL');
+      setSelectedStatus(slot.status || 'UNKNOWN');
       setMemoInput(slot.memo || '');
+      setChangeReason('');
     }
-  }, [slot]);
+  }, [slot?.id, slot?.status, slot?.slotType, slot?.memo]);
 
   /** 학습 해설: 선택 구획이 없으면 패널 JSX를 아예 그리지 않는 조기 반환입니다. */
   if (!slot) return null;
 
   /** 학습 해설: 기존 구획 객체를 펼친 뒤 현재 폼 값을 덮어쓰기 하여 onSave로 전달합니다. DB 요청은 여기서 수행하지 않습니다. */
   const handleSave = () => {
-    const updatedSlot: ExtendedParkingSlot = {
-      ...slot,
-      slotType: selectedType,
-      status: selectedType === 'DISABLED' ? 'DISABLED' : selectedStatus,
+    if (selectedStatus === 'UNKNOWN' && selectedType !== 'DISABLED') { window.alert('구획 상태를 먼저 선택해 주세요.'); return; }
+    if (!changeReason.trim()) { window.alert('변경 사유를 입력해 주세요.'); return; }
+    if (!window.confirm(`${slot.spaceCode} 구획의 설정을 DB에 저장하시겠습니까?`)) return;
+    void onSave({
+      spaceStatusCode: selectedType === 'DISABLED' ? 'DISABLED' : selectedStatus === 'EMPTY' ? 'AVAILABLE' : selectedStatus,
+      spaceTypeCode: selectedType,
       memo: memoInput,
-    };
-    onSave(updatedSlot);
+      changeReason,
+    });
   };
 
   /** 학습 해설: 버튼 텍스트, 코드값, 활성 배경색을 데이터로 관리하여 중복 JSX를 줄입니다. */
@@ -83,7 +90,7 @@ export const SlotDetailPanel: React.FC<SlotDetailPanelProps> = ({
             지하 {slot.floor}층
           </span>
           <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', margin: '6px 0 0 0' }}>
-            📌 {slot.slotNumber} 구획 정보
+            📌 {slot.spaceCode} 구획 정보
           </h3>
         </div>
         <button
@@ -182,9 +189,17 @@ export const SlotDetailPanel: React.FC<SlotDetailPanelProps> = ({
         />
       </div>
 
+      {/* 변경 사유: 변경 이력 저장을 위해 필수 */}
+      <div style={{ marginBottom: '16px' }}>
+        <label htmlFor="changeReason" style={{ fontWeight: 'bold', fontSize: 12 }}>변경 사유 (필수)</label>
+        <textarea id="changeReason" value={changeReason} onChange={(e) => setChangeReason(e.target.value)}
+          maxLength={500} rows={2} placeholder="예: 센서 오인식으로 인한 관리자 수동 보정"
+          style={{ width: '100%', boxSizing: 'border-box' }} />
+      </div>
       {/* 4. 저장 버튼 */}
       <button
         onClick={handleSave}
+        disabled={saving}
         style={{
           width: '100%',
           padding: '10px',
@@ -197,7 +212,7 @@ export const SlotDetailPanel: React.FC<SlotDetailPanelProps> = ({
           cursor: 'pointer'
         }}
       >
-        설정 저장하기
+        {saving ? '저장 중...' : '설정 저장하기'}
       </button>
     </div>
   );
