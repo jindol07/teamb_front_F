@@ -4,11 +4,12 @@
  * 경고: 현재 Zustand 변경은 새로고침 후 소실됨. 서버 API 연결은 후속 단계.
  * 공통 슬롯 좌표는 parkingLayout.ts만 수정하며 이 파일에서 재생성하지 않음.
  */
-import React from 'react';
+import { useState } from 'react';
+import { saveParkingSpace } from './parkingSpaceApi';
 import { ParkingMapView } from './ParkingMapView';
 import { useParkingStore } from './useParkingStore';
 import { SlotDetailPanel } from './SlotDetailPanel';
-import { ExtendedParkingSlot } from './parking';
+import { useParkingSpaceSync } from './useParkingSpaceSync';
 
 /**
  * [관리자 주차관제 메인 페이지 컴포넌트]
@@ -16,42 +17,95 @@ import { ExtendedParkingSlot } from './parking';
  */
 /** 학습 해설: 관리자 페이지를 조립합니다. Zustand 훅에서 구획과 선택 상태를 읽고 하위 컴포넌트에 Props를 전달합니다. */
 export default function ParkingStatusAdmin() {
+  const { refresh } = useParkingSpaceSync(); // 조회는 공개 API 사용, 수정은 로그인 필수
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const {
     selectedFloor,
     setSelectedFloor,
     selectedSlot,
     setSelectedSlot,
     slots,
-    updateSlotDetail,
+    syncState,
+    syncError,
   } = useParkingStore();
 
-  // 동적 현황 집계 (전체 구획 스토어 기준 계산)
-  /** 학습 해설: 전체 배열에서 선택한 층만 골라 아래 통계에 사용합니다. */
-  const currentFloorSlots = slots.filter((s) => s.floor === selectedFloor);
-  /** 학습 해설: 현재 층 구획 수. 서버에서 구획을 받기 전에도 레이아웃이 있으면 15로 표시됩니다. */
-  const totalSpots = currentFloorSlots.length;
-  /** 학습 해설: OCCUPIED인 구획의 수를 셉니다. 상태 문자열 비교는 대소문자를 구분합니다. */
-  const currentParked = currentFloorSlots.filter((s) => s.status === 'OCCUPIED').length;
-  /** 학습 해설: 예약 상태로 표시된 구획 수이며 시간대별 예약 가능 여부를 보증하지 않습니다. */
-  const reservedSpots = currentFloorSlots.filter((s) => s.status === 'RESERVED').length;
-  /** 학습 해설: 사용불가 상태 또는 유형을 합쳐 셉니다. 데이터가 모순되면 통계 중복 가능성을 점검해야 합니다. */
-  const disabledSpots = currentFloorSlots.filter((s) => s.status === 'DISABLED' || s.slotType === 'DISABLED').length;
-  /** 학습 해설: 잔여 구획 수를 구하고 Math.max(0, ...)로 음수 표시를 방지합니다. */
-  const availableSpots = Math.max(0, totalSpots - currentParked - reservedSpots - disabledSpots);
-
-  /** 학습 해설: 반복 출력할 통계 카드의 표시용 배열입니다. */
-  const cards = [
-    { label: '전체 구획', value: totalSpots, unit: '면', color: 'text-dark' },
-    { label: '사용중', value: currentParked, unit: '면', color: 'text-primary' },
-    { label: '예약됨', value: reservedSpots, unit: '면', color: 'text-warning' },
-    { label: '사용가능', value: availableSpots, unit: '면', color: 'text-success' },
-  ];
-
-  // 설정 저장 핸들러
-  /** 학습 해설: 하위 패널에서 완성한 구획 객체를 전달받아 전역 스토어 수정 액션을 호출합니다. */
-  const handleSaveSlot = (updatedSlot: ExtendedParkingSlot) => {
-    updateSlotDetail(updatedSlot.id, updatedSlot);
+  /** 서버 저장이 성공하기 전에는 로컬 Zustand/도면 상태를 변경하지 않는다. */
+  const handleSave = async (input: {
+    spaceStatusCode: string; spaceTypeCode: string; memo: string; changeReason: string;
+  }) => {
+    if (!selectedSlot?.parkingSpaceId) return;
+    setSaving(true);
+    setSaveError(null);
+    setSaveNotice(null);
+    try {
+      await saveParkingSpace(selectedSlot.parkingSpaceId, input);
+      // 관리자 인증 세션으로 다시 읽어 메모까지 표시한다.
+      // 로그인 연동이 완성되면 관리자 조회 API로 메모까지 다시 불러온다.
+      // 지금은 공개 조회로만 화면 갱신; 저장 자체는 반드시 관리자 세션 필요.
+      await refresh();
+      setSaveNotice(`${selectedSlot.spaceCode} 구획의 변경사항을 저장했습니다.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setSaveError(message.includes('401') ? '관리자 로그인 세션이 없어 저장할 수 없습니다. 로그인 담당 팀원의 연동이 필요합니다.' : message);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  /** 중복 집계 방지: 각 주차구획은 하나의 상태 범주에만 포함합니다. */
+  const summarize = (items: typeof slots) => {
+    const total = items.length;
+    const disabled = items.filter((slot) => slot.status === 'DISABLED' || slot.slotType === 'DISABLED').length;
+    const occupied = items.filter((slot) => slot.status !== 'DISABLED' && slot.slotType !== 'DISABLED' && slot.status === 'OCCUPIED').length;
+    const reserved = items.filter((slot) => slot.status !== 'DISABLED' && slot.slotType !== 'DISABLED' && slot.status === 'RESERVED').length;
+    const available = items.filter((slot) => slot.status === 'EMPTY' && slot.slotType !== 'DISABLED').length;
+    const unknown = total - disabled - occupied - reserved - available;
+    return { total, occupied, reserved, available, disabled, unknown };
+  };
+
+  // 전체 45개에 대한 총괄 통계는 선택한 층과 무관합니다.
+  const allSummary = summarize(slots);
+  const floorSummaries = [1, 2, 3].map((floor) => ({
+    floor,
+    ...summarize(slots.filter((slot) => slot.floor === floor)),
+  }));
+
+  // 전체 주차장의 통계 카드 (지하 1~3층, 총 45개 구획 기준)
+const cards = [
+  {
+    label: '전체 구획',
+    value: allSummary.total,
+    unit: '면',
+    color: 'text-dark',
+  },
+  {
+    label: '사용중',
+    value: allSummary.occupied,
+    unit: '면',
+    color: 'text-primary',
+  },
+  {
+    label: '예약됨',
+    value: allSummary.reserved,
+    unit: '면',
+    color: 'text-warning',
+  },
+  {
+    label: '사용가능',
+    value: allSummary.available,
+    unit: '면',
+    color: 'text-success',
+  },
+  {
+    label: '사용불가',
+    value: allSummary.disabled,
+    unit: '면',
+    color: 'text-secondary',
+  },
+];
+
 
   return (
     <div className="container-fluid p-4">
@@ -61,10 +115,17 @@ export default function ParkingStatusAdmin() {
         <p className="text-muted small mb-0">주차장의 구획별 상태를 실시간 모니터링하고 제어합니다.</p>
       </div>
 
-      {/* 실시간 현황 카드 */}
+      {/* 서버 연결 결과를 숨기지 않습니다. */}
+      {syncState === 'loading' && <div role="status" className="alert alert-info">주차구획 정보를 불러오는 중입니다.</div>}
+      {syncState === 'error' && <div role="alert" className="alert alert-danger">주차구획 조회 실패: {syncError}</div>}
+      {syncState === 'ready' && <div className="alert alert-light py-2 small">DB 주차구획 {slots.length}건 조회 완료 · 현재 조회는 공개 API 기준입니다.</div>}
+      {saveError && <div role="alert" className="alert alert-danger">{saveError}</div>}
+      {saveNotice && <div role="status" className="alert alert-success">{saveNotice}</div>}
+      {/* 전체 1~3층 통계: 층 선택과 무관하게 항상 전체 수치를 표시 */}
+      <h5 className="fw-semibold mb-3">전체 주차장 현황 <span className="text-muted fs-6">(지하 1~3층 통합)</span></h5>
       <div className="row g-3 mb-4">
         {cards.map((card) => (
-          <div key={card.label} className="col-12 col-sm-6 col-xl-3">
+          <div key={card.label} className="col-6 col-md-4 col-xl">
             <div className="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
               <div className="text-secondary small fw-medium mb-1">{card.label}</div>
               <div className={`fs-2 fw-bold ${card.color}`}>
@@ -76,6 +137,46 @@ export default function ParkingStatusAdmin() {
         ))}
       </div>
 
+      {/* 층별 요약 카드: 눌러서 아래 도면의 층도 변경할 수 있습니다. */}
+      <h5 className="fw-semibold mb-3">층별 주차현황</h5>
+      <div className="row g-3 mb-4">
+        {floorSummaries.map((floor) => {
+          const isSelected = selectedFloor === floor.floor;
+          const availablePercent = floor.total > 0 ? Math.round((floor.available / floor.total) * 100) : 0;
+          return (
+            <div className="col-12 col-lg-4" key={floor.floor}>
+              <button
+                type="button"
+                className={`card bg-white rounded-3 p-3 w-100 h-100 text-start ${isSelected ? 'border-primary shadow-sm' : 'border-light shadow-sm'}`}
+                onClick={() => { setSelectedFloor(floor.floor); setSelectedSlot(null); }}
+                aria-pressed={isSelected}
+                aria-label={`지하 ${floor.floor}층 도면 보기`}
+              >
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <span className="fw-bold">지하 {floor.floor}층</span>
+                  <span className="text-muted small">전체 {floor.total}면</span>
+                </div>
+                <div className="mb-2">
+                  <span className="text-success fs-4 fw-bold">{floor.available}</span>
+                  <span className="text-muted small ms-2">사용 가능 · {availablePercent}%</span>
+                </div>
+                <div className="progress mb-2" style={{ height: 7 }} role="progressbar" aria-valuenow={availablePercent} aria-valuemin={0} aria-valuemax={100} aria-label={`지하 ${floor.floor}층 사용 가능 비율`}>
+                  <div className="progress-bar bg-success" style={{ width: `${availablePercent}%` }} />
+                </div>
+                <div className="text-muted small">
+                  사용중 {floor.occupied} · 예약 {floor.reserved} · 사용불가 {floor.disabled}
+                  {floor.unknown > 0 && ` · 확인필요 ${floor.unknown}`}
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {allSummary.unknown > 0 && (
+        <div className="alert alert-warning py-2" role="status">상태 확인이 필요한 주차구획 {allSummary.unknown}면이 있습니다.</div>
+      )}
+
+      <h5 className="fw-semibold mb-3">주차장 상세 도면 <span className="text-muted fs-6">(지하 {selectedFloor}층)</span></h5>
       {/* 관제 메인 레이아웃: [2D Map] + [우측 설정 패널] */}
       <div className="row g-4 align-items-start">
         <div className={selectedSlot ? 'col-12 col-xl-8' : 'col-12'}>
@@ -100,7 +201,8 @@ export default function ParkingStatusAdmin() {
             <div className="card border-0 shadow-sm rounded-3 bg-white p-2">
               <SlotDetailPanel
                 slot={selectedSlot}
-                onSave={handleSaveSlot}
+                onSave={handleSave}
+                saving={saving}
                 onClose={() => setSelectedSlot(null)}
               />
             </div>
