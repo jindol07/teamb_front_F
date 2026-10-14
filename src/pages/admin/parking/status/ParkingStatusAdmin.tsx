@@ -1,8 +1,8 @@
 /**
- * 관리자 페이지: 현재 층 통계 계산, 공통 Konva 지도, 상세 패널을 조립.
- * 클릭한 구획은 Zustand selectedSlot으로 저장; 패널 저장 시 updateSlotDetail 반영.
- * 경고: 현재 Zustand 변경은 새로고침 후 소실됨. 서버 API 연결은 후속 단계.
- * 공통 슬롯 좌표는 parkingLayout.ts만 수정하며 이 파일에서 재생성하지 않음.
+ * 관리자 주차현황 페이지.
+ * 전체 45개 및 층별 주차구획 통계, 공통 React Konva 도면, 상세 설정 패널을 조립합니다.
+ * 공개 GET API로 실시간 현황을 조회하며, 관리자 설정의 DB 저장은 인증된 PATCH API만 사용합니다.
+ * 저장 버튼 클릭 전에는 서버 상태를 변경하지 않습니다.
  */
 import { useState } from 'react';
 import { saveParkingSpace } from './parkingSpaceApi';
@@ -72,40 +72,14 @@ export default function ParkingStatusAdmin() {
     ...summarize(slots.filter((slot) => slot.floor === floor)),
   }));
 
-  // 전체 주차장의 통계 카드 (지하 1~3층, 총 45개 구획 기준)
-const cards = [
-  {
-    label: '전체 구획',
-    value: allSummary.total,
-    unit: '면',
-    color: 'text-dark',
-  },
-  {
-    label: '사용중',
-    value: allSummary.occupied,
-    unit: '면',
-    color: 'text-primary',
-  },
-  {
-    label: '예약됨',
-    value: allSummary.reserved,
-    unit: '면',
-    color: 'text-warning',
-  },
-  {
-    label: '사용가능',
-    value: allSummary.available,
-    unit: '면',
-    color: 'text-success',
-  },
-  {
-    label: '사용불가',
-    value: allSummary.disabled,
-    unit: '면',
-    color: 'text-secondary',
-  },
-];
-
+  // 지하 1~3층 전체 주차구획 통계. 아래 카드 JSX에서 card.unit을 참조하므로 단위도 함께 선언합니다.
+  const cards = [
+    { label: '전체 구획', value: allSummary.total, unit: '면', color: 'text-dark' },
+    { label: '사용중', value: allSummary.occupied, unit: '면', color: 'text-primary' },
+    { label: '예약됨', value: allSummary.reserved, unit: '면', color: 'text-warning' },
+    { label: '사용가능', value: allSummary.available, unit: '면', color: 'text-success' },
+    { label: '사용불가', value: allSummary.disabled, unit: '면', color: 'text-secondary' },
+  ];
 
   return (
     <div className="container-fluid p-4">

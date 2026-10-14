@@ -3,7 +3,7 @@
  * Stage(640x480)와 외곽선, 램프, 주행 화살표, 보행자 코어의 기준좌표 유지.
  * slots prop으로 전달되는 구획만 그림: 관리자 UI 클릭→상세패널, 사용자 UI 클릭→예약모달.
  * mode는 안내 문구용이며 권한 통제 수단이 아닙니다. 서버에서 권한을 검증해야 합니다.
- * 좌표 변경 시 parkingLayout.ts 및 AI팀 종이도면을 함께 변경하세요.
+ * 구획별 좌표는 DB를 기준으로 하며 AI팀 종이도면과 일치해야 합니다.
  */
 import React, { useState } from 'react';
 import { Stage, Layer, Rect, Text, Group, Arc, Arrow } from 'react-konva';
@@ -188,7 +188,7 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
                   {badgeText && (
                     <Text x={5} y={32} text={badgeText} fontSize={8} fontStyle="bold" fill="#FEF08A" />
                   )}
-                  {slot.vehicleNumber && (
+                  {mode === 'admin' && slot.vehicleNumber && (
                     <Text x={4} y={slot.height - 13} text={slot.vehicleNumber} fontSize={8} fontStyle="bold" fill="#FEF08A" />
                   )}
                 </Group>

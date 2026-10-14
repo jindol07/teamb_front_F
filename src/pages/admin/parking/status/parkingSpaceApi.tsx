@@ -27,6 +27,8 @@ export interface ParkingSpaceDto {
   height: number | null;
   /** 관리자에게만 반환하며 사용자 공개 API에는 존재하지 않음. */
   memo?: string | null;
+  /** 관리자 응답 전용. 공개 API에는 포함되지 않습니다. */
+  vehicleNumber?: string | null;
   updatedAt?: string | null;
 }
 

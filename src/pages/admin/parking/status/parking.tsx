@@ -2,7 +2,7 @@
  * 주차구획 도메인 타입(관리자/사용자 공용).
  *
  * 중요한 구분:
- * 1) x/y/width/height: AI팀과 미리 합의한 2D 도면 위치(정적 레이아웃).
+ * 1) x/y/width/height: Oracle DB에서 제공하는 2D 도면 위치.
  * 2) parkingSpaceId: Oracle PARKING_SPACE.PARKING_SPACE_ID (DB 기본키).
  * 3) status: 서버에서 확인된 점유 상태. 서버에서 확인하지 못하면 UNKNOWN.
  * 4) rawStatusCode/rawTypeCode: 실제 DB 코드값. 임의로 EMPTY 등으로 추측하지 않음.
