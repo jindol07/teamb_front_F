@@ -3,12 +3,12 @@
  * Stage(640x480)와 외곽선, 램프, 주행 화살표, 보행자 코어의 기준좌표 유지.
  * slots prop으로 전달되는 구획만 그림: 관리자 UI 클릭→상세패널, 사용자 UI 클릭→예약모달.
  * mode는 안내 문구용이며 권한 통제 수단이 아닙니다. 서버에서 권한을 검증해야 합니다.
- * 좌표 변경 시 parkingLayout.ts 및 AI팀 종이도면을 함께 변경하세요.
+ * 구획별 좌표는 Oracle DB에서 받습니다. 변경 시 AI팀 종이도면과 함께 검증하세요.
  */
 import React, { useState } from 'react';
 import { Stage, Layer, Rect, Text, Group, Arc, Arrow } from 'react-konva';
 import { ExtendedParkingSlot, ParkingMapProps } from './parking';
-import { PARKING_FLOORS, PARKING_STAGE_SIZE, PARKING_MAP_BOUNDS } from './parkingLayout';
+import { PARKING_STAGE_SIZE, PARKING_MAP_BOUNDS } from './parkingLayout';
 
 /** 학습 해설: 논리 도면 크기를 상수 별칭으로 참조합니다. DOM의 실제 반응형 폭과는 별개입니다. */
 const STAGE_CONFIG = PARKING_STAGE_SIZE;
@@ -32,17 +32,20 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
   // 현재 선택된 층에 해당하는 구획만 필터링
   /** 학습 해설: filter는 원본 slots를 수정하지 않고 현재 층의 새 배열을 만듭니다. */
   const currentFloorSlots = slots.filter((s) => s.floor === currentFloor);
+  const availableFloors = [...new Set(slots.map((s) => s.floor))].sort((a, b) => a - b);
 
   // 구획 상태 및 전용 구분에 따른 채우기 색상
   /** 학습 해설: 선택 표시를 먼저 판단하기 때문에 클릭한 구획은 실제 점유 색 대신 파란색입니다. */
   const getSlotColor = (slot: ExtendedParkingSlot, isSelected: boolean) => {
     if (isSelected) return '#2563eb'; // 선택 시 파란색
-    if (slot.slotType === 'DISABLED' || slot.status === 'DISABLED') return '#64748b'; // 사용불가 회색
+    if (slot.slotType === 'DISABLED' || slot.status === 'DISABLED') return '#64748b';
+    if (slot.status === 'UNKNOWN') return '#94a3b8'; // DB 미확인: 사용가능으로 보이면 안 됨 // 사용불가 회색
 
     switch (slot.status) {
       case 'OCCUPIED': return '#ef4444'; // 사용중 빨간색
       case 'RESERVED': return '#f59e0b'; // 예약됨 주황색
-      case 'EMPTY': default: return '#10b981'; // 사용가능 초록색
+      case 'EMPTY': return '#10b981'; // 사용가능 초록색
+      default: return '#94a3b8'; // 그 외는 미확인 회색
     }
   };
 
@@ -53,6 +56,7 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
       case 'ELECTRIC': return '⚡전기';
       case 'DISABLED_PERSON': return '♿장애인';
       case 'DISABLED': return '🚫불가';
+      case 'UNKNOWN': return '? 미확인';
       default: return '';
     }
   };
@@ -63,7 +67,7 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
       {/* 층 선택 및 동선 보기 컨트롤러 */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div style={{ display: 'inline-flex', padding: '3px', backgroundColor: '#f1f5f9', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-          {PARKING_FLOORS.map((floor) => (
+          {availableFloors.map((floor) => (
             <button
               key={floor}
               onClick={() => onFloorChange?.(floor)}
@@ -169,7 +173,7 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
                     strokeWidth={isSelected ? 2.5 : 1}
                     cornerRadius={3}
                   />
-                  <Text x={5} y={5} text={slot.slotNumber} fontSize={10} fontStyle="bold" fill="#FFFFFF" />
+                  <Text x={5} y={5} text={slot.spaceCode} fontSize={10} fontStyle="bold" fill="#FFFFFF" />
                   <Text
                     x={5}
                     y={19}
@@ -180,7 +184,9 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
                         ? '🚗 주차'
                         : slot.status === 'RESERVED'
                         ? '📅 예약'
-                        : '✅ 가능'
+                        : slot.status === 'EMPTY'
+                        ? '✅ 가능'
+                        : '❔ 미확인'
                     }
                     fontSize={9}
                     fill="#FFFFFF"
@@ -199,7 +205,7 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
       </div>
       {currentFloorSlots.length === 0 && (
         <p role="status" style={{ marginTop: 12, fontSize: 13, color: '#64748b' }}>
-          주차구획 데이터가 없습니다. 백엔드 조회 API 연결 후 도면에 표시됩니다.
+          표시할 주차구획이 없습니다. 도면 설정과 DB 구획 정보를 확인하세요.
         </p>
       )}
       <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>

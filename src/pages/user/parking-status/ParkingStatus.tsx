@@ -9,14 +9,18 @@
 import React, { useCallback, useState } from 'react';
 import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
 import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import { useParkingSpaceSync } from '../../admin/parking/status/useParkingSpaceSync';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import ParkingReservationModal from '../reservation/ParkingReservationModal';
 
 /** 사용자 주차현황: 관리자와 동일한 구획 상태를 읽되, 변경 기능은 제공하지 않습니다. */
 /** 학습 해설: 사용자 조회용 페이지로, 관리자의 편집 패널을 가져오지 않습니다. */
 export default function ParkingStatus() {
+  useParkingSpaceSync();
   /** 학습 해설: 상태 선택자(selector)로 slots만 구독합니다. 다른 데이터 변경 시 불필요한 렌더링을 줄이는 패턴입니다. */
   const slots = useParkingStore((state) => state.slots);
+  const syncState = useParkingStore((state) => state.syncState);
+  const syncError = useParkingStore((state) => state.syncError);
   /** 학습 해설: 관리자와 독립적인 사용자 페이지용 현재 층 상태입니다. */
   const [currentFloor, setCurrentFloor] = useState(1);
   /** 학습 해설: null이면 예약 모달이 닫히고 객체이면 열립니다. */
@@ -46,6 +50,8 @@ export default function ParkingStatus() {
     <div className="container py-4">
       <h2 className="page-title">주차현황 및 예약</h2>
       <p className="page-description">주차구획 현황을 확인하고 구획을 선택하여 예약 화면을 열 수 있습니다.</p>
+      {syncState === 'loading' && <div role="status" className="alert alert-info">주차구획을 불러오는 중입니다.</div>}
+      {syncState === 'error' && <div role="alert" className="alert alert-danger">조회 실패: {syncError}</div>}
       <div className="row g-3 mb-4">
         {[
           { label: '전체 주차면', value: total },
