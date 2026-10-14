@@ -8,7 +8,7 @@ import React from 'react';
 import { ParkingMapView } from './ParkingMapView';
 import { useParkingStore } from './useParkingStore';
 import { SlotDetailPanel } from './SlotDetailPanel';
-import { ExtendedParkingSlot } from './parking';
+import { useParkingSpaceSync } from './useParkingSpaceSync';
 
 /**
  * [관리자 주차관제 메인 페이지 컴포넌트]
@@ -16,13 +16,15 @@ import { ExtendedParkingSlot } from './parking';
  */
 /** 학습 해설: 관리자 페이지를 조립합니다. Zustand 훅에서 구획과 선택 상태를 읽고 하위 컴포넌트에 Props를 전달합니다. */
 export default function ParkingStatusAdmin() {
+  useParkingSpaceSync(); // 페이지 진입 시 API 조회 및 5초 폴링
   const {
     selectedFloor,
     setSelectedFloor,
     selectedSlot,
     setSelectedSlot,
     slots,
-    updateSlotDetail,
+    syncState,
+    syncError,
   } = useParkingStore();
 
   // 동적 현황 집계 (전체 구획 스토어 기준 계산)
@@ -47,11 +49,7 @@ export default function ParkingStatusAdmin() {
     { label: '사용가능', value: availableSpots, unit: '면', color: 'text-success' },
   ];
 
-  // 설정 저장 핸들러
-  /** 학습 해설: 하위 패널에서 완성한 구획 객체를 전달받아 전역 스토어 수정 액션을 호출합니다. */
-  const handleSaveSlot = (updatedSlot: ExtendedParkingSlot) => {
-    updateSlotDetail(updatedSlot.id, updatedSlot);
-  };
+
 
   return (
     <div className="container-fluid p-4">
@@ -61,6 +59,10 @@ export default function ParkingStatusAdmin() {
         <p className="text-muted small mb-0">주차장의 구획별 상태를 실시간 모니터링하고 제어합니다.</p>
       </div>
 
+      {/* 서버 연결 결과를 숨기지 않습니다. */}
+      {syncState === 'loading' && <div role="status" className="alert alert-info">주차구획 정보를 불러오는 중입니다.</div>}
+      {syncState === 'error' && <div role="alert" className="alert alert-danger">주차구획 조회 실패: {syncError}</div>}
+      {syncState === 'ready' && <div className="alert alert-light py-2 small">DB 주차구획 {slots.length}건 조회 완료 · 현재 조회는 공개 API 기준입니다.</div>}
       {/* 실시간 현황 카드 */}
       <div className="row g-3 mb-4">
         {cards.map((card) => (
@@ -100,7 +102,7 @@ export default function ParkingStatusAdmin() {
             <div className="card border-0 shadow-sm rounded-3 bg-white p-2">
               <SlotDetailPanel
                 slot={selectedSlot}
-                onSave={handleSaveSlot}
+                onSave={() => { window.alert("관리자 수정 API가 아직 연결되지 않았습니다. 현재 단계는 조회 전용입니다."); }}
                 onClose={() => setSelectedSlot(null)}
               />
             </div>
