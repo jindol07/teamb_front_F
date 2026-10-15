@@ -1,17 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { noticeListMock } from '../../../mock/noticeMock';
 import { getCategoryBadge } from './noticeUtils';
+import { getAdminNoticeList, registerNotice } from '../../../api/adminNoticeApi';
+import { Notice } from '../../../mock/noticeMock';
 export default function AdminNotice() {
   // 공지사항 검색 상태
   const [category, setCategory] = useState('전체');
   const [searchKeyword, setSearchKeyword] = useState('');
   // 공지사항 목록
-  const [noticeList, setNoticeList] = useState(noticeListMock);
+  const [noticeList, setNoticeList] = useState<Notice[]>([]);
+  useEffect(() => {
+    const fetchNotices = async () => {
+      try {
+        const data = await getAdminNoticeList();
+        setNoticeList(data);
+      } catch (error) {
+        console.error('공지사항 목록 조회 실패:', error);
+      }
+    };
+    void fetchNotices();
+  }, []);
   // 등록 화면 표시 여부
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   // 등록 폼 입력값
-  const [registerCategory, setRegisterCategory] = useState('이용안내');
+  const [registerCategory, setRegisterCategory] = useState('USAGE_GUIDE');
   const [registerTitle, setRegisterTitle] = useState('');
   const [registerContent, setRegisterContent] = useState('');
   const [registerImportant, setRegisterImportant] = useState(false);
@@ -86,7 +98,7 @@ export default function AdminNotice() {
   ];
   // 등록 폼 입력값 초기화
   const resetRegisterForm = () => {
-    setRegisterCategory('이용안내');
+    setRegisterCategory('USAGE_GUIDE');
     setRegisterTitle('');
     setRegisterContent('');
     setRegisterImportant(false);
@@ -94,7 +106,7 @@ export default function AdminNotice() {
     setRegisterFiles([]);
   };
   // 공지사항 등록
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (registerTitle.trim() === '') {
       alert('제목을 입력해주세요.');
       return;
@@ -103,28 +115,25 @@ export default function AdminNotice() {
       alert('내용을 입력해주세요.');
       return;
     }
-    const now = Date.now();
-    const newNotice = {
-      id: now,
-      title: registerTitle,
-      writer: '관리자',
-      content: registerContent,
-      createdAt: new Date().toISOString().slice(0, 10),
-      views: 0,
-      category: registerCategory,
-      isPinned: registerPinned,
-      isImportant: registerImportant,
-      attachments: registerFiles.map((file, index) => ({
-        id: now + index,
-        name: file.name,
-        url: '',
-      })),
-    };
-    // 기존 공지사항 목록에 추가
-    setNoticeList((prev) => [newNotice, ...prev]);
-    // 등록 완료 후 목록 화면으로 이동
-    resetRegisterForm();
-    setIsRegisterOpen(false);
+    try {
+      await registerNotice({
+        writerAdminId: 1,
+        noticeTypeCode: registerCategory,
+        title: registerTitle,
+        content: registerContent,
+        importantYn: registerImportant ? 'Y' : 'N',
+        pinnedYn: registerPinned ? 'Y' : 'N',
+        files: registerFiles,
+      });
+      const updatedNotices = await getAdminNoticeList();
+      setNoticeList(updatedNotices);
+      alert('공지사항이 등록되었습니다.');
+      resetRegisterForm();
+      setIsRegisterOpen(false);
+    } catch (error) {
+      console.error('공지사항 등록 실패:', error);
+      alert('공지사항 등록에 실패했습니다.');
+    }
   };
   // 공지사항 등록 취소
   const handleCancel = () => {
@@ -186,11 +195,11 @@ export default function AdminNotice() {
                 setRegisterCategory(e.target.value)
               }
             >
-              <option value="이용안내">이용안내</option>
-              <option value="시설점검">시설점검</option>
-              <option value="주차요금">주차요금</option>
-              <option value="긴급공지">긴급공지</option>
-              <option value="정기권">정기권</option>
+              <option value="USAGE_GUIDE">이용안내</option>
+              <option value="FACILITY_INSPECTION">시설점검</option>
+              <option value="PARKING_FEE">주차요금</option>
+              <option value="EMERGENCY_NOTICE">긴급공지</option>
+              <option value="SEASON_PASS">정기권</option>
             </select>
           </div>
           {/* 제목 */}
@@ -355,13 +364,9 @@ export default function AdminNotice() {
                     <th>번호</th>
                     <th>공지 유형</th>
                     <th>제목</th>
-                    <th>중요</th>
-                    <th>상단 고정</th>
-                    <th>첨부파일</th>
                     <th>작성자</th>
                     <th>작성일</th>
                     <th>조회수</th>
-                    <th>관리</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -383,49 +388,42 @@ export default function AdminNotice() {
                       </td>
                       {/* 제목 */}
                       <td>
-                        {notice.isImportant && (
-                          <span className="text-danger fw-bold me-1">
-                            [중요]
-                          </span>
-                        )}
                         <Link
                           to={`/admin/notice/${notice.id}`}
                           className="text-decoration-none text-dark"
                         >
-                          {notice.title}
+                          <div className="d-flex align-items-center">
+                            {/* 중요 / 고정 표시 영역: 항상 동일한 너비 */}
+                            <div
+                              className="d-flex align-items-center gap-1 flex-shrink-0"
+                              style={{ width: '110px' }}
+                            >
+                              {notice.isImportant && (
+                                <span className="text-danger fw-bold small">
+                                  [중요]
+                                </span>
+                              )}
+                              {notice.isPinned && (
+                                <span className="badge bg-dark">
+                                  고정
+                                </span>
+                              )}
+                            </div>
+                            {/* 첨부파일 아이콘 / 제목 영역 */}
+                            {/* 첨부파일 아이콘 / 제목 영역 */}
+                            <div className="d-flex align-items-center gap-2">
+                              {/* 첨부파일 유무와 관계없이 동일한 너비 확보 */}
+                              <span
+                                className="d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                style={{ width: '20px' }}
+                                title={notice.attachments.length > 0 ? '첨부파일 있음' : undefined}
+                              >
+                                {notice.attachments.length > 0 ? '📎' : null}
+                              </span>
+                              <span>{notice.title}</span>
+                            </div>
+                          </div>
                         </Link>
-                      </td>
-                      {/* 중요 */}
-                      <td>
-                        {notice.isImportant ? (
-                          <span className="badge bg-danger">
-                            중요
-                          </span>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
-                      {/* 상단 고정 */}
-                      <td>
-                        {notice.isPinned ? (
-                          <span className="badge bg-dark">
-                            고정
-                          </span>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
-                      {/* 첨부파일 */}
-                      <td>
-                        {notice.attachments.length > 0 ? (
-                          <span>
-                            📎 {notice.attachments.length}개
-                          </span>
-                        ) : (
-                          <span className="text-muted">
-                            없음
-                          </span>
-                        )}
                       </td>
                       {/* 작성자 */}
                       <td>{notice.writer}</td>
@@ -433,28 +431,13 @@ export default function AdminNotice() {
                       <td>{notice.createdAt}</td>
                       {/* 조회수 */}
                       <td>{notice.views}</td>
-                      {/* 관리 */}
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-secondary me-1"
-                        >
-                          수정
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-outline-danger"
-                        >
-                          삭제
-                        </button>
-                      </td>
                     </tr>
                   ))}
                   {/* 검색 결과가 없는 경우 */}
                   {sortedNoticeList.length === 0 && (
                     <tr>
                       <td
-                        colSpan={10}
+                        colSpan={6}
                         className="text-center text-muted py-4"
                       >
                         검색 결과가 없습니다.
