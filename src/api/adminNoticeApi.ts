@@ -154,6 +154,6 @@ export const getAdminNoticeAttachments = async (
     return (response.data.getfilelist ?? []).map((file) => ({
         id: file.noticeAttachmentId,
         name: file.originalName,
-        url: `${import.meta.env.VITE_ADMIN_API_URL}/api/notice/${noticeId}/file/download`,
+        url: `${import.meta.env.VITE_BOOT_API_BASE_URL_A}/api/notice/${noticeId}/file/download`,
     }));
 };
