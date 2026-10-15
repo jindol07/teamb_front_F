@@ -4,8 +4,9 @@
  * 공개 GET API로 실시간 현황을 조회하며, 관리자 설정의 DB 저장은 인증된 PATCH API만 사용합니다.
  * 저장 버튼 클릭 전에는 서버 상태를 변경하지 않습니다.
  */
-import { useState } from 'react';
-import { saveParkingSpace } from './parkingSpaceApi';
+import { useEffect, useMemo, useState } from 'react';
+import { fetchAdminParkingSpaces, saveParkingSpace } from './parkingSpaceApi';
+import type { ParkingSpaceDto } from './parkingSpaceApi';
 import { ParkingMapView } from './ParkingMapView';
 import { useParkingStore } from './useParkingStore';
 import { SlotDetailPanel } from './SlotDetailPanel';
@@ -21,6 +22,37 @@ export default function ParkingStatusAdmin() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  /** 관리자 전용 조회 결과는 공용 Zustand에 넣지 않습니다(사용자 화면 노출 방지). */
+  const [adminRows, setAdminRows] = useState<ParkingSpaceDto[] | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let inFlight = false;
+    let authorizationMissing = false;
+
+    const loadAdminRows = async () => {
+      if (inFlight || authorizationMissing || controller.signal.aborted) return;
+      inFlight = true;
+      try {
+        const rows = await fetchAdminParkingSpaces(controller.signal);
+        if (!controller.signal.aborted) setAdminRows(rows);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        // 관리자 로그인 이전에는 401이 정상: 공개 상태 조회는 계속 사용합니다.
+        if (error instanceof Error && error.message.includes('401')) {
+          authorizationMissing = true;
+        }
+        setAdminRows(null);
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    void loadAdminRows();
+    const timer = window.setInterval(() => { void loadAdminRows(); }, 5000);
+    return () => { window.clearInterval(timer); controller.abort(); };
+  }, []);
+
   const {
     selectedFloor,
     setSelectedFloor,
@@ -64,6 +96,20 @@ export default function ParkingStatusAdmin() {
     const unknown = total - disabled - occupied - reserved - available;
     return { total, occupied, reserved, available, disabled, unknown };
   };
+
+  /** 관리자 차량번호는 관리자 전용 응답에서만 꺼내 도면에 일시적으로 합칩니다. */
+  const adminMapSlots = useMemo(() => {
+    const byId = new Map((adminRows ?? []).map((row) => [row.parkingSpaceId, row]));
+    return slots.map((slot) => {
+      const row = slot.parkingSpaceId == null ? undefined : byId.get(slot.parkingSpaceId);
+      return {
+        ...slot,
+        vehicleNumber: slot.status === 'OCCUPIED' && row?.spaceStatusCode === 'OCCUPIED'
+          ? (row.vehicleNumber ?? undefined)
+          : undefined,
+      };
+    });
+  }, [slots, adminRows]);
 
   // 전체 45개에 대한 총괄 통계는 선택한 층과 무관합니다.
   const allSummary = summarize(slots);
@@ -157,7 +203,7 @@ export default function ParkingStatusAdmin() {
           <div className="card border-0 shadow-sm rounded-3 p-4 bg-white d-flex flex-column align-items-center">
             <ParkingMapView
               mode="admin"
-              slots={slots}
+              slots={adminMapSlots}
               currentFloor={selectedFloor}
               onFloorChange={(floor) => {
                 setSelectedFloor(floor);
