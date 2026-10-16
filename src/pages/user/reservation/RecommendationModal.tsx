@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import axios from 'axios';
 
 interface RecommendationModalProps {
   isOpen: boolean;
@@ -22,29 +23,119 @@ export default function RecommendationModal({
 
   if (!isOpen) return null;
 
-  const handleRunAnalysis = () => {
+  //10/15
+  // const handleRunAnalysis = () => {
+  //   setLoading(true);
+  //   setResultMessage(null);
+  //   setRecommendedSlot(null);
+
+  //   // AI 분석 시뮬레이션 (1.5초 지연)
+  //   setTimeout(() => {
+  //     setLoading(false);
+
+  //     // 빈 슬롯 중 첫 번째 자리를 추천 자리로 선정 (없으면 첫 번째 슬롯)
+  //     const targetSlot =
+  //       slots.find((s) => s.status === 'EMPTY' && s.slotType !== 'DISABLED') || slots[0];
+
+  //     if (targetSlot) {
+  //       setRecommendedSlot(targetSlot);
+  //       setResultMessage(
+  //         `AI 분석 완료: ${targetSlot.floor}층 ${targetSlot.slotNumber}구역이 출구와 가장 가깝고 비어있는 확률이 높습니다. 이 자리를 추천합니다!`,
+  //       );
+  //     } else {
+  //       setResultMessage('현재 예약 가능한 주차 공간이 없습니다.');
+  //     }
+  //   }, 1500);
+  // };
+
+  const handleRunAnalysis = async () => {
     setLoading(true);
     setResultMessage(null);
     setRecommendedSlot(null);
 
-    // AI 분석 시뮬레이션 (1.5초 지연)
-    setTimeout(() => {
-      setLoading(false);
+    //부트 서버(사용자) 주소
+    const BOOT_API_BASE_URL_U = import.meta.env.VITE_BOOT_API_BASE_URL_U
+    // FastAPI 서버 주소
+    const FASTAPI_BASE_URL = import.meta.env.VITE_AI_API_BASE_URL
 
-      // 빈 슬롯 중 첫 번째 자리를 추천 자리로 선정 (없으면 첫 번째 슬롯)
-      const targetSlot =
-        slots.find((s) => s.status === 'EMPTY' && s.slotType !== 'DISABLED') || slots[0];
+    // 로그인 기능 구현 전까지 office_id = 1로 고정
+    const officeId = 1;
+    // 테스트용 예약 예정 시간 (나중에 React 예약시간 상태값으로 변경)
+    const reservationAt = '2026-10-16T09:00:00';
 
-      if (targetSlot) {
-        setRecommendedSlot(targetSlot);
-        setResultMessage(
-          `AI 분석 완료: ${targetSlot.floor}층 ${targetSlot.slotNumber}구역이 출구와 가장 가깝고 비어있는 확률이 높습니다. 이 자리를 추천합니다!`,
-        );
-      } else {
-        setResultMessage('현재 예약 가능한 주차 공간이 없습니다.');
+    try {
+      // Spring Boot에 사용자 과거 주차이력 조회 요청
+      const response = await axios.get(`${BOOT_API_BASE_URL_U}/api/recmn/${officeId}`);
+
+      // Spring Boot에서 반환한 주차이력 데이터
+      const history = response.data;
+
+      console.log('사용자 과거 주차이력:', history);
+
+      if (!Array.isArray(history) || history.length === 0) {
+        setResultMessage('사용자의 과거 주차이력이 없습니다.');
+        return;
       }
-    }, 1500);
+
+      // 주차이력 조회 성공 메시지
+      //setResultMessage(
+      //`주차이력 ${history.length}건 조회 완료! AI 추천을 요청할 준비가 되었습니다.`,
+      //);
+
+      // 2. FastAPI 요청 형식에 맞게 변환
+      const historyData = history.map((item) => ({
+        entry_at: item.usage_date,
+        zone_code: item.target_zone,
+      }));
+
+      const requestData = {
+        office_id: officeId,
+        reservation_at: reservationAt,
+        history: historyData
+      };
+
+      console.log('FastAPI 요청 데이터:', requestData);
+
+      const aiResponse = await axios.post(
+        `${FASTAPI_BASE_URL}/api/recmn/predict`,
+        requestData
+      );
+
+      // 5. FastAPI 추천 결과 수신
+      const aiResult = aiResponse.data;
+
+      console.log('AI 추천 결과:', aiResult);
+
+      setResultMessage(
+        `AI 분석 완료! 추천 결과: ${JSON.stringify(aiResult)}`
+      );
+
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.error('요청 URL:', error.config?.url);
+        console.error('상태 코드:', error.response?.status);
+
+        // FastAPI가 반환한 검증 오류 목록
+        const details = error.response?.data?.detail;
+
+        if (Array.isArray(details)) {
+          console.table(details);
+
+          // 처음 5개 오류를 자세히 확인
+          console.log(
+            'FastAPI 검증 오류:',
+            JSON.stringify(details.slice(0, 5), null, 2)
+          );
+        } else {
+          console.error('서버 오류 상세:', error.response?.data);
+        }
+      }
+
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div
