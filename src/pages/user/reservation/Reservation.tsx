@@ -25,12 +25,10 @@ export default function Reservation() {
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [reservationExpired, setReservationExpired] = useState(false);
 
-  // 모달 상태 관리
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingSlot, setBookingSlot] = useState<ExtendedParkingSlot | null>(null);
   const [isRecommendationModalOpen, setIsRecommendationModalOpen] = useState(false);
 
-  // 백엔드에서 최신 예약 정보 불러오기
   const loadReservationFromApi = useCallback(async () => {
     try {
       const response = await fetch('/alpharking/api/reservation', {
@@ -65,6 +63,7 @@ export default function Reservation() {
     }
   }, []);
 
+  // 💡 5초마다 자동으로 최신 예약 상태 폴링 (새로고침 불필요)
   useEffect(() => {
     loadReservationFromApi();
 
@@ -83,7 +82,6 @@ export default function Reservation() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // 남은 시간 계산 로직
   useEffect(() => {
     if (!reservation || !reservation.reservation_end_at) {
       setRemainingTime(null);
@@ -120,7 +118,6 @@ export default function Reservation() {
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   };
 
-  // 예약 취소 핸들러 (백엔드 DELETE 연동)
   const handleCancelReservation = async () => {
     if (!reservation) return;
 
@@ -151,21 +148,39 @@ export default function Reservation() {
     }
   };
 
-  // 1. 내 예약 구획 매칭
-  const currentSlot = reservation?.parking_space_id
-    ? (rawSlots.find(
-        (s) =>
-          String(s.id) === String(reservation.parking_space_id) ||
-          15 + Number(s.slotNumber?.replace(/[^0-9]/g, '')) ===
-            reservation.parking_space_id,
-      ) ?? null)
-    : null;
+  const slots = rawSlots.map((slot) => {
+    if (!reservation) return slot;
+
+    const resSpaceId = reservation.parking_space_id;
+    let computedId = 16;
+    const slotIndex = rawSlots.findIndex((s) => s.id === slot.id);
+    if (slotIndex !== -1) {
+      computedId = 16 + slotIndex;
+    } else {
+      const numericMatch = slot.slotNumber?.replace(/[^0-9]/g, '');
+      computedId = numericMatch ? 15 + Number(numericMatch) : 16;
+    }
+
+    const isMatch = Number(resSpaceId) === Number(computedId);
+    const isCanceled = reservation.status_code === 'CANCELED';
+
+    if (isMatch && !isCanceled) {
+      return { ...slot, status: 'RESERVED' as const };
+    }
+    return slot;
+  });
+
+  const currentSlot =
+    slots.find((s) => {
+      if (!reservation) return false;
+      const resSpaceId = reservation.parking_space_id;
+      const slotIndex = rawSlots.findIndex((raw) => raw.id === s.id);
+      let computedId = slotIndex !== -1 ? 16 + slotIndex : 16;
+      return Number(resSpaceId) === Number(computedId);
+    }) ?? null;
 
   const currentFloor = currentSlot?.floor ?? 1;
   const selectedSlotId = currentSlot?.id ?? null;
-
-  // 2. 관리자 도면 구조를 해치지 않도록 원본 rawSlots 그대로 사용
-  const slots = rawSlots;
 
   return (
     <div className="myreservation-page">
@@ -323,7 +338,6 @@ export default function Reservation() {
         </div>
       </div>
 
-      {/* BookingModal / MyBookingModal 연동 */}
       {isBookingModalOpen && (
         <MyBookingModal
           slot={bookingSlot}
