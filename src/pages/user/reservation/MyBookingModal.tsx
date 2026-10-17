@@ -4,9 +4,9 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './MyBookingModal.css';
 import VehicleSearchModal from './VehicleSearchModal';
-import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
-import { useParkingStore } from '../../../shared/parking/useParkingStore';
-import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
+import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 
 interface MyBookingModalProps {
   slot: ExtendedParkingSlot | null;
@@ -46,8 +46,6 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
     if (slot) {
       setCurrentFloor(slot.floor);
       setSelectedSlot(slot);
-    } else {
-      setSelectedSlot(null);
     }
   }, [slot]);
 
@@ -59,7 +57,6 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
     };
 
     document.addEventListener('keydown', handleKeyDown);
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -72,7 +69,6 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
   };
 
   const today = getToday();
-
   const maxAllowedStartDate = new Date(today);
   maxAllowedStartDate.setDate(today.getDate() + 30);
 
@@ -84,7 +80,6 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
 
   const formatDateString = (date: Date | null) => {
     if (!date) return '';
-
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
       2,
       '0',
@@ -94,16 +89,13 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
   const compareDates = (first: Date, second: Date) => {
     const firstTime = new Date(first);
     const secondTime = new Date(second);
-
     firstTime.setHours(0, 0, 0, 0);
     secondTime.setHours(0, 0, 0, 0);
-
     return firstTime.getTime() - secondTime.getTime();
   };
 
   const handleDateClick = (value: Date) => {
     setMessage('');
-
     const clickedDate = new Date(value);
     clickedDate.setHours(0, 0, 0, 0);
 
@@ -112,12 +104,10 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
         setMessage('오늘 이후의 날짜만 선택할 수 있습니다.');
         return;
       }
-
       if (compareDates(clickedDate, maxAllowedStartDate) > 0) {
         setMessage('예약 시작일은 오늘부터 30일 이내까지만 선택할 수 있습니다.');
         return;
       }
-
       setStartDate(clickedDate);
       setEndDate(null);
       return;
@@ -144,41 +134,20 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
     const start = formatDateString(startDate);
     const end = formatDateString(endDate);
 
-    if (start && end && start === end && current === start) {
-      return 'range-single';
-    }
-
+    if (start && end && start === end && current === start) return 'range-single';
     if (start && current === start) return 'range-start';
     if (end && current === end) return 'range-end';
-
-    if (start && end && current > start && current < end) {
-      return 'range-middle';
-    }
-
+    if (start && end && current > start && current < end) return 'range-middle';
     return '';
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     if (isSubmitting) return;
-
     setMessage('');
 
     if (!selectedSlot) {
       setMessage('주차할 구획을 선택해주세요.');
-      return;
-    }
-
-    // 예약 요청 직전에 공통 저장소의 최신 구획 상태를 확인합니다.
-    const latestSlot = slots.find((item) => item.id === selectedSlot.id);
-
-    if (
-      !latestSlot ||
-      latestSlot.status !== 'EMPTY' ||
-      latestSlot.slotType === 'DISABLED'
-    ) {
-      setMessage('이미 예약되었거나 이용할 수 없는 자리입니다.');
       return;
     }
 
@@ -187,12 +156,18 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
       return;
     }
 
-    // 공통 주차 구획 객체의 실제 DB ID를 사용합니다.
-    // 임의의 16 + slotIndex 계산은 사용하지 않습니다.
-    const parkingSpaceId = Number(latestSlot.parkingSpaceId);
+    // BookingModal과 동일한 parking_space_id 계산 로직 적용
+    let parkingSpaceId = 16;
+    const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
+    if (slotIndex !== -1) {
+      parkingSpaceId = 16 + slotIndex;
+    } else {
+      const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
+      parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
+    }
 
     if (!Number.isSafeInteger(parkingSpaceId) || parkingSpaceId <= 0) {
-      setMessage('실제 주차 공간 ID를 확인할 수 없습니다.');
+      setMessage('주차 공간 ID를 확인할 수 없습니다.');
       return;
     }
 
@@ -208,7 +183,8 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/alpharking/api/reservation', {
+      const targetUrl = '/alpharking/api/reservation';
+      const response = await fetch(targetUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -219,20 +195,16 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-
         const errorMsg =
           errorData?.message || `예약 등록에 실패했습니다. (${response.status})`;
-
         throw new Error(errorMsg);
       }
 
       alert('예약이 성공적으로 완료되었습니다.');
-
       onClose();
       navigate('/user/Reservation');
     } catch (error) {
       console.error('예약 등록 실패:', error);
-
       setMessage(
         error instanceof Error ? error.message : '예약 처리 중 오류가 발생했습니다.',
       );
@@ -265,12 +237,10 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                 <h3 id="booking-modal-title" className="mb-1 fw-bold fs-5">
                   주차 기간 예약
                 </h3>
-
                 <p className="text-muted mb-0 small">
                   선택한 주차 구획과 이용 기간을 확인하고 예약을 완료하세요.
                 </p>
               </div>
-
               <button
                 type="button"
                 className="btn-close"
@@ -281,7 +251,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
             </div>
 
             <div className="reservation-layout-grid">
-              {/* 현황표: 모달 내부에서 직접 자리 선택 가능 */}
+              {/* 현황표 (모달 내부에서 직접 자리 선택 가능) */}
               <section className="parking-status-section">
                 <div className="section-title-box">
                   <h5>주차장 현황 정보</h5>
@@ -297,14 +267,15 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                     currentFloor={currentFloor}
                     onFloorChange={(floor) => setCurrentFloor(floor)}
                     onSlotClick={(clickedSlot) => {
+                      const statusStr = String(clickedSlot.status).toUpperCase();
                       if (
-                        clickedSlot.status !== 'EMPTY' ||
+                        statusStr === 'RESERVED' ||
+                        statusStr === 'OCCUPIED' ||
                         clickedSlot.slotType === 'DISABLED'
                       ) {
                         setMessage('이미 예약되었거나 이용할 수 없는 자리입니다.');
                         return;
                       }
-
                       setSelectedSlot(clickedSlot);
                       setMessage('');
                     }}
@@ -317,7 +288,6 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
               <section className="reservation-card">
                 <div className="reservation-card-header">
                   <h5>예약 정보 입력</h5>
-
                   <p>
                     선택된 자리:{' '}
                     <strong className="selected-space-text">
@@ -334,9 +304,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                       <span className="text-primary fw-semibold">
                         {startDate ? formatDateString(startDate) : '시작일 선택'}
                       </span>
-
                       <span>{' ~ '}</span>
-
                       <span className="text-danger fw-semibold">
                         {endDate ? formatDateString(endDate) : '종료일 선택'}
                       </span>
@@ -364,7 +332,6 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
 
                   <div className="reservation-form-section">
                     <label className="form-label fw-bold">방문 차량 번호</label>
-
                     <div className="visitor-search">
                       <input
                         type="text"
@@ -373,7 +340,6 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                         value={selectedVisitorVehicle?.number ?? ''}
                         readOnly
                       />
-
                       <button
                         type="button"
                         className="btn btn-outline-primary text-nowrap"

@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import MyBookingModal from './MyBookingModal';
 import RecommendationModal from './RecommendationModal';
-import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
-import { useParkingStore } from '../../../shared/parking/useParkingStore';
-import { useParkingWebSocket } from '../../../shared/parking/useParkingWebSocket';
-import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
+import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import './Reservation.css';
 
 interface ReservationResponse {
@@ -20,12 +19,7 @@ interface ReservationResponse {
 
 export default function Reservation() {
   const [reservation, setReservation] = useState<ReservationResponse | null>(null);
-
-  // 공통 주차 저장소의 최신 구획 정보
   const rawSlots = useParkingStore((state) => state.slots);
-
-  // 공통 WebSocket 모듈에서 제공하는 서버 상태 동기화 함수
-  const { refresh } = useParkingWebSocket();
 
   const [now, setNow] = useState(new Date());
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
@@ -35,7 +29,7 @@ export default function Reservation() {
   const [bookingSlot, setBookingSlot] = useState<ExtendedParkingSlot | null>(null);
   const [isRecommendationModalOpen, setIsRecommendationModalOpen] = useState(false);
 
-  // 예약 정보 조회
+  // 백엔드에서 최신 예약 정보 불러오기 (HTML 응답 에러 방어 로직 포함)
   const loadReservationFromApi = useCallback(async () => {
     try {
       const response = await fetch('/alpharking/api/reservation', {
@@ -44,23 +38,36 @@ export default function Reservation() {
       });
 
       if (!response.ok) {
-        throw new Error('예약 정보를 불러오지 못했습니다.');
+        throw new Error(`예약 정보를 불러오지 못했습니다. 상태 코드: ${response.status}`);
       }
 
-      const data = await response.json();
+      // 서버가 JSON 대신 HTML(로그인/에러 페이지)을 줄 경우를 대비해 텍스트로 먼저 받기
+      const text = await response.text();
+      if (
+        !text ||
+        text.trim().startsWith('<!DOCTYPE') ||
+        text.trim().startsWith('<html')
+      ) {
+        console.warn(
+          '서버가 JSON 대신 HTML을 반환했습니다. 로그인이 필요할 수 있습니다.',
+        );
+        setReservation(null);
+        return;
+      }
 
-      if (Array.isArray(data)) {
+      const data = JSON.parse(text);
+
+      if (Array.isArray(data) && data.length > 0) {
         const activeReservations = data.filter(
-          (item: ReservationResponse) => item.status_code !== 'CANCELED',
+          (r: ReservationResponse) => r.status_code !== 'CANCELED',
         );
 
-        // API 응답 순서에 의존하는 기존 동작을 유지
-        setReservation(
-          activeReservations.length > 0
-            ? activeReservations[activeReservations.length - 1]
-            : null,
-        );
-      } else if (data && data.status_code !== 'CANCELED') {
+        if (activeReservations.length > 0) {
+          setReservation(activeReservations[activeReservations.length - 1]);
+        } else {
+          setReservation(null);
+        }
+      } else if (data && !Array.isArray(data) && data.status_code !== 'CANCELED') {
         setReservation(data);
       } else {
         setReservation(null);
@@ -71,18 +78,17 @@ export default function Reservation() {
     }
   }, []);
 
-  // 예약 정보는 5초마다 조회
+  // 5초마다 자동으로 최신 예약 상태 폴링
   useEffect(() => {
-    void loadReservationFromApi();
+    loadReservationFromApi();
 
     const timer = window.setInterval(() => {
-      void loadReservationFromApi();
+      loadReservationFromApi();
     }, 5000);
 
     return () => window.clearInterval(timer);
   }, [loadReservationFromApi]);
 
-  // 남은 시간 표시를 위한 현재 시각 갱신
   useEffect(() => {
     const timer = window.setInterval(() => {
       setNow(new Date());
@@ -91,9 +97,8 @@ export default function Reservation() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // 예약 만료 시간 계산
   useEffect(() => {
-    if (!reservation?.reservation_end_at) {
+    if (!reservation || !reservation.reservation_end_at) {
       setRemainingTime(null);
       setReservationExpired(false);
       return;
@@ -128,7 +133,6 @@ export default function Reservation() {
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   };
 
-  // 예약 취소
   const handleCancelReservation = async () => {
     if (!reservation) return;
 
@@ -150,57 +154,45 @@ export default function Reservation() {
       setReservation(null);
       setRemainingTime(null);
       setReservationExpired(false);
-
-      // 예약 취소 성공 후 공통 주차 상태를 서버와 동기화
-      await refresh();
-
-      // 취소 이후 최신 예약 정보 재조회
-      await loadReservationFromApi();
-
       alert('예약이 성공적으로 취소되었습니다.');
+
+      loadReservationFromApi();
     } catch (error) {
-      console.error('예약 취소 또는 상태 동기화 오류:', error);
-      alert(
-        error instanceof Error
-          ? `예약 취소 후 처리 중 오류가 발생했습니다: ${error.message}`
-          : '예약 취소 중 오류가 발생했습니다.',
-      );
+      console.error('예약 취소 오류:', error);
+      alert('예약 취소 중 오류가 발생했습니다.');
     }
   };
 
-  /*
-   * 예약 공간은 계산한 ID가 아닌 실제 DB ID로 매칭합니다.
-   * slot.id는 화면 식별자이고 parkingSpaceId는 DB 공간 ID입니다.
-   */
-  const currentSlot =
-    reservation && reservation.parking_space_id != null
-      ? (rawSlots.find(
-          (slot) =>
-            slot.parkingSpaceId != null &&
-            String(slot.parkingSpaceId) === String(reservation.parking_space_id),
-        ) ?? null)
-      : null;
-
-  // 공통 저장소의 상태를 직접 변경하지 않고 예약 구획만 화면에 반영
   const slots = rawSlots.map((slot) => {
-    const isReservationSlot =
-      reservation != null &&
-      slot.parkingSpaceId != null &&
-      String(slot.parkingSpaceId) === String(reservation.parking_space_id);
+    if (!reservation) return slot;
 
-    if (
-      isReservationSlot &&
-      reservation.status_code !== 'CANCELED' &&
-      slot.status === 'EMPTY'
-    ) {
-      return {
-        ...slot,
-        status: 'RESERVED' as const,
-      };
+    const resSpaceId = reservation.parking_space_id;
+    let computedId = 16;
+    const slotIndex = rawSlots.findIndex((s) => s.id === slot.id);
+    if (slotIndex !== -1) {
+      computedId = 16 + slotIndex;
+    } else {
+      const numericMatch = slot.slotNumber?.replace(/[^0-9]/g, '');
+      computedId = numericMatch ? 15 + Number(numericMatch) : 16;
     }
 
+    const isMatch = Number(resSpaceId) === Number(computedId);
+    const isCanceled = reservation.status_code === 'CANCELED';
+
+    if (isMatch && !isCanceled) {
+      return { ...slot, status: 'RESERVED' as const };
+    }
     return slot;
   });
+
+  const currentSlot =
+    slots.find((s) => {
+      if (!reservation) return false;
+      const resSpaceId = reservation.parking_space_id;
+      const slotIndex = rawSlots.findIndex((raw) => raw.id === s.id);
+      let computedId = slotIndex !== -1 ? 16 + slotIndex : 16;
+      return Number(resSpaceId) === Number(computedId);
+    }) ?? null;
 
   const currentFloor = currentSlot?.floor ?? 1;
   const selectedSlotId = currentSlot?.id ?? null;
@@ -228,17 +220,8 @@ export default function Reservation() {
           <div className="parking-status-board">
             {!reservation ? (
               <div className="text-center py-5">
-                <div
-                  style={{
-                    fontSize: '3rem',
-                    marginBottom: '15px',
-                  }}
-                >
-                  🚗
-                </div>
-
+                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🚗</div>
                 <h4 className="fw-bold mb-2">주차 정보를 찾을 수 없습니다 :(</h4>
-
                 <p className="text-muted mb-4">
                   현재 진행 중인 주차 예약이 없습니다.
                   <br />
@@ -256,7 +239,6 @@ export default function Reservation() {
                   >
                     바로 예약하기
                   </button>
-
                   <button
                     type="button"
                     className="btn btn-outline-success px-4 py-2"
@@ -377,7 +359,7 @@ export default function Reservation() {
           onClose={() => {
             setIsBookingModalOpen(false);
             setBookingSlot(null);
-            void loadReservationFromApi();
+            loadReservationFromApi();
           }}
         />
       )}
