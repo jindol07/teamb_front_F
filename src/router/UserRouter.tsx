@@ -1,4 +1,4 @@
-import { Route } from 'react-router-dom';
+import { Navigate, Route } from 'react-router-dom';
 import UserLayout from '../layout/UserLayout';
 import UserLogin from '../pages/user/login/UserLogin';
 import UserHome from '../pages/user/home/UserHome';
@@ -9,6 +9,7 @@ import UserSignUp from '../pages/user/login/UserSignUp';
 import MyPage from '../pages/user/mypage/MyPage';
 import NoticeDetail from '../pages/user/notice/NoticeDetail';
 import AlpacaChatbot from '../pages/user/chatbot/AlpacaChatbot';
+import RequireAuth from '../auth/RequireAuthProps';
 
 /**
  * UserRoutes
@@ -27,6 +28,10 @@ import AlpacaChatbot from '../pages/user/chatbot/AlpacaChatbot';
 export default function UserRoutes() {
   return (
     <>
+      {/* 첫 화면 접속 시 로그인 화면으로 이동 */}
+      <Route path="/" element={<Navigate to="/user/login" replace />} />
+
+
       {/* 로그인 화면은 공통 Header/Footer가 필요 없으므로 UserLayout 밖에 둡니다 */}
       <Route path="/user/login" element={<UserLogin />} />
       <Route path="/user/signup" element={<UserSignUp />} />

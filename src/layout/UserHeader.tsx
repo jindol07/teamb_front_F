@@ -1,5 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { currentUserMock } from '../mock/userMock';
+import { logoutAction } from '../auth/actions/authActions';
+import { useAppDispatch } from '../auth/reducers/store';
 
 /**
  * UserHeader
@@ -8,9 +10,10 @@ import { currentUserMock } from '../mock/userMock';
  */
 export default function UserHeader() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const handleLogout = () => {
-    // 실제 로그아웃 처리는 아직 구현하지 않습니다. (문서 41번 참고)
+    logoutAction()(dispatch);
     navigate('/user/login');
   };
 

@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
+import RequireAuth from '../auth/RequireAuthProps';
 
 /**
  * AdminLayout
@@ -16,14 +17,17 @@ import AdminSidebar from './AdminSidebar';
  */
 export default function AdminLayout() {
   return (
-    <div className="admin-layout">
-      <AdminHeader />
-      <div className="d-flex">
-        <AdminSidebar />
-        <main className="admin-content flex-grow-1 p-4">
-          <Outlet />
-        </main>
+    <RequireAuth allowedRoles={["ADMIN"]}>
+      <div className="admin-layout">
+        <AdminHeader />
+        <div className="d-flex">
+          <AdminSidebar />
+          <main className="admin-content flex-grow-1 p-4">
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </RequireAuth>
+
   );
 }

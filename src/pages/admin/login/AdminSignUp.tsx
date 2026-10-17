@@ -1,18 +1,20 @@
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import VehicleList from '../../../components/common/VehicleList';
 
 /**
- * 관리자 회원가입 페이지 (/admin/signup)
+ * 입주민 회원가입 페이지 (/user/signup)
  * 현재는 실제 회원가입/인증 기능을 구현하지 않습니다.
  */
-export default function AdminSignup() {
+export default function UserSignUp() {
+  const [vehicleList, setVehicleList] = useState();
   const navigate = useNavigate();
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // TODO: 추후 Axios로 관리자 회원가입 API를 호출합니다.
-    navigate('/admin/login');
+    // TODO: 추후 Axios로 회원가입 API를 호출합니다.
+    navigate('/user/login');
   };
 
   return (
@@ -22,20 +24,20 @@ export default function AdminSignup() {
         {/* 제목 */}
         <div className="text-center mb-4">
           <h2 className="fw-bold text-primary">주차관제 서비스</h2>
-          <p className="text-secondary">관리자 회원가입</p>
+          <p className="text-secondary">입주민 회원가입</p>
         </div>
 
         <form onSubmit={handleSubmit}>
 
           {/* 아이디 */}
           <div className="mb-3">
-            <label htmlFor="adminId" className="form-label">
+            <label htmlFor="userId" className="form-label">
               아이디
             </label>
 
             <input
               type="text"
-              id="adminId"
+              id="userId"
               className="form-control"
               placeholder="아이디를 입력해주세요"
             />
@@ -44,13 +46,13 @@ export default function AdminSignup() {
 
           {/* 비밀번호 */}
           <div className="mb-3">
-            <label htmlFor="adminPw" className="form-label">
+            <label htmlFor="userPw" className="form-label">
               비밀번호
             </label>
 
             <input
               type="password"
-              id="adminPw"
+              id="userPw"
               className="form-control"
               placeholder="비밀번호를 입력해주세요"
             />
@@ -59,44 +61,29 @@ export default function AdminSignup() {
 
           {/* 비밀번호 확인 */}
           <div className="mb-3">
-            <label htmlFor="adminPwConfirm" className="form-label">
+            <label htmlFor="userPwConfirm" className="form-label">
               비밀번호 확인
             </label>
 
             <input
               type="password"
-              id="adminPwConfirm"
+              id="userPwConfirm"
               className="form-control"
               placeholder="비밀번호를 다시 입력해주세요"
             />
           </div>
 
 
-          {/* 이름 */}
-          <div className="mb-3">
-            <label htmlFor="adminName" className="form-label">
-              이름
-            </label>
-
-            <input
-              type="text"
-              id="adminName"
-              className="form-control"
-              placeholder="이름을 입력해주세요"
-            />
-          </div>
-
-
           {/* 이메일 */}
           <div className="mb-3">
-            <label htmlFor="adminEmail" className="form-label">
+            <label htmlFor="email" className="form-label">
               이메일
             </label>
 
             <div className="input-group">
               <input
                 type="email"
-                id="adminEmail"
+                id="email"
                 className="form-control"
                 placeholder="이메일을 입력해주세요"
               />
@@ -141,63 +128,70 @@ export default function AdminSignup() {
           </div>
 
 
-          {/* 관리사무소 코드 */}
+          {/* 동 / 호수 */}
           <div className="mb-3">
-            <label htmlFor="officeCode" className="form-label">
-              관리사무소 코드
+            <label className="form-label">
+              거주지
             </label>
 
-            <input
-              type="text"
-              id="officeCode"
-              className="form-control"
-              placeholder="관리사무소 코드를 입력해주세요"
-            />
+            <div className="d-flex gap-2">
+              <input
+                type="text"
+                id="dong"
+                className="form-control"
+                placeholder="동"
+              />
 
-            <div className="form-text">
-              소속된 관리사무소에서 발급받은 코드를 입력해주세요.
+              <input
+                type="text"
+                id="ho"
+                className="form-control"
+                placeholder="호수"
+              />
             </div>
           </div>
 
 
-          {/* 관리자 인증번호 */}
-          {/* <div className="mb-3">
-            <label htmlFor="adminCode" className="form-label">
-              관리자 인증번호
+          {/* 입주민 인증번호 */}
+          <div className="mb-3">
+            <label htmlFor="residentCode" className="form-label">
+              입주민 인증번호
             </label>
 
             <input
               type="text"
-              id="adminCode"
+              id="residentCode"
               className="form-control"
-              placeholder="관리자 인증번호를 입력해주세요"
+              placeholder="입주민 인증번호를 입력해주세요"
             />
 
             <div className="form-text">
-              관리사무소에서 발급받은 관리자 인증번호를 입력해주세요.
+              관리사무소에서 발급받은 입주민 인증번호를 입력해주세요.
             </div>
-          </div> */}
+          </div>
 
 
-          {/* 직책 */}
-          {/* <div className="mb-3">
-            <label htmlFor="position" className="form-label">
-              직책
+          {/* 차량 등록 */}
+          <div className="mb-3">
+            <label htmlFor="carNumber" className="form-label">
+              차량 등록 <span className="text-secondary"></span>
             </label>
 
-            <select
-              id="position"
-              className="form-select"
-              defaultValue=""
-            >
-              <option value="" disabled>
-                직책을 선택해주세요
-              </option>
-              <option value="MANAGER">관리소장</option>
-              <option value="PARKING_MANAGER">주차관리자</option>
-              <option value="STAFF">관리사무소 직원</option>
-            </select>
-          </div> */}
+            {/* <input
+              type="text"
+              id="carNumber"
+              className="form-control"
+              placeholder="예: 12가 3456"
+              required
+            /> */}
+
+            <VehicleList addVehicle={setVehicleList} />
+
+            <div className="form-text" style={{marginTop:"1rem"}}>
+              이용할 차량을 최소 1대 등록해주세요.
+            </div>
+          </div>
+
 
 
           {/* 약관 동의 */}
@@ -231,8 +225,7 @@ export default function AdminSignup() {
                 htmlFor="terms"
                 className="form-check-label"
               >
-                서비스 이용약관 동의{' '}
-                <span className="text-danger">(필수)</span>
+                이용약관 동의 <span className="text-danger">(필수)</span>
               </label>
             </div>
 
@@ -247,8 +240,7 @@ export default function AdminSignup() {
                 htmlFor="privacy"
                 className="form-check-label"
               >
-                개인정보 수집 및 이용 동의{' '}
-                <span className="text-danger">(필수)</span>
+                개인정보 수집 및 이용 동의 <span className="text-danger">(필수)</span>
               </label>
             </div>
 
@@ -260,18 +252,18 @@ export default function AdminSignup() {
             type="submit"
             className="btn btn-primary w-100 mb-3"
           >
-            관리자 회원가입
+            회원가입
           </button>
 
 
           {/* 로그인 이동 */}
           <div className="text-center small">
-            이미 관리자 계정이 있으신가요?{' '}
+            이미 회원이신가요?{' '}
             <Link
-              to="/admin/login"
+              to="/user/login"
               className="text-decoration-none"
             >
-              관리자 로그인
+              로그인
             </Link>
           </div>
 
