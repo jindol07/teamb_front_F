@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import MyBookingModal from './MyBookingModal';
 import RecommendationModal from './RecommendationModal';
-import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
-import { useParkingStore } from '../../../shared/parking/useParkingStore';
-import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
+import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import './Reservation.css';
 
 interface ReservationResponse {
@@ -29,6 +29,7 @@ export default function Reservation() {
   const [bookingSlot, setBookingSlot] = useState<ExtendedParkingSlot | null>(null);
   const [isRecommendationModalOpen, setIsRecommendationModalOpen] = useState(false);
 
+  // 백엔드에서 최신 예약 정보 불러오기 (HTML 응답 에러 방어 로직 포함)
   const loadReservationFromApi = useCallback(async () => {
     try {
       const response = await fetch('/alpharking/api/reservation', {
@@ -37,10 +38,24 @@ export default function Reservation() {
       });
 
       if (!response.ok) {
-        throw new Error('예약 정보를 불러오지 못했습니다.');
+        throw new Error(`예약 정보를 불러오지 못했습니다. 상태 코드: ${response.status}`);
       }
 
-      const data = await response.json();
+      // 서버가 JSON 대신 HTML(로그인/에러 페이지)을 줄 경우를 대비해 텍스트로 먼저 받기
+      const text = await response.text();
+      if (
+        !text ||
+        text.trim().startsWith('<!DOCTYPE') ||
+        text.trim().startsWith('<html')
+      ) {
+        console.warn(
+          '서버가 JSON 대신 HTML을 반환했습니다. 로그인이 필요할 수 있습니다.',
+        );
+        setReservation(null);
+        return;
+      }
+
+      const data = JSON.parse(text);
 
       if (Array.isArray(data) && data.length > 0) {
         const activeReservations = data.filter(
@@ -63,7 +78,7 @@ export default function Reservation() {
     }
   }, []);
 
-  // 💡 5초마다 자동으로 최신 예약 상태 폴링 (새로고침 불필요)
+  // 5초마다 자동으로 최신 예약 상태 폴링
   useEffect(() => {
     loadReservationFromApi();
 
