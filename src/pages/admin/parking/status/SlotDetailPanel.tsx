@@ -7,7 +7,7 @@
  */
 import { useState, useEffect } from 'react';
 import type { FC } from 'react';
-import { ExtendedParkingSlot, SlotStatusType, ExtendedSlotType } from './parking';
+import { ExtendedParkingSlot, SlotStatusType, ExtendedSlotType } from '../../../../shared/parking/parking';
 
 /** 학습 해설: 부모가 선택 구획, 닫기 함수, 저장 콜백을 전달하기 위한 계약입니다. */
 interface SlotDetailPanelProps {

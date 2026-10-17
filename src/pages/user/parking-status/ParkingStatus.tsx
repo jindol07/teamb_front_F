@@ -18,13 +18,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
-import { useParkingStore } from '../../admin/parking/status/useParkingStore';
-import { useParkingSpaceSync } from '../../admin/parking/status/useParkingSpaceSync';
+import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../shared/parking/useParkingStore';
+import { useParkingSpaceSync } from '../../../shared/parking/useParkingSpaceSync';
 
 import type {
   ExtendedParkingSlot,
-} from '../../admin/parking/status/parking';
+} from '../../../shared/parking/parking';
 
 import ParkingReservationModal from '../reservation/ParkingReservationModal';
 

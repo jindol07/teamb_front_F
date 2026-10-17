@@ -7,9 +7,9 @@
  * 선택된 구획의 층과 구획 정보를 표시합니다.
  */
 import { useEffect } from 'react';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
-import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
-import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import BookingModal from './BookingModal';
 
 /** 예약 모달 외부 인터페이스 */

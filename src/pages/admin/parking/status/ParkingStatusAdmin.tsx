@@ -5,12 +5,12 @@
  * 저장 버튼 클릭 전에는 서버 상태를 변경하지 않습니다.
  */
 import { useEffect, useMemo, useState } from 'react';
-import { fetchAdminParkingSpaces, saveParkingSpace } from './parkingSpaceApi';
-import type { ParkingSpaceDto } from './parkingSpaceApi';
-import { ParkingMapView } from './ParkingMapView';
-import { useParkingStore } from './useParkingStore';
+import { fetchAdminParkingSpaces, saveParkingSpace } from '../../../../shared/parking/parkingSpaceApi';
+import type { ParkingSpaceDto } from '../../../../shared/parking/parkingSpaceApi';
+import { ParkingMapView } from '../../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../../shared/parking/useParkingStore';
 import { SlotDetailPanel } from './SlotDetailPanel';
-import { useParkingSpaceSync } from './useParkingSpaceSync';
+import { useParkingSpaceSync } from '../../../../shared/parking/useParkingSpaceSync';
 
 /**
  * [관리자 주차관제 메인 페이지 컴포넌트]

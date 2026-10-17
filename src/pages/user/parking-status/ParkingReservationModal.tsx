@@ -7,7 +7,7 @@
  * 현재 코드는 예약 확정을 가장하지 않으며 ESC/배경 클릭으로 닫을 수 있음.
  */
 import React, { useEffect } from 'react';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 
 /** 예약 담당자와 연동할 모달의 경계 컴포넌트. 실제 신청/확정은 구현하지 않습니다. */
 /** 학습 해설: 예약 담당자와 합의할 외부 인터페이스. slot에는 선택 구획 전체 정보가 들어갑니다. */

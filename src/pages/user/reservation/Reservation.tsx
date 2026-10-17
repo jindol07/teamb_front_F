@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import MyBookingModal from './MyBookingModal'; // <-- 기존 BookingModal 대신 MyBookingModal 임포트
 import RecommendationModal from './RecommendationModal';
-import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
-import { useParkingStore } from '../../admin/parking/status/useParkingStore';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../shared/parking/useParkingStore';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 import './Reservation.css';
 
 interface Reservation {
