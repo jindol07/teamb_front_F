@@ -6,7 +6,7 @@ import './MyBookingModal.css';
 import VehicleSearchModal from './VehicleSearchModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
-import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 
 interface MyBookingModalProps {
   slot: ExtendedParkingSlot | null;
@@ -156,7 +156,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
       return;
     }
 
-    // 💡 BookingModal과 동일한 parking_space_id 계산 로직 적용
+    // BookingModal과 동일한 parking_space_id 계산 로직 적용
     let parkingSpaceId = 16;
     const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
     if (slotIndex !== -1) {
