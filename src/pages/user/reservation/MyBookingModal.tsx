@@ -13,37 +13,19 @@ interface MyBookingModalProps {
   onClose: () => void;
 }
 
-export interface ReservationPayload {
-  startDate: string;
-  endDate: string;
-  vehicleType: 'visitor';
-  vehicleId: string | null;
-  vehicleLabel: string;
-  spaceId: string | number;
-  spaceNumber: string;
-  floor: number;
-}
-
 interface VisitorVehicle {
   id: number;
   number: string;
 }
 
-const processReservation = async (data: ReservationPayload) => {
-  const reservationData = {
-    ...data,
-    createdAt: new Date().toISOString(),
-    status: 'reserved',
-  };
-
-  sessionStorage.setItem('myReservation', JSON.stringify(reservationData));
-  window.dispatchEvent(new StorageEvent('storage', { key: 'myReservation' }));
-
-  return {
-    success: true,
-    message: '예약이 완료되었습니다.',
-  };
-};
+interface ReservationRequest {
+  parking_space_id: number;
+  vehicle_id: number | null;
+  vehicle_number: string;
+  reservation_type_code: string;
+  start_date_str: string;
+  end_date_str: string;
+}
 
 export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
   const navigate = useNavigate();
@@ -58,6 +40,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVisitorVehicle, setSelectedVisitorVehicle] =
     useState<VisitorVehicle | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (slot) {
@@ -68,7 +51,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !isSubmitting) {
         onClose();
       }
     };
@@ -77,7 +60,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, isSubmitting]);
 
   const getToday = () => {
     const date = new Date();
@@ -160,6 +143,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setMessage('');
 
     if (!selectedSlot) {
@@ -172,27 +156,60 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
       return;
     }
 
-    const payload: ReservationPayload = {
-      startDate: formatDateString(startDate),
-      endDate: formatDateString(endDate),
-      vehicleType: 'visitor',
-      vehicleId: null,
-      vehicleLabel: selectedVisitorVehicle.number,
-      spaceId: selectedSlot.id,
-      spaceNumber: selectedSlot.slotNumber,
-      floor: selectedSlot.floor,
+    // 💡 BookingModal과 동일한 parking_space_id 계산 로직 적용
+    let parkingSpaceId = 16;
+    const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
+    if (slotIndex !== -1) {
+      parkingSpaceId = 16 + slotIndex;
+    } else {
+      const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
+      parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
+    }
+
+    if (!Number.isSafeInteger(parkingSpaceId) || parkingSpaceId <= 0) {
+      setMessage('주차 공간 ID를 확인할 수 없습니다.');
+      return;
+    }
+
+    const request: ReservationRequest = {
+      parking_space_id: parkingSpaceId,
+      vehicle_id: selectedVisitorVehicle.id || null,
+      vehicle_number: selectedVisitorVehicle.number,
+      reservation_type_code: 'VISITOR',
+      start_date_str: formatDateString(startDate),
+      end_date_str: formatDateString(endDate),
     };
 
+    setIsSubmitting(true);
+
     try {
-      const result = await processReservation(payload);
-      if (!result.success) {
-        setMessage(result.message);
-        return;
+      const targetUrl = '/alpharking/api/reservation';
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMsg =
+          errorData?.message || `예약 등록에 실패했습니다. (${response.status})`;
+        throw new Error(errorMsg);
       }
+
+      alert('예약이 성공적으로 완료되었습니다.');
       onClose();
       navigate('/user/Reservation');
-    } catch {
-      setMessage('예약 처리 중 오류가 발생했습니다.');
+    } catch (error) {
+      console.error('예약 등록 실패:', error);
+      setMessage(
+        error instanceof Error ? error.message : '예약 처리 중 오류가 발생했습니다.',
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -201,7 +218,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
       className="reservation-modal-backdrop"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (event.target === event.currentTarget && !isSubmitting) {
           onClose();
         }
       }}
@@ -229,11 +246,12 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                 className="btn-close"
                 aria-label="모달 닫기"
                 onClick={onClose}
+                disabled={isSubmitting}
               />
             </div>
 
             <div className="reservation-layout-grid">
-              {/* 현황표 (예약된 자리 클릭 방지 및 상태 처리) */}
+              {/* 현황표 (모달 내부에서 직접 자리 선택 가능) */}
               <section className="parking-status-section">
                 <div className="section-title-box">
                   <h5>주차장 현황 정보</h5>
@@ -249,13 +267,11 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                     currentFloor={currentFloor}
                     onFloorChange={(floor) => setCurrentFloor(floor)}
                     onSlotClick={(clickedSlot) => {
-                      // status 값이 'available' 또는 빈 자리 상태일 때만 선택 허용
-                      // (프로젝트 내 슬롯 상태 정의에 맞추어 점유 상태 체크)
-                      const statusStr = String(clickedSlot.status).toLowerCase();
+                      const statusStr = String(clickedSlot.status).toUpperCase();
                       if (
-                        statusStr === 'reserved' ||
-                        statusStr === 'occupied' ||
-                        statusStr === 'disabled'
+                        statusStr === 'RESERVED' ||
+                        statusStr === 'OCCUPIED' ||
+                        clickedSlot.slotType === 'DISABLED'
                       ) {
                         setMessage('이미 예약되었거나 이용할 수 없는 자리입니다.');
                         return;
@@ -328,6 +344,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                         type="button"
                         className="btn btn-outline-primary text-nowrap"
                         onClick={() => setIsVehicleModalOpen(true)}
+                        disabled={isSubmitting}
                       >
                         차량 검색
                       </button>
@@ -337,8 +354,9 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                   <button
                     type="submit"
                     className="btn btn-primary w-100 reservation-button"
+                    disabled={isSubmitting}
                   >
-                    예약하기
+                    {isSubmitting ? '예약 처리 중...' : '예약하기'}
                   </button>
 
                   {message && (
@@ -357,7 +375,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
           onClose={() => setIsVehicleModalOpen(false)}
           onSelectVehicle={(vehicleNumber) => {
             setSelectedVisitorVehicle({
-              id: 999,
+              id: 0,
               number: vehicleNumber,
             });
             setMessage('');
