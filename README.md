@@ -493,3 +493,6 @@ npm install lucide-react
 
 --1015
 npm install axios  
+
+--1017
+npm install react-icons
