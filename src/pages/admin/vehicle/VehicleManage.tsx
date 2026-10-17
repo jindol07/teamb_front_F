@@ -1,37 +1,38 @@
-import { ChangeEvent, FormEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import styles from './Vehicle.module.css';
 import ApartmentMap from './apartment/ApartmentMap';
 import VehicleDetail from './VehicleDetail';
 import AdditionalVehicleManagement from './AdditionalVehicleManagement';
-import { mockVehicleData } from '../../../mock/additionalMock';
-import { Fine, FineReason, FineStatus, useVehicleStore, Vehicle, VehicleType } from '../vehicle/vehicleStore';
+import AdditionalVehicleDetail from './AdditionalDetail';
+import {
+  AdditionalVehicleRequest,
+  Fine,
+  FineReason,
+  FineStatus,
+  useVehicleStore,
+  Vehicle,
+  VehicleType,
+} from './vehicleStore';
 
-type ActiveMenu =
-  | 'list'
-  | 'register'
-  | 'upload'
-  | 'status'
-  | 'edit'
-  | 'plus'
-  | 'detail';
+type ActiveMenu = 'list' | 'register' | 'upload' | 'status' | 'edit' | 'plus' | 'detail';
 
 interface VehicleForm {
-  vehicleNumber: string;
-  vehicleType: VehicleType;
-  vehicleModel: string;
+  vehiclenumber: string;
+  vehicletypecode: VehicleType;
+  vehiclemodel: string;
   building: string;
-  unit: string;
-  ownerName: string;
+  officenumber: string;
+  ownername: string;
   registeredAt: string;
 }
 
 interface VehiclePrediction {
-  vehicleType: VehicleType;
+  vehicletypecode: VehicleType;
 }
 
 interface FineForm {
-  vehicleId: string;
-  violationDate: string;
+  vehicleid: string;
+  violationdate: string;
   reason: FineReason;
   amount: string;
   status: FineStatus;
@@ -45,7 +46,7 @@ const MENU_ITEMS: {
   { key: 'list', label: '차량 등록 현황' },
   { key: 'upload', label: '파일 업로드' },
   { key: 'status', label: '주정차 관리' },
-  { key: 'plus', label: '추가 등록 차량 관리' },
+  { key: 'plus', label: '신청 관리' },
 ];
 
 const getToday = (): string => {
@@ -53,55 +54,108 @@ const getToday = (): string => {
 };
 
 const createInitialVehicleForm = (): VehicleForm => ({
-  vehicleNumber: '',
-  vehicleType: '승용차',
-  vehicleModel: '',
+  vehiclenumber: '',
+  vehicletypecode: '승용차',
+  vehiclemodel: '',
   building: '',
-  unit: '',
-  ownerName: '',
+  officenumber: '',
+  ownername: '',
   registeredAt: getToday(),
 });
 
 const createInitialFineForm = (): FineForm => ({
-  vehicleId: '',
-  violationDate: getToday(),
+  vehicleid: '',
+  violationdate: getToday(),
   reason: '지정구역 위반',
   amount: '50000',
   status: '미조치',
   memo: '',
 });
 
-const predictVehicle = (vehicleNumber: string): VehiclePrediction | null => {
-  const number = vehicleNumber.replace(/\s/g, '').trim();
+const predictVehicle = (vehiclenumber: string): VehiclePrediction | null => {
+  const number = vehiclenumber.replace(/\s/g, '').trim();
   if (!number) return null;
   const numberMatches = number.match(/\d/g);
-  if (!numberMatches?.length) return { vehicleType: '승용차' };
+  if (!numberMatches?.length) return { vehicletypecode: '승용차' };
   const lastNumber = Number(numberMatches[numberMatches.length - 1]);
 
   switch (lastNumber) {
     case 0:
     case 5:
-      return { vehicleType: 'SUV' };
+      return { vehicletypecode: 'SUV' };
     case 1:
     case 6:
-      return { vehicleType: '경차' };
+      return { vehicletypecode: '경차' };
     case 2:
     case 7:
-      return { vehicleType: '승합차' };
+      return { vehicletypecode: '승합차' };
     default:
-      return { vehicleType: '승용차' };
+      return { vehicletypecode: '승용차' };
   }
 };
 
 export default function VehicleManage() {
   const vehicles = useVehicleStore((state) => state.vehicles);
   const fines = useVehicleStore((state) => state.fines);
+  const fetchVehicles = useVehicleStore((state) => state.fetchVehicles);
   const addVehicle = useVehicleStore((state) => state.addVehicle);
   const updateVehicle = useVehicleStore((state) => state.updateVehicle);
   const deleteVehicle = useVehicleStore((state) => state.deleteVehicle);
   const addFine = useVehicleStore((state) => state.addFine);
   const updateFine = useVehicleStore((state) => state.updateFine);
   const deleteFine = useVehicleStore((state) => state.deleteFine);
+  const [selectedAdditionalRequest, setSelectedAdditionalRequest] =
+    useState<AdditionalVehicleRequest | null>(null);
+  const fetchAdditionalVehicleRequests = useVehicleStore(
+    (state) => state.fetchAdditionalVehicleRequests,
+  );
+  const additionalVehicleRequests = useVehicleStore(
+    (state) => state.additionalVehicleRequests,
+  );
+  const approveAdditionalVehicleRequest = useVehicleStore(
+    (state) => state.approveAdditionalVehicleRequest,
+  );
+
+  const rejectAdditionalVehicleRequest = useVehicleStore(
+    (state) => state.rejectAdditionalVehicleRequest,
+  );
+
+  const handleApproveRequest = async (request: AdditionalVehicleRequest) => {
+    // 지금은 Admin 계정을 1로 임시 지정
+    const success = await approveAdditionalVehicleRequest(request.id, 1);
+
+    if (!success) {
+      alert('차량 신청 승인에 실패했습니다.');
+      return;
+    }
+
+    await fetchVehicles();
+    await fetchAdditionalVehicleRequests();
+
+    alert('추가 차량 신청을 승인했습니다.');
+  };
+
+  const handleRejectRequest = async (
+    request: AdditionalVehicleRequest,
+    reason: string,
+  ) => {
+    // 지금은 Admin 계정을 1로 임시 지정
+    const success = await rejectAdditionalVehicleRequest(request.id, 1, reason); 
+
+    if (!success) {
+      alert('차량 신청 반려에 실패했습니다. 반려 사유를 확인해주세요.');
+      return;
+    }
+
+    await fetchAdditionalVehicleRequests();
+
+    alert('차량 신청을 반려했습니다.');
+  };
+  useEffect(() => {
+    fetchVehicles().catch((error) => {
+      console.error('차량 목록 조회 실패:', error);
+    });
+  }, [fetchVehicles]);
 
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>('list');
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
@@ -119,59 +173,32 @@ export default function VehicleManage() {
 
   const filteredVehicles = vehicles.filter((vehicle) => {
     const keyword = vehicleSearch.trim().toLowerCase();
+
     if (!keyword) return true;
+
     return (
-      vehicle.vehicleNumber.toLowerCase().includes(keyword) ||
-      vehicle.ownerName.toLowerCase().includes(keyword) ||
-      vehicle.building.toLowerCase().includes(keyword) ||
-      vehicle.unit.toLowerCase().includes(keyword)
+      vehicle.vehiclenumber.toLowerCase().includes(keyword) ||
+      vehicle.ownername.toLowerCase().includes(keyword) ||
+      String((vehicle as any).building ?? '')
+        .toLowerCase()
+        .includes(keyword) ||
+      String(vehicle.officenumber ?? '')
+        .toLowerCase()
+        .includes(keyword)
     );
   });
-
   const filteredFines = fines.filter((fine) => {
     const keyword = fineSearch.trim().toLowerCase();
-    const vehicle = vehicles.find((item) => item.id === fine.vehicleId);
+    const vehicle = vehicles.find((item) => item.vehicleid === fine.vehicleid);
     const matchesKeyword =
       !keyword ||
-      vehicle?.vehicleNumber.toLowerCase().includes(keyword) ||
-      vehicle?.ownerName.toLowerCase().includes(keyword) ||
+      vehicle?.vehiclenumber.toLowerCase().includes(keyword) ||
+      vehicle?.ownername.toLowerCase().includes(keyword) ||
       fine.reason.toLowerCase().includes(keyword);
 
     const matchesStatus = fineStatusFilter === '전체' || fine.status === fineStatusFilter;
     return matchesKeyword && matchesStatus;
   });
-
-  const handleVehicleNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setVehicleForm((prev) => ({ ...prev, vehicleNumber: e.target.value }));
-    setPrediction(null);
-    setPredictionChecked(false);
-  };
-
-  const handleVehiclePrediction = () => {
-    const vehicleNumber = vehicleForm.vehicleNumber.trim();
-    if (!vehicleNumber) {
-      alert('차량번호를 입력해주세요.');
-      return;
-    }
-    setIsPredicting(true);
-    const result = predictVehicle(vehicleNumber);
-    setPrediction(result);
-    if (result) {
-      setVehicleForm((prev) => ({ ...prev, vehicleType: result.vehicleType }));
-    }
-    setPredictionChecked(true);
-    setIsPredicting(false);
-  };
-
-  const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setVehicleForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFineFormChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFineForm((prev) => ({ ...prev, [name]: value }));
-  };
 
   const resetVehicleForm = () => {
     setVehicleForm(createInitialVehicleForm());
@@ -186,23 +213,35 @@ export default function VehicleManage() {
     setEditingFineId(null);
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const vehicleNumber = vehicleForm.vehicleNumber.trim();
-    const ownerName = vehicleForm.ownerName.trim();
+    const vehiclenumber = vehicleForm.vehiclenumber.trim();
+    const ownername = vehicleForm.ownername.trim();
     const building = vehicleForm.building.trim();
-    const unit = vehicleForm.unit.trim();
+    const officenumber = vehicleForm.officenumber.trim();
 
-    if (!vehicleNumber) { alert('차량번호를 입력해주세요.'); return; }
-    if (!ownerName) { alert('차주명을 입력해주세요.'); return; }
-    if (!building) { alert('동을 선택해주세요.'); return; }
-    if (!unit) { alert('호수를 선택해주세요.'); return; }
+    if (!vehiclenumber) {
+      alert('차량번호를 입력해주세요.');
+      return;
+    }
+    if (!ownername) {
+      alert('차주명을 입력해주세요.');
+      return;
+    }
+    if (!building) {
+      alert('동을 선택해주세요.');
+      return;
+    }
+    if (!officenumber) {
+      alert('호수를 선택해주세요.');
+      return;
+    }
 
-    const normalizedNumber = vehicleNumber.replace(/\s/g, '').toLowerCase();
+    const normalizedNumber = vehiclenumber.replace(/\s/g, '').toLowerCase();
     const duplicateVehicle = vehicles.find(
       (vehicle) =>
-        vehicle.vehicleNumber.replace(/\s/g, '').toLowerCase() === normalizedNumber &&
-        vehicle.id !== editingVehicleId
+        vehicle.vehiclenumber.replace(/\s/g, '').toLowerCase() === normalizedNumber &&
+        vehicle.vehicleid !== editingVehicleId,
     );
 
     if (duplicateVehicle) {
@@ -211,16 +250,33 @@ export default function VehicleManage() {
     }
 
     if (editingVehicleId !== null) {
-      updateVehicle({
-        id: editingVehicleId,
-        vehicleNumber,
-        vehicleType: vehicleForm.vehicleType,
-        vehicleModel: vehicleForm.vehicleModel,
-        building,
-        unit,
-        ownerName,
-        registeredAt: vehicleForm.registeredAt || getToday(),
+      const existingVehicle = vehicles.find((v) => v.vehicleid === editingVehicleId);
+      const success = await updateVehicle({
+        vehicleid: editingVehicleId,
+        officeid: existingVehicle ? existingVehicle.officeid : 0,
+        vehiclenumber,
+        vehiclemodel: vehicleForm.vehiclemodel,
+        ownername,
+        vehicletypecode: vehicleForm.vehicletypecode,
+        registrationtypecode: existingVehicle
+          ? existingVehicle.registrationtypecode
+          : 'INITIAL',
+        registrationstatuscode: existingVehicle
+          ? existingVehicle.registrationstatuscode
+          : 'REGISTERED',
+        registeredat: vehicleForm.registeredAt || getToday(),
+        rejectedreason: existingVehicle ? existingVehicle.rejectedreason : '',
+        createdat: existingVehicle ? existingVehicle.createdat : getToday(),
+        updatedat: getToday(),
+        deletedat: '',
+        ...({ building, officenumber } as any),
       });
+
+      if (!success) {
+        alert('차량 정보 수정에 실패했습니다.');
+        return;
+      }
+
       alert('차량 정보가 수정되었습니다.');
       const updatedId = editingVehicleId;
       resetVehicleForm();
@@ -230,47 +286,48 @@ export default function VehicleManage() {
     }
 
     const newVehicle: Vehicle = {
-      id: Date.now(),
-      vehicleNumber,
-      vehicleType: vehicleForm.vehicleType,
-      vehicleModel: vehicleForm.vehicleModel,
-      building,
-      unit,
-      ownerName,
-      registeredAt: vehicleForm.registeredAt || getToday(),
+      vehicleid: 0,
+      officeid: 0,
+      vehiclenumber,
+      vehiclemodel: vehicleForm.vehiclemodel,
+      ownername,
+      vehicletypecode: vehicleForm.vehicletypecode,
+      registrationtypecode: 'INITIAL',
+      registrationstatuscode: 'REGISTERED',
+      registeredat: vehicleForm.registeredAt || getToday(),
+      rejectedreason: '',
+      createdat: getToday(),
+      updatedat: getToday(),
+      deletedat: '',
+      ...({ building, officenumber } as any),
     };
 
-    addVehicle(newVehicle);
+    const success = await addVehicle(newVehicle);
+    if (!success) {
+      alert('차량 등록에 실패했습니다.');
+      return;
+    }
+
     alert('차량이 등록되었습니다.');
     resetVehicleForm();
     setActiveMenu('list');
   };
 
   const handleEditVehicle = (vehicle: Vehicle) => {
-    setEditingVehicleId(vehicle.id);
+    setEditingVehicleId(vehicle.vehicleid);
     setVehicleForm({
-      vehicleNumber: vehicle.vehicleNumber,
-      vehicleType: vehicle.vehicleType,
-      vehicleModel: vehicle.vehicleModel,
-      building: vehicle.building,
-      unit: vehicle.unit,
-      ownerName: vehicle.ownerName,
-      registeredAt: vehicle.registeredAt || getToday(),
+      vehiclenumber: vehicle.vehiclenumber,
+      vehicletypecode: vehicle.vehicletypecode as VehicleType,
+      vehiclemodel: vehicle.vehiclemodel,
+      building: (vehicle as any).building || '',
+      officenumber: (vehicle as any).unit || '',
+      ownername: vehicle.ownername,
+      registeredAt: vehicle.registeredat || getToday(),
     });
-    const result = predictVehicle(vehicle.vehicleNumber);
+    const result = predictVehicle(vehicle.vehiclenumber);
     setPrediction(result);
     setPredictionChecked(Boolean(result));
     setActiveMenu('register');
-  };
-
-  const handleDeleteVehicle = (vehicle: Vehicle) => {
-    const confirmed = window.confirm(
-      `"${vehicle.vehicleNumber}" 차량을 삭제하시겠습니까?\n\n차량 정보와 연결된 주정차 위반 정보도 함께 삭제됩니다.`
-    );
-    if (!confirmed) return;
-    deleteVehicle(vehicle.id);
-    resetVehicleForm();
-    alert('차량이 삭제되었습니다.');
   };
 
   const handleMoveToRegister = () => {
@@ -278,37 +335,96 @@ export default function VehicleManage() {
     setActiveMenu('register');
   };
 
+  const handleVehicleNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setVehicleForm((prev) => ({ ...prev, vehiclenumber: e.target.value }));
+    setPrediction(null);
+    setPredictionChecked(false);
+  };
+
+  const handleVehiclePrediction = () => {
+    const vehiclenumber = vehicleForm.vehiclenumber.trim();
+    if (!vehiclenumber) {
+      alert('차량번호를 입력해주세요.');
+      return;
+    }
+    setIsPredicting(true);
+    const result = predictVehicle(vehiclenumber);
+    setPrediction(result);
+    if (result) {
+      setVehicleForm((prev) => ({ ...prev, vehicletypecode: result.vehicletypecode }));
+    }
+    setPredictionChecked(true);
+    setIsPredicting(false);
+  };
+
+  const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setVehicleForm((prev) => ({ ...prev, [name]: value }));
+  };
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setSelectedFile(e.target.files?.[0] ?? null);
   };
 
-  const handleFileUpload = () => {
+  const handleFileUpload = async (): Promise<void> => {
     if (!selectedFile) {
       alert('업로드할 파일을 선택해주세요.');
       return;
     }
+
     const fileName = selectedFile.name.toLowerCase();
-    const isValid = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv');
+    const isValid =
+      fileName.endsWith('.xlsx') ||
+      fileName.endsWith('.xls')
+
     if (!isValid) {
-      alert('xlsx, xls, csv 파일만 업로드할 수 있습니다.');
+      alert('xlsx, xls 파일만 업로드할 수 있습니다.');
       return;
     }
-    alert(`${selectedFile.name} 파일이 선택되었습니다.\n\n실제 서버 업로드 API 연결이 필요합니다.`);
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const response = await fetch('/api/vehicle/upload-excel', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('파일 업로드에 실패했습니다.');
+      }
+
+      const result = await response.json();
+
+      alert(`업로드가 완료되었습니다.\n${JSON.stringify(result, null, 2)}`);
+    } catch (error) {
+      console.error('차량 파일 업로드 오류:', error);
+      alert('파일 업로드에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   const handleFineSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const vehicleId = Number(fineForm.vehicleId);
+    const vehicleid = Number(fineForm.vehicleid);
     const amount = Number(fineForm.amount.replace(/,/g, ''));
 
-    if (!vehicleId) { alert('차량을 선택해주세요.'); return; }
-    if (!fineForm.violationDate) { alert('주차위반 날짜를 선택해주세요.'); return; }
-    if (!Number.isFinite(amount) || amount <= 0) { alert('올바른 주정차 위반 정보를 입력해주세요.'); return; }
+    if (!vehicleid) {
+      alert('차량을 선택해주세요.');
+      return;
+    }
+    if (!fineForm.violationdate) {
+      alert('주차위반 날짜를 선택해주세요.');
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      alert('올바른 주정차 위반 정보를 입력해주세요.');
+      return;
+    }
 
     const fine: Fine = {
       id: editingFineId ?? Date.now(),
-      vehicleId,
-      violationDate: fineForm.violationDate,
+      vehicleid,
+      violationdate: fineForm.violationdate,
       reason: fineForm.reason,
       amount,
       status: fineForm.status,
@@ -325,11 +441,18 @@ export default function VehicleManage() {
     resetFineForm();
   };
 
+  const handleFineFormChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFineForm((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleEditFine = (fine: Fine) => {
     setEditingFineId(fine.id);
     setFineForm({
-      vehicleId: String(fine.vehicleId),
-      violationDate: fine.violationDate,
+      vehicleid: String(fine.vehicleid),
+      violationdate: fine.violationdate,
       reason: fine.reason,
       amount: String(fine.amount),
       status: fine.status,
@@ -348,7 +471,9 @@ export default function VehicleManage() {
   return (
     <div className={styles.vehiclePage}>
       <h2 className={styles.pageTitle}>차량관리</h2>
-      <p className={styles.pageDescription}>등록된 차량 및 주정차 위반 정보를 관리합니다.</p>
+      <p className={styles.pageDescription}>
+        등록된 차량 및 주정차 위반 정보를 관리합니다.
+      </p>
 
       <div className={styles.vehicleMenu}>
         {MENU_ITEMS.map(({ key, label }) => (
@@ -356,9 +481,16 @@ export default function VehicleManage() {
             key={key}
             type="button"
             className={activeMenu === key ? styles.active : ''}
-            onClick={() => {
+            onClick={async () => {
               if (key === 'list') resetVehicleForm();
               setActiveMenu(key);
+              if (key === 'plus') {
+                try {
+                  await fetchAdditionalVehicleRequests();
+                } catch {
+                  alert('추가 차량 신청 목록을 불러오지 못했습니다.');
+                }
+              }
             }}
           >
             {label}
@@ -374,7 +506,7 @@ export default function VehicleManage() {
             setSelectedVehicleId(null);
           }}
           onEdit={(id) => {
-            const targetVehicle = vehicles.find((v) => v.id === id);
+            const targetVehicle = vehicles.find((v) => v.vehicleid === id);
             if (targetVehicle) handleEditVehicle(targetVehicle);
           }}
         />
@@ -387,7 +519,11 @@ export default function VehicleManage() {
                   <h3>차량 등록 현황</h3>
                   <p>등록된 차량을 검색하여 관리할 수 있습니다.</p>
                 </div>
-                <button type="button" className={styles.primaryButton} onClick={handleMoveToRegister}>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={handleMoveToRegister}
+                >
                   + 차량 등록
                 </button>
               </div>
@@ -395,16 +531,46 @@ export default function VehicleManage() {
               <div className={styles.vehicleSummary}>
                 <div className={styles.summaryItem}>
                   <span>전체 차량</span>
-                  <strong>{vehicles.length}<small>대</small></strong>
+                  <strong>
+                    {vehicles.length}
+                    <small>대</small>
+                  </strong>
                 </div>
                 <div className={styles.summaryItem}>
                   <span>등록된 차량</span>
-                  <strong className={styles.summaryNormal}>{vehicles.length}<small>대</small></strong>
+                  <strong className={styles.summaryNormal}>
+                    {
+                      vehicles.filter((v) => v.registrationstatuscode === 'REGISTERED')
+                        .length
+                    }
+                    <small>대</small>
+                  </strong>
+                </div>
+                <div className={styles.summaryItem}>
+                  <span>추가 등록 차량</span>
+                  <strong>
+                    {
+                      vehicles.filter((v) => v.registrationtypecode === 'ADDITIONAL')
+                        .length
+                    }
+                    <small>대</small>
+                  </strong>
                 </div>
                 <div className={styles.summaryItem}>
                   <span>방문 차량</span>
                   <strong className={styles.summaryStopped}>
-                    {fines.filter((fine) => fine.status === '조치 중').length}<small>대</small>
+                    {vehicles.filter((v) => v.vehicletypecode === 'VISIT').length}
+                    <small>대</small>
+                  </strong>
+                </div>
+                <div className={styles.summaryItem}>
+                  <span>접수중인 차량</span>
+                  <strong>
+                    {
+                      vehicles.filter((v) => v.registrationstatuscode === 'REQUESTED')
+                        .length
+                    }
+                    <small>대</small>
                   </strong>
                 </div>
               </div>
@@ -428,7 +594,11 @@ export default function VehicleManage() {
                   <div className={styles.emptyIcon}>🚗</div>
                   <strong>등록된 차량이 없습니다.</strong>
                   <p>차량을 등록하면 이곳에서 차량 등록 현황을 확인할 수 있습니다.</p>
-                  <button type="button" className={styles.primaryButton} onClick={handleMoveToRegister}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={handleMoveToRegister}
+                  >
                     + 첫 차량 등록
                   </button>
                 </div>
@@ -436,7 +606,11 @@ export default function VehicleManage() {
                 <div className={styles.emptySearch}>
                   <strong>검색 결과가 없습니다.</strong>
                   <p>검색어를 변경해주세요.</p>
-                  <button type="button" className={styles.secondaryButton} onClick={() => setVehicleSearch('')}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => setVehicleSearch('')}
+                  >
                     검색 초기화
                   </button>
                 </div>
@@ -455,27 +629,28 @@ export default function VehicleManage() {
                     </thead>
                     <tbody>
                       {filteredVehicles.map((vehicle) => (
-                        <tr key={vehicle.id}>
+                        <tr key={vehicle.vehicleid}>
                           <td>
                             <button
                               type="button"
                               className={styles.vehicleDetailLink}
                               onClick={() => {
-                                setSelectedVehicleId(vehicle.id);
+                                setSelectedVehicleId(vehicle.vehicleid);
                                 setActiveMenu('detail');
                               }}
                             >
-                              {vehicle.vehicleNumber}
+                              {vehicle.vehiclenumber}
                             </button>
                           </td>
-                          <td>{vehicle.vehicleType}</td>
-                          <td>{vehicle.vehicleModel || '-'}</td>
-                          <td>{vehicle.ownerName || '-'}</td>
+                          <td>{vehicle.vehicletypecode}</td>
+                          <td>{vehicle.vehiclemodel || '-'}</td>
+                          <td>{vehicle.ownername || '-'}</td>
                           <td>
-                            {vehicle.building ? `${vehicle.building}동` : '동 미지정'}
-                            {vehicle.unit ? ` ${vehicle.unit}호` : ''}
+                            {(vehicle as any).officenumber
+                              ? ` ${(vehicle as any).officenumber}호`
+                              : '-'}
                           </td>
-                          <td>{vehicle.registeredAt}</td>
+                          <td>{vehicle.registeredat}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -508,12 +683,12 @@ export default function VehicleManage() {
                 <div className={styles.apartmentMapArea}>
                   <ApartmentMap
                     selectedBuilding={vehicleForm.building}
-                    selectedUnit={vehicleForm.unit}
-                    onUnitSelect={(building, unit) => {
+                    selectedUnit={vehicleForm.officenumber}
+                    onUnitSelect={(building, officenumber) => {
                       setVehicleForm((prev) => ({
                         ...prev,
                         building,
-                        unit,
+                        officenumber,
                       }));
                     }}
                   />
@@ -523,9 +698,11 @@ export default function VehicleManage() {
                   <div className={styles.formGroup}>
                     <label>선택 호수</label>
                     <div className={styles.selectedUnit}>
-                      {vehicleForm.building && vehicleForm.unit ? (
+                      {vehicleForm.building && vehicleForm.officenumber ? (
                         <>
-                          <strong>{vehicleForm.building}동 {vehicleForm.unit}호</strong>
+                          <strong>
+                            {vehicleForm.building}동 {vehicleForm.officenumber}호
+                          </strong>
                           <span>선택된 호수</span>
                         </>
                       ) : (
@@ -535,12 +712,12 @@ export default function VehicleManage() {
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label htmlFor="vehicleNumber">차량번호</label>
+                    <label htmlFor="vehiclenumber">차량번호</label>
                     <div className={styles.inputWithButton}>
                       <input
-                        id="vehicleNumber"
-                        name="vehicleNumber"
-                        value={vehicleForm.vehicleNumber}
+                        id="vehiclenumber"
+                        name="vehiclenumber"
+                        value={vehicleForm.vehiclenumber}
                         onChange={handleVehicleNumberChange}
                         placeholder="예: 12가 3456"
                         autoComplete="off"
@@ -556,17 +733,17 @@ export default function VehicleManage() {
                     </div>
                     {predictionChecked && prediction && (
                       <div className={styles.predictionResult}>
-                        차량 형태: <strong>{prediction.vehicleType}</strong>
+                        차량 형태: <strong>{prediction.vehicletypecode}</strong>
                       </div>
                     )}
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label htmlFor="vehicleType">차량 형태</label>
+                    <label htmlFor="vehicletypecode">차량 형태</label>
                     <select
-                      id="vehicleType"
-                      name="vehicleType"
-                      value={vehicleForm.vehicleType}
+                      id="vehicletypecode"
+                      name="vehicletypecode"
+                      value={vehicleForm.vehicletypecode}
                       onChange={handleFormChange}
                     >
                       <option value="승용차">승용차</option>
@@ -581,7 +758,7 @@ export default function VehicleManage() {
                     <input
                       id="ownerName"
                       name="ownerName"
-                      value={vehicleForm.ownerName}
+                      value={vehicleForm.ownername}
                       onChange={handleFormChange}
                       placeholder="차주명을 입력하세요"
                     />
@@ -591,8 +768,8 @@ export default function VehicleManage() {
                     <label htmlFor="vehicleModel">차량 모델</label>
                     <input
                       id="vehicleModel"
-                      name="vehicleModel"
-                      value={vehicleForm.vehicleModel}
+                      name="vehiclemodel"
+                      value={vehicleForm.vehiclemodel}
                       onChange={handleFormChange}
                       placeholder="차량 모델을 입력하세요"
                     />
@@ -636,7 +813,7 @@ export default function VehicleManage() {
               <div className={styles.contentHeader}>
                 <div>
                   <h3>차량 정보 파일 업로드</h3>
-                  <p>엑셀 또는 CSV 파일을 선택하여 차량 정보를 업로드합니다.</p>
+                  <p>엑셀 파일을 선택하여 차량 정보를 업로드합니다.</p>
                 </div>
                 <button
                   type="button"
@@ -651,14 +828,16 @@ export default function VehicleManage() {
                 <input
                   id="vehicleFile"
                   type="file"
-                  accept=".xlsx,.xls,.csv"
+                  accept=".xlsx,.xls"
                   onChange={handleFileChange}
                 />
                 <label htmlFor="vehicleFile" className={styles.fileUploadLabel}>
                   <span className={styles.fileUploadIcon}>📊</span>
                   <span className={styles.fileUploadText}>
-                    <span className={styles.fileUploadTitle}>Excel / CSV 파일 선택</span>
-                    <span className={styles.fileUploadDescription}>XLSX, XLS, CSV 파일을 지원합니다.</span>
+                    <span className={styles.fileUploadTitle}>Excel 파일 선택</span>
+                    <span className={styles.fileUploadDescription}>
+                      XLSX, XLS 파일을 지원합니다.
+                    </span>
                   </span>
                   <span className={styles.fileUploadButton}>파일 선택</span>
                 </label>
@@ -702,17 +881,22 @@ export default function VehicleManage() {
             </div>
           )}
 
-          {activeMenu === 'plus' && (
-            <AdditionalVehicleManagement
-              requests={mockVehicleData as any}
-              onApprove={(request) => {
-                alert(`${request.vehicleNumber} 차량의 추가 등록이 승인되었습니다.`);
-              }}
-              onReject={(request, reason) => {
-                alert(`${request.vehicleNumber} 차량의 추가 등록이 반려되었습니다. (사유: ${reason})`);
-              }}
-            />
-          )}
+          {activeMenu === 'plus' &&
+            (selectedAdditionalRequest ? (
+              <AdditionalVehicleDetail
+                request={selectedAdditionalRequest}
+                onBack={() => setSelectedAdditionalRequest(null)}
+                onApprove={handleApproveRequest}
+                onReject={handleRejectRequest}
+              />
+            ) : (
+              <AdditionalVehicleManagement
+                requests={additionalVehicleRequests}
+                onDetail={(request) => setSelectedAdditionalRequest(request)}
+                onApprove={handleApproveRequest}
+                onReject={handleRejectRequest}
+              />
+            ))}
 
           {activeMenu === 'status' && (
             <div className={styles.vehicleContent}>
@@ -726,18 +910,37 @@ export default function VehicleManage() {
               <div className={styles.vehicleSummary}>
                 <div className={styles.summaryItem}>
                   <span>전체 벌칙금</span>
-                  <strong>{fines.length}<small>건</small></strong>
+                  <strong>
+                    {fines.length}
+                    <small>건</small>
+                  </strong>
+                </div>
+                <div className={styles.summaryItem}>
+                  <span>미조치</span>
+                  <strong>
+                    {fines.filter((fine) => fine.status === '미조치').length}
+                    <small>건</small>
+                  </strong>
                 </div>
                 <div className={styles.summaryItem}>
                   <span>조치 중</span>
                   <strong className={styles.summaryStopped}>
-                    {fines.filter((fine) => fine.status === '조치 중').length}<small>건</small>
+                    {fines.filter((fine) => fine.status === '조치 중').length}
+                    <small>건</small>
                   </strong>
                 </div>
                 <div className={styles.summaryItem}>
                   <span>조치 완료</span>
                   <strong className={styles.summaryNormal}>
-                    {fines.filter((fine) => fine.status === '조치 완료').length}<small>건</small>
+                    {fines.filter((fine) => fine.status === '조치 완료').length}
+                    <small>건</small>
+                  </strong>
+                </div>
+                <div className={styles.summaryItem}>
+                  <span>처리 불가</span>
+                  <strong>
+                    {fines.filter((fine) => fine.status === '처리 불가').length}
+                    <small>건</small>
                   </strong>
                 </div>
               </div>
@@ -748,13 +951,13 @@ export default function VehicleManage() {
                   <select
                     id="fineVehicleId"
                     name="vehicleId"
-                    value={fineForm.vehicleId}
+                    value={fineForm.vehicleid}
                     onChange={handleFineFormChange}
                   >
                     <option value="">차량을 선택해주세요</option>
                     {vehicles.map((vehicle) => (
-                      <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.vehicleNumber} - {vehicle.ownerName || '차주 미등록'}
+                      <option key={vehicle.vehicleid} value={vehicle.vehicleid}>
+                        {vehicle.vehiclenumber} ({vehicle.ownername || '차주 미등록'})
                       </option>
                     ))}
                   </select>
@@ -766,7 +969,7 @@ export default function VehicleManage() {
                     id="violationDate"
                     name="violationDate"
                     type="date"
-                    value={fineForm.violationDate}
+                    value={fineForm.violationdate}
                     onChange={handleFineFormChange}
                   />
                 </div>
@@ -815,7 +1018,11 @@ export default function VehicleManage() {
 
                 <div className={styles.formActions}>
                   {editingFineId !== null && (
-                    <button type="button" className={styles.secondaryButton} onClick={resetFineForm}>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={resetFineForm}
+                    >
                       수정 취소
                     </button>
                   )}
@@ -839,7 +1046,9 @@ export default function VehicleManage() {
 
                   <select
                     value={fineStatusFilter}
-                    onChange={(e) => setFineStatusFilter(e.target.value as '전체' | FineStatus)}
+                    onChange={(e) =>
+                      setFineStatusFilter(e.target.value as '전체' | FineStatus)
+                    }
                   >
                     <option value="전체">전체</option>
                     <option value="조치 중">조치 중</option>
@@ -885,7 +1094,9 @@ export default function VehicleManage() {
                     </thead>
                     <tbody>
                       {filteredFines.map((fine) => {
-                        const vehicle = vehicles.find((item) => item.id === fine.vehicleId);
+                        const vehicle = vehicles.find(
+                          (item) => item.vehicleid === fine.vehicleid,
+                        );
 
                         return (
                           <tr key={fine.id}>
@@ -894,14 +1105,14 @@ export default function VehicleManage() {
                                 type="button"
                                 className={styles.vehicleDetailLink}
                                 onClick={() => {
-                                  setSelectedVehicleId(fine.vehicleId);
+                                  setSelectedVehicleId(fine.vehicleid);
                                   setActiveMenu('detail');
                                 }}
                               >
-                                {vehicle?.vehicleNumber ?? '-'}
+                                {vehicle?.vehiclenumber ?? '-'}
                               </button>
                             </td>
-                            <td>{fine.violationDate}</td>
+                            <td>{fine.violationdate}</td>
                             <td>{fine.reason}</td>
                             <td>{fine.status}</td>
                             <td>

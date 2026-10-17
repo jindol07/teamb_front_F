@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: '0.0.0.0', //localhost, 127.0.0.1, 사설ip 허용
     port: 3000,
     open: true,
   },

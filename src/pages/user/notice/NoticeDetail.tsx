@@ -1,21 +1,113 @@
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { noticeListMock } from '../../../mock/noticeMock';
+import type { Notice } from '../../../mock/noticeMock';
+import {
+    getUserNoticeDetail,
+    downloadUserNoticeFile,
+} from '../../../api/userNoticeApi';
 import { getCategoryBadge } from '../../admin/notice/noticeUtils';
 export default function NoticeDetail() {
-    /*
-     * URL에서 공지사항 ID 가져오기
-     * 예: /user/notice/1 → id = "1"
-     */
+    // URL에서 공지사항 ID 가져오기
+    // 예: /user/notice/55 → id = "55"
     const { id } = useParams();
-    // Mock 데이터에서 해당 공지사항 조회
-    const notice = noticeListMock.find(
-        (notice) => notice.id === Number(id)
-    );
-    // 공지사항이 존재하지 않는 경우
-    if (!notice) {
+    // DB에서 조회한 공지사항
+    const [notice, setNotice] = useState<Notice | null>(null);
+    // 로딩 및 오류 상태
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
+    // 현재 다운로드 중인 첨부파일 ID
+    const [downloadingFileId, setDownloadingFileId] =
+        useState<number | null>(null);
+    // 페이지 진입 시 공지사항 상세 조회
+    useEffect(() => {
+        const noticeId = Number(id);
+        // 잘못된 공지사항 ID 검사
+        if (!id || !Number.isInteger(noticeId) || noticeId <= 0) {
+            setNotice(null);
+            setError(true);
+            setLoading(false);
+            return;
+        }
+        let cancelled = false;
+        const fetchNoticeDetail = async () => {
+            setLoading(true);
+            setError(false);
+            setNotice(null);
+            try {
+                const data = await getUserNoticeDetail(noticeId);
+                if (!cancelled) {
+                    setNotice(data);
+                }
+            } catch (err) {
+                console.error('공지사항 상세 조회 실패:', err);
+                if (!cancelled) {
+                    setError(true);
+                }
+            } finally {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            }
+        };
+        void fetchNoticeDetail();
+        return () => {
+            cancelled = true;
+        };
+    }, [id]);
+    // 첨부파일 다운로드
+    const handleDownload = async (
+        attachmentId: number,
+        fileName: string
+    ) => {
+        // 공지사항이 없거나 다운로드 중이면 실행하지 않음
+        if (!notice || downloadingFileId !== null) {
+            return;
+        }
+        try {
+            setDownloadingFileId(attachmentId);
+            await downloadUserNoticeFile(
+                notice.id,
+                attachmentId,
+                fileName
+            );
+        } catch (err) {
+            console.error('첨부파일 다운로드 실패:', err);
+            alert('첨부파일 다운로드에 실패했습니다.');
+        } finally {
+            setDownloadingFileId(null);
+        }
+    };
+    // 로딩 중
+    if (loading) {
         return (
             <div className="container py-4">
-                공지사항을 찾을 수 없습니다.
+                <h2 className="page-title">
+                    공지사항
+                </h2>
+                <div className="text-center py-5 text-muted">
+                    공지사항을 불러오는 중입니다.
+                </div>
+            </div>
+        );
+    }
+    // 조회 실패 또는 공지사항 없음
+    if (error || !notice) {
+        return (
+            <div className="container py-4">
+                <h2 className="page-title">
+                    공지사항
+                </h2>
+                <div className="text-center py-5 text-muted">
+                    공지사항을 찾을 수 없거나 불러오지 못했습니다.
+                </div>
+                <div className="mt-3">
+                    <Link
+                        to="/user/notice"
+                        className="btn btn-outline-secondary"
+                    >
+                        목록으로
+                    </Link>
+                </div>
             </div>
         );
     }
@@ -59,29 +151,44 @@ export default function NoticeDetail() {
                         조회수 {notice.views}
                     </div>
                     {/* 공지 내용 */}
-                    <div className="py-4">
+                    <div
+                        className="py-4"
+                        style={{ whiteSpace: 'pre-wrap' }}
+                    >
                         {notice.content}
                     </div>
                     {/* 첨부파일 */}
                     {notice.attachments.length > 0 && (
                         <div className="border-top pt-3">
-                            <strong>첨부파일</strong>
+                            <strong>
+                                첨부파일
+                            </strong>
                             <div className="mt-2">
                                 {notice.attachments.map((file) => (
-                                    <div key={file.id} className="mb-1">
-                                        {file.url ? (
-                                            <a
-                                                href={file.url}
-                                                className="text-decoration-none"
-                                                download
-                                            >
-                                                📎 {file.name}
-                                            </a>
-                                        ) : (
-                                            <span className="text-muted">
-                                                📎 {file.name}
+                                    <div
+                                        key={file.id}
+                                        className="mb-2"
+                                    >
+                                        <button
+                                            type="button"
+                                            className="btn btn-link text-decoration-none p-0"
+                                            disabled={
+                                                downloadingFileId !== null
+                                            }
+                                            onClick={() =>
+                                                void handleDownload(
+                                                    file.id,
+                                                    file.name
+                                                )
+                                            }
+                                        >
+                                            📎 {file.name}
+                                            <span className="ms-2">
+                                                {downloadingFileId === file.id
+                                                    ? '다운로드 중...'
+                                                    : '다운로드'}
                                             </span>
-                                        )}
+                                        </button>
                                     </div>
                                 ))}
                             </div>

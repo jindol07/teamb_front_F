@@ -4,16 +4,19 @@
  * 원칙:
  * - 임의의 Mock 데이터는 반환하지 않음. 오류면 예외를 던짐.
  * - 관리자/사용자 조회 API를 분리하여 관리자 메모를 사용자에게 노출하지 않음.
- * - 프론트엔드의 Vite proxy로 /alpharking/admin 요청을 localhost:81에 전달.
+ * - VITE_BOOT_API_BASE_URL(.env)로 각 개발자의 백엔드에 직접 요청.
  * - 운영에서는 /public 읽기 API를 apcms_u로 분리하고 권한/배포 경로를 확정해야 함.
  */
-// .env 파일에 설정한 Spring Boot 서버 주소
-const BOOT_API_BASE_URL =
-  import.meta.env.VITE_BOOT_API_BASE_URL;
+// 개인별 서버 주소는 Vite 환경변수(.env, .env.local)에서 읽습니다.
+const API_ORIGIN = (import.meta.env.VITE_BOOT_API_BASE_URL ?? '').replace(/\/$/, '');
+const BASE_URL = `${API_ORIGIN}/alpharking/admin/api/parking/spaces`;
 
-// 주차현황 API 주소
-const BASE_URL =
-  `${BOOT_API_BASE_URL}/alpharking/admin/api/parking/spaces`;
+/** 공개 현황 소켓도 기존 주차구획 GET과 동일한 서버를 사용합니다. */
+export function getParkingWebSocketUrl(): string {
+  const url = new URL(`${API_ORIGIN}/alpharking/admin/ws/parking/spaces`, window.location.origin);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return url.toString();
+}
 
 /** 실제 Oracle 테이블 JOIN 결과에 해당하는 서버 응답 JSON. */
 export interface ParkingSpaceDto {
@@ -31,6 +34,8 @@ export interface ParkingSpaceDto {
   height: number | null;
   /** 관리자에게만 반환하며 사용자 공개 API에는 존재하지 않음. */
   memo?: string | null;
+  /** 관리자 응답 전용. 공개 API에는 포함되지 않습니다. */
+  vehicleNumber?: string | null;
   updatedAt?: string | null;
 }
 
@@ -45,6 +50,10 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
   if (!response.ok) {
     // 로그인 미구현(401), 서버 장애(5xx), 경로 오류(404) 등을 UI에서 구분할 수 있음.
     throw new Error(`주차구획 API 오류: HTTP ${response.status}`);
+  }
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(`주차구획 API가 JSON이 아닌 응답을 반환했습니다: ${contentType || 'Content-Type 없음'}`);
   }
   return (await response.json()) as T;
 }
@@ -69,5 +78,17 @@ export function saveParkingMemo(parkingSpaceId: number, memo: string) {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ memo }),
+  });
+}
+
+/** 관리자 구획 강제 변경: 인증 세션이 없으면 HTTP 401. */
+export function saveParkingSpace(
+  parkingSpaceId: number,
+  input: { spaceStatusCode: string; spaceTypeCode: string; memo: string; changeReason: string }
+) {
+  return request<ParkingSpaceDto>(`${BASE_URL}/${parkingSpaceId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
   });
 }

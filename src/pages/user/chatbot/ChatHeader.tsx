@@ -13,7 +13,7 @@ export default function ChatHeader() {
                 </div>
                 <div>
                     <div className="fw-bold">
-                        알파카
+                        알파킹
                     </div>
                     <div className="small text-secondary">
                         AI 주차 도우미

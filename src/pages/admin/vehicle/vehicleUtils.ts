@@ -26,31 +26,31 @@ export const getToday = (): string => {
 // 차량 등록 폼 초기값
 export const createInitialVehicleForm =
   (): VehicleForm => ({
-    vehicleNumber: '',
-    vehicleType: '승용차',
-    vehicleModel: '',
+    vehiclenumber: '',
+    vehicletype: '승용차',
+    vehiclemodel: '',
     building: '',
     unit: '',
-    ownerName: '',
-    registeredAt: getToday(),
+    ownername: '',
+    registeredat: getToday(),
   });
 
 // 추가 등록 신청 폼 초기값
 export const createInitialAdditionalVehicleForm =
   (): AdditionalVehicleForm => ({
-    vehicleNumber: '',
-    vehicleType: '승용차',
-    vehicleModel: '',
+    vehiclenumber: '',
+    vehicletype: '승용차',
+    vehiclemodel: '',
     building: '',
     unit: '',
-    ownerName: '',
+    ownername: '',
   });
 
 // 주정차 위반 폼 초기값
 export const createInitialFineForm =
   (): FineForm => ({
-    vehicleId: '',
-    violationDate: getToday(),
+    vehicleid: '',
+    violationdate: getToday(),
     reason: '지정구역 위반',
     amount: '50000',
     status: '미조치',
