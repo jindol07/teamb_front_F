@@ -4,24 +4,13 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './BookingModal.css';
 import VehicleSearchModal from './VehicleSearchModal';
-import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
-import { useParkingStore } from '../../admin/parking/status/useParkingStore';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../shared/parking/useParkingStore';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 
 interface BookingModalProps {
   slot: ExtendedParkingSlot | null;
   onClose: () => void;
-}
-
-export interface ReservationPayload {
-  startDate: string;
-  endDate: string;
-  vehicleType: 'visitor';
-  vehicleId: string | null;
-  vehicleLabel: string;
-  spaceId: string | number;
-  spaceNumber: string;
-  floor: number;
 }
 
 interface VisitorVehicle {
@@ -29,21 +18,14 @@ interface VisitorVehicle {
   number: string;
 }
 
-const processReservation = async (data: ReservationPayload) => {
-  const reservationData = {
-    ...data,
-    createdAt: new Date().toISOString(),
-    status: 'reserved',
-  };
-
-  sessionStorage.setItem('myReservation', JSON.stringify(reservationData));
-  window.dispatchEvent(new StorageEvent('storage', { key: 'myReservation' }));
-
-  return {
-    success: true,
-    message: '예약이 완료되었습니다.',
-  };
-};
+interface ReservationRequest {
+  parking_space_id: number;
+  vehicle_id: number | null;
+  vehicle_number: string;
+  reservation_type_code: string;
+  start_date_str: string;
+  end_date_str: string;
+}
 
 export default function BookingModal({ slot, onClose }: BookingModalProps) {
   const navigate = useNavigate();
@@ -51,32 +33,36 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
 
   const [currentFloor, setCurrentFloor] = useState<number>(slot?.floor ?? 1);
   const [selectedSlot] = useState<ExtendedParkingSlot | null>(slot);
-
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [message, setMessage] = useState('');
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVisitorVehicle, setSelectedVisitorVehicle] =
     useState<VisitorVehicle | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // 🛑 [이중 방어 1] 모달이 렌더링될 때 선택된 자리가 빈 자리('EMPTY')가 아니면 즉시 모달 차단 및 닫기
   useEffect(() => {
     if (slot) {
       setCurrentFloor(slot.floor);
+      if (slot.status !== 'EMPTY') {
+        alert('이미 주차되어 있거나 예약된 자리입니다. 예약할 수 없습니다.');
+        onClose();
+      }
     }
-  }, [slot]);
+  }, [slot, onClose]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !isSubmitting) {
         onClose();
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose]);
+  }, [onClose, isSubmitting]);
 
   const getToday = () => {
     const date = new Date();
@@ -96,10 +82,7 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
 
   const formatDateString = (date: Date | null) => {
     if (!date) return '';
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-      2,
-      '0',
-    )}-${String(date.getDate()).padStart(2, '0')}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
   const compareDates = (first: Date, second: Date) => {
@@ -129,15 +112,13 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
       return;
     }
 
-    const maxEndDate = getMaxEndDate(startDate);
-
     if (compareDates(clickedDate, startDate) < 0) {
       setStartDate(clickedDate);
       setEndDate(null);
       return;
     }
 
-    if (compareDates(clickedDate, maxEndDate) > 0) {
+    if (compareDates(clickedDate, getMaxEndDate(startDate)) > 0) {
       setMessage('주차 이용 기간은 최대 3일까지 선택할 수 있습니다.');
       return;
     }
@@ -145,7 +126,6 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
     setEndDate(clickedDate);
   };
 
-  // 날짜 범위 선택 시 중간 영역이 파란색으로 이어지도록 지정
   const getDateTileClassName = ({ date }: { date: Date }) => {
     const current = formatDateString(date);
     const start = formatDateString(startDate);
@@ -160,10 +140,12 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setMessage('');
 
-    if (!selectedSlot) {
-      setMessage('주차할 구획을 선택해주세요.');
+    // 🛑 [이중 방어 2] 제출 직전에도 한 번 더 상태 검증
+    if (!selectedSlot || selectedSlot.status !== 'EMPTY') {
+      setMessage('이미 차 있는 자리는 예약할 수 없습니다.');
       return;
     }
 
@@ -172,27 +154,59 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
       return;
     }
 
-    const payload: ReservationPayload = {
-      startDate: formatDateString(startDate),
-      endDate: formatDateString(endDate),
-      vehicleType: 'visitor',
-      vehicleId: null,
-      vehicleLabel: selectedVisitorVehicle.number,
-      spaceId: selectedSlot.id,
-      spaceNumber: selectedSlot.slotNumber,
-      floor: selectedSlot.floor,
+    let parkingSpaceId = 16;
+    const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
+    if (slotIndex !== -1) {
+      parkingSpaceId = 16 + slotIndex;
+    } else {
+      const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
+      parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
+    }
+
+    if (!Number.isSafeInteger(parkingSpaceId) || parkingSpaceId <= 0) {
+      setMessage('주차 공간 ID를 확인할 수 없습니다.');
+      return;
+    }
+
+    const request: ReservationRequest = {
+      parking_space_id: parkingSpaceId,
+      vehicle_id: selectedVisitorVehicle.id || null,
+      vehicle_number: selectedVisitorVehicle.number,
+      reservation_type_code: 'VISITOR',
+      start_date_str: formatDateString(startDate),
+      end_date_str: formatDateString(endDate),
     };
 
+    setIsSubmitting(true);
+
     try {
-      const result = await processReservation(payload);
-      if (!result.success) {
-        setMessage(result.message);
-        return;
+      const targetUrl = '/alpharking/api/reservation';
+      const response = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(request),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMsg =
+          errorData?.message || `예약 등록에 실패했습니다. (${response.status})`;
+        throw new Error(errorMsg);
       }
+
+      alert('예약이 성공적으로 완료되었습니다.');
       onClose();
       navigate('/user/Reservation');
-    } catch {
-      setMessage('예약 처리 중 오류가 발생했습니다.');
+    } catch (error) {
+      console.error('예약 등록 실패:', error);
+      setMessage(
+        error instanceof Error ? error.message : '예약 처리 중 오류가 발생했습니다.',
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -201,7 +215,7 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
       className="reservation-modal-backdrop"
       role="presentation"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
+        if (event.target === event.currentTarget && !isSubmitting) {
           onClose();
         }
       }}
@@ -229,17 +243,16 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
                 className="btn-close"
                 aria-label="모달 닫기"
                 onClick={onClose}
+                disabled={isSubmitting}
               />
             </div>
 
             <div className="reservation-layout-grid">
-              {/* 현황표 (클릭 불가능하도록 고정) */}
               <section className="parking-status-section">
                 <div className="section-title-box">
                   <h5>주차장 현황 정보</h5>
                   <p className="section-desc">선택된 자리의 위치를 확인하세요.</p>
                 </div>
-
                 <div className="parking-map">
                   <ParkingMapView
                     mode="user"
@@ -252,7 +265,6 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
                 </div>
               </section>
 
-              {/* 예약 정보 입력 폼 */}
               <section className="reservation-card">
                 <div className="reservation-card-header">
                   <h5>예약 정보 입력</h5>
@@ -267,17 +279,15 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
                 <form onSubmit={handleSubmit}>
                   <div className="reservation-form-section">
                     <label className="form-label fw-bold">주차 이용 기간 선택</label>
-
                     <div className="date-range-display">
                       <span className="text-primary fw-semibold">
                         {startDate ? formatDateString(startDate) : '시작일 선택'}
                       </span>
-                      <span>{' ~ '}</span>
+                      <span> ~ </span>
                       <span className="text-danger fw-semibold">
                         {endDate ? formatDateString(endDate) : '종료일 선택'}
                       </span>
                     </div>
-
                     <div className="calendar-wrapper">
                       <Calendar
                         onChange={(value) => {
@@ -312,6 +322,7 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
                         type="button"
                         className="btn btn-outline-primary text-nowrap"
                         onClick={() => setIsVehicleModalOpen(true)}
+                        disabled={isSubmitting}
                       >
                         차량 검색
                       </button>
@@ -321,8 +332,9 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
                   <button
                     type="submit"
                     className="btn btn-primary w-100 reservation-button"
+                    disabled={isSubmitting}
                   >
-                    예약하기
+                    {isSubmitting ? '예약 처리 중...' : '예약하기'}
                   </button>
 
                   {message && (
@@ -341,7 +353,7 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
           onClose={() => setIsVehicleModalOpen(false)}
           onSelectVehicle={(vehicleNumber) => {
             setSelectedVisitorVehicle({
-              id: 999,
+              id: 0,
               number: vehicleNumber,
             });
             setMessage('');

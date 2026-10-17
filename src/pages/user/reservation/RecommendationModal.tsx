@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 import axios from 'axios';
 
 interface RecommendationModalProps {
