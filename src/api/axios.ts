@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // 사용자 백엔드 (80번 포트)
-export const api = axios.create({
+export const userApi = axios.create({
     baseURL: import.meta.env.VITE_BOOT_API_BASE_URL_U,
 });
 
