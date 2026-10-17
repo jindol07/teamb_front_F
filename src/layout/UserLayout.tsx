@@ -1,7 +1,9 @@
 import { Outlet } from 'react-router-dom';
 import UserHeader from './UserHeader';
 import UserFooter from './UserFooter';
-import RequireAuth from '../auth/RequireAuthProps';
+import FloatingChatbot from '../components/FloatingChatbot';
+import { ChatbotProvider } from '../pages/user/chatbot/ChatbotContext';
+import RequireAuth from '../components/RequireAuth'; // 만약 경로가 다르다면 기존 경로를 확인해주세요!
 
 /**
  * UserLayout
@@ -16,14 +18,17 @@ import RequireAuth from '../auth/RequireAuthProps';
 export default function UserLayout() {
   return (
     <RequireAuth allowedRoles={["OFFICE"]}>
-      <div className="d-flex flex-column min-vh-100">
-        <UserHeader />
-        <main className="flex-grow-1">
-          <Outlet />
-        </main>
-        <UserFooter />
-      </div>
+      <ChatbotProvider>
+        <div className="d-flex flex-column min-vh-100">
+          <UserHeader />
+          <main className="flex-grow-1">
+            <Outlet />
+          </main>
+          <UserFooter />
+          {/* 사용자 페이지 공통 플로팅 AI 챗봇 */}
+          <FloatingChatbot />
+        </div>
+      </ChatbotProvider>
     </RequireAuth>
-    
   );
 }
