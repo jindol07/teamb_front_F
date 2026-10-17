@@ -1,6 +1,9 @@
+
 import { Outlet } from 'react-router-dom';
 import UserHeader from './UserHeader';
 import UserFooter from './UserFooter';
+import FloatingChatbot from '../components/FloatingChatbot';
+import { ChatbotProvider } from '../pages/user/chatbot/ChatbotContext';
 
 /**
  * UserLayout
@@ -14,12 +17,16 @@ import UserFooter from './UserFooter';
  */
 export default function UserLayout() {
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <UserHeader />
-      <main className="flex-grow-1">
-        <Outlet />
-      </main>
-      <UserFooter />
-    </div>
+    <ChatbotProvider>
+      <div className="d-flex flex-column min-vh-100">
+        <UserHeader />
+        <main className="flex-grow-1">
+          <Outlet />
+        </main>
+        <UserFooter />
+        {/* 사용자 페이지 공통 플로팅 AI 챗봇 */}
+        <FloatingChatbot />
+      </div>
+    </ChatbotProvider>
   );
 }
