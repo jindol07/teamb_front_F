@@ -39,8 +39,7 @@ export interface ParkingMapProps {
   mode?: 'admin' | 'user';
   /** 도면에 표시할 주차구획: 동일한 배열을 관리자/사용자 화면에서 공유 */
   slots: ExtendedParkingSlot[];
-  mode: 'admin' | 'user';
-  slots: ExtendedParkingSlot[];
+
   currentFloor: number;
   onFloorChange: (floor: number) => void;
   onSlotClick: (slot: ExtendedParkingSlot) => void;
