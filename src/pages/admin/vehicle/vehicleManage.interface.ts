@@ -1,77 +1,56 @@
 import type {
-  Fine,
-  FineReason,
-  FineStatus,
   Vehicle,
   VehicleType,
+  Fine,
+  FineStatus,
+  FineReason,
+  AdditionalVehicleRequest,
+  AdditionalVehicleInput,
+  AdditionalVehicleStatus,
 } from './vehicleStore';
-
-// 추가 차량 등록 상태 타입 정의 (스토어에 없다면 여기서 관리)
-export type AdditionalVehicleStatus =
-  | '승인대기'
-  | '승인완료'
-  | '승인반려';
-
-// 추가 차량 등록 신청 타입 정의
-export interface AdditionalVehicleRequest extends Vehicle {
-  requestStatus: AdditionalVehicleStatus;
-  requestMemo?: string;
-}
-
-// 차량 관리 메뉴
-export type ActiveMenu =
-  | 'list'
-  | 'register'
-  | 'upload'
-  | 'status'
-  | 'edit'
-  | 'additional' // 추가 차량 등록 메뉴 추가
-  | 'detail';
 
 // 차량 등록 및 수정 폼
 export interface VehicleForm {
-  vehicleNumber: string;
-  vehicleType: VehicleType;
-  vehicleModel: string;
+  vehiclenumber: string;
+  vehicletype: VehicleType;
+  vehiclemodel: string;
   building: string;
   unit: string;
-  ownerName: string;
-  registeredAt: string;
+  ownername: string;
+  registeredat: string;
 }
 
-// 차량 종류 예측 결과
-export interface VehiclePrediction {
-  vehicleType: VehicleType;
+// 추가 차량 등록 신청 폼
+export interface AdditionalVehicleForm {
+  vehiclenumber: string;
+  vehicletype: VehicleType;
+  vehiclemodel: string;
+  building: string;
+  unit: string;
+  ownername: string;
 }
 
 // 주정차 위반 등록 및 수정 폼
 export interface FineForm {
-  vehicleId: string;
-  violationDate: string;
+  vehicleid: string;
+  violationdate: string;
   reason: FineReason;
   amount: string;
   status: FineStatus;
   memo: string;
 }
 
-// 메뉴 항목
-export interface MenuItem {
-  key: ActiveMenu;
-  label: string;
+// 차량 번호 조회 결과
+export interface VehiclePrediction {
+  vehicleType: VehicleType;
 }
 
-// 차량 목록 Props
-export interface VehicleListProps {
-  vehicles: Vehicle[];
-  vehicleSearch: string;
-  onSearchChange: (value: string) => void;
-  onRegister: () => void;
-  onDetail: (vehicleId: number) => void;
-  onEdit: (vehicle: Vehicle) => void;
-  onDelete: (vehicle: Vehicle) => void;
-}
+// 차량 목록 표시용 타입
+export type VehicleListItem = Vehicle & {
+  registrationSource?: '기존등록' | '추가등록';
+};
 
-// 차량 등록 및 수정 Props
+// 차량 등록 및 수정 폼 Props
 export interface VehicleFormProps {
   editingVehicleId: number | null;
   vehicleForm: VehicleForm;
@@ -87,9 +66,28 @@ export interface VehicleFormProps {
   onPredict: () => void;
 }
 
+// 차량 목록 Props
+export interface VehicleListProps {
+  vehicles: Vehicle[];
+  vehicleSearch: string;
+  onSearchChange: (value: string) => void;
+  onRegister: () => void;
+  onDetail: (vehicleId: number) => void;
+  onEdit: (vehicle: Vehicle) => void;
+  onDelete: (vehicle: Vehicle) => void;
+}
+
+// 차량 상세 화면 Props
+export interface VehicleDetailProps {
+  vehicle: Vehicle;
+  fines?: Fine[];
+  onBack: () => void;
+  onEdit: (vehicle: Vehicle) => void;
+}
+
 // 차량 파일 업로드 Props
 export interface VehicleFileUploadProps {
-  onUpload: (file: File) => void | Promise<void>;
+  onUpload: (file: File) => Promise<void>;
 }
 
 // 주정차 관리 Props
@@ -97,46 +95,47 @@ export interface FineManagementProps {
   onVehicleDetail: (vehicleId: number) => void;
 }
 
-// 차량 상세 Props
-export interface VehicleDetailProps {
-  vehicleId: number;
-  onBack: () => void;
-  onEdit: (vehicleId: number) => void;
-}
-
-// 추가 등록 신청 폼
-export interface AdditionalVehicleForm {
-  vehicleNumber: string;
-  vehicleType: VehicleType;
-  vehicleModel: string;
-  building: string;
-  unit: string;
-  ownerName: string;
-}
-
-// 관리자 추가 등록 차량 관리 Props (컴포넌트 구현과 일치하도록 수정)
+// 추가 차량 등록 신청 관리 Props
 export interface AdditionalVehicleManagementProps {
-  requests: AdditionalVehicleRequest[];
-  onApprove: (request: AdditionalVehicleRequest) => void;
+  requests?: AdditionalVehicleRequest[];
+  onApprove?: (
+    request: AdditionalVehicleRequest,
+  ) => void;
+  onReject?: (
+    request: AdditionalVehicleRequest,
+    reason: string,
+  ) => void;
+}
+
+// 추가 차량 등록 신청 상세 Props
+export interface AdditionalVehicleDetailProps {
+  request: AdditionalVehicleRequest;
+  onBack: () => void;
+  onApprove: (
+    request: AdditionalVehicleRequest,
+  ) => void;
   onReject: (
     request: AdditionalVehicleRequest,
     reason: string,
   ) => void;
 }
 
-// 기존 차량과 추가 등록 차량의 목록 표시용 타입
-export interface VehicleListItem extends Vehicle {
-  registrationSource?: '기존등록' | '추가등록';
-  approvalStatus?: AdditionalVehicleStatus;
+// 추가 차량 등록 신청 제출 Props
+export interface AdditionalVehicleRequestFormProps {
+  onSubmit: (
+    form: AdditionalVehicleInput,
+  ) => boolean;
+  onCancel?: () => void;
 }
 
-// 주정차 위반 등록 결과
-export interface FineSubmitResult {
-  success: boolean;
-  message: string;
+// 추가 차량 등록 신청 목록 필터
+export interface AdditionalVehicleFilter {
+  keyword: string;
+  status: '전체' | AdditionalVehicleStatus;
 }
 
-// 주정차 위반 수정 데이터
-export interface FineEditPayload {
-  fine: Fine;
+// 주정차 위반 필터
+export interface FineFilter {
+  keyword: string;
+  status: '전체' | FineStatus;
 }
