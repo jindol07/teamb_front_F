@@ -5,8 +5,8 @@
  * 백엔드 웹소켓 연동을 통해 실시간 주차/예약 상태 동기화 지원.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
-import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import ParkingReservationModal from '../reservation/ParkingReservationModal';
 

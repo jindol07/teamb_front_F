@@ -8,8 +8,8 @@
  */
 import { useEffect } from 'react';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
-import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
-import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import BookingModal from './BookingModal';
 
 /** 예약 모달 외부 인터페이스 */

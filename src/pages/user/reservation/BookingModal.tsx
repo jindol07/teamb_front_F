@@ -4,8 +4,8 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './BookingModal.css';
 import VehicleSearchModal from './VehicleSearchModal';
-import { ParkingMapView } from '../../admin/parking/status/ParkingMapView';
-import { useParkingStore } from '../../admin/parking/status/useParkingStore';
+import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
+import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 
 interface BookingModalProps {
