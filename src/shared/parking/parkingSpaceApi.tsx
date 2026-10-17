@@ -11,6 +11,13 @@
 const API_ORIGIN = (import.meta.env.VITE_BOOT_API_BASE_URL ?? '').replace(/\/$/, '');
 const BASE_URL = `${API_ORIGIN}/alpharking/admin/api/parking/spaces`;
 
+/** 공개 현황 소켓도 기존 주차구획 GET과 동일한 서버를 사용합니다. */
+export function getParkingWebSocketUrl(): string {
+  const url = new URL(`${API_ORIGIN}/alpharking/admin/ws/parking/spaces`, window.location.origin);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return url.toString();
+}
+
 /** 실제 Oracle 테이블 JOIN 결과에 해당하는 서버 응답 JSON. */
 export interface ParkingSpaceDto {
   parkingSpaceId: number;
