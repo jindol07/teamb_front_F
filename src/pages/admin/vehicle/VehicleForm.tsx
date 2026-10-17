@@ -28,7 +28,7 @@ export default function VehicleForm({
 
   // 입력값 변경 처리
   const handleInputChange = (
-    field: 'vehicleNumber' | 'ownerName' | 'vehicleModel' | 'registeredAt',
+    field: 'vehiclenumber' | 'ownername' | 'vehiclemodel' | 'registeredat',
     value: string,
   ) => {
     onChange(field, value);
@@ -44,17 +44,10 @@ export default function VehicleForm({
         <div>
           <h3>{isEditing ? '차량 정보 수정' : '차량 등록'}</h3>
 
-          <p>
-            상가 배치도에서 세대를 선택하고 차량 정보를
-            입력해주세요.
-          </p>
+          <p>상가 배치도에서 세대를 선택하고 차량 정보를 입력해주세요.</p>
         </div>
 
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={onCancel}
-        >
+        <button type="button" className={styles.secondaryButton} onClick={onCancel}>
           차량 등록 현황
         </button>
       </div>
@@ -71,10 +64,7 @@ export default function VehicleForm({
         </div>
 
         {/* 차량 정보 입력 */}
-        <form
-          className={styles.vehicleForm}
-          onSubmit={handleSubmit}
-        >
+        <form className={styles.vehicleForm} onSubmit={handleSubmit}>
           {/* 선택한 동·호수 */}
           <div className={styles.formGroup}>
             <label>선택 호수</label>
@@ -89,27 +79,22 @@ export default function VehicleForm({
                   <span>선택된 호수</span>
                 </>
               ) : (
-                <span>
-                  상가 배치도에서 세대를 선택해주세요.
-                </span>
+                <span>상가 배치도에서 세대를 선택해주세요.</span>
               )}
             </div>
           </div>
 
           {/* 차량번호 및 차량 형태 조회 */}
           <div className={styles.formGroup}>
-            <label htmlFor="vehicleNumber">차량번호</label>
+            <label htmlFor="vehiclenumber">차량번호</label>
 
             <div className={styles.inputWithButton}>
               <input
-                id="vehicleNumber"
-                name="vehicleNumber"
-                value={vehicleForm.vehicleNumber}
+                id="vehiclenumber"
+                name="vehiclenumber"
+                value={vehicleForm.vehiclenumber}
                 onChange={(event) =>
-                  handleInputChange(
-                    'vehicleNumber',
-                    event.target.value,
-                  )
+                  handleInputChange('vehiclenumber', event.target.value)
                 }
                 placeholder="예: 12가 3456"
                 autoComplete="off"
@@ -135,15 +120,13 @@ export default function VehicleForm({
 
           {/* 차량 형태 */}
           <div className={styles.formGroup}>
-            <label htmlFor="vehicleType">차량 형태</label>
+            <label htmlFor="vehicletypecode">차량 형태</label>
 
             <select
-              id="vehicleType"
-              name="vehicleType"
-              value={vehicleForm.vehicleType}
-              onChange={(event) =>
-                onChange('vehicleType', event.target.value)
-              }
+              id="vehicletypecode"
+              name="vehicletypecode"
+              value={vehicleForm.vehicletype}
+              onChange={(event) => onChange('vehicletype', event.target.value)}
             >
               <option value="승용차">승용차</option>
               <option value="SUV">SUV</option>
@@ -159,10 +142,8 @@ export default function VehicleForm({
             <input
               id="ownerName"
               name="ownerName"
-              value={vehicleForm.ownerName}
-              onChange={(event) =>
-                handleInputChange('ownerName', event.target.value)
-              }
+              value={vehicleForm.ownername}
+              onChange={(event) => handleInputChange('ownername', event.target.value)}
               placeholder="차주명을 입력하세요"
               required
             />
@@ -175,10 +156,8 @@ export default function VehicleForm({
             <input
               id="vehicleModel"
               name="vehicleModel"
-              value={vehicleForm.vehicleModel}
-              onChange={(event) =>
-                handleInputChange('vehicleModel', event.target.value)
-              }
+              value={vehicleForm.vehiclemodel}
+              onChange={(event) => handleInputChange('vehiclemodel', event.target.value)}
               placeholder="차량 모델을 입력하세요"
             />
           </div>
@@ -191,10 +170,8 @@ export default function VehicleForm({
               id="registeredAt"
               name="registeredAt"
               type="date"
-              value={vehicleForm.registeredAt}
-              onChange={(event) =>
-                handleInputChange('registeredAt', event.target.value)
-              }
+              value={vehicleForm.registeredat}
+              onChange={(event) => handleInputChange('registeredat', event.target.value)}
               required
             />
           </div>
@@ -202,19 +179,12 @@ export default function VehicleForm({
           {/* 폼 버튼 */}
           <div className={styles.formActions}>
             {isEditing && (
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={onCancel}
-              >
+              <button type="button" className={styles.secondaryButton} onClick={onCancel}>
                 수정 취소
               </button>
             )}
 
-            <button
-              type="submit"
-              className={styles.primaryButton}
-            >
+            <button type="submit" className={styles.primaryButton}>
               {isEditing ? '수정 완료' : '차량 등록'}
             </button>
           </div>

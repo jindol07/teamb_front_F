@@ -1,7 +1,9 @@
 /* =====================================================
-   차량 관리 페이지
+   차량 관리 공통 스타일
+   중복 선택자를 정리한 Vehicle.module.css
 ===================================================== */
 
+/* 페이지 */
 .vehiclePage {
   width: 100%;
   min-width: 0;
@@ -9,8 +11,6 @@
   padding: 0 32px;
   box-sizing: border-box;
 }
-
-/* 페이지 제목 */
 
 .pageTitle {
   margin: 0;
@@ -29,10 +29,8 @@
 }
 
 /* 상단 메뉴 */
-
 .vehicleMenu {
   display: flex;
-  flex-direction: row;
   align-items: center;
   flex-wrap: nowrap;
   gap: 2px;
@@ -44,7 +42,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #e3e7ed;
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
@@ -53,7 +51,6 @@
 .vehicleMenu button {
   display: inline-flex;
   flex: 0 0 auto;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
   width: auto;
@@ -71,8 +68,6 @@
   font-weight: 500;
   white-space: nowrap;
   word-break: keep-all;
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed;
   cursor: pointer;
 }
 
@@ -83,22 +78,27 @@
 
 .vehicleMenu button.active {
   background: #172b4d;
-  color: #ffffff;
+  color: #fff;
   font-weight: 600;
 }
 
-/* 공통 콘텐츠 */
-
+/* 콘텐츠 및 헤더 */
 .vehicleContent {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-surface: #fff;
+  --color-background: #f8fafc;
+
   width: 100%;
   min-width: 0;
-  max-width: none;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0;
   box-sizing: border-box;
 }
-
-/* 콘텐츠 헤더 */
 
 .contentHeader {
   display: flex;
@@ -133,8 +133,6 @@
   line-height: 1.5;
 }
 
-/* 헤더 카운트 */
-
 .headerCount {
   display: inline-flex;
   flex: 0 0 auto;
@@ -158,8 +156,7 @@
   font-weight: 700;
 }
 
-/* 공통 버튼 */
-
+/* 버튼 공통 */
 .primaryButton,
 .secondaryButton,
 .deleteButton {
@@ -171,30 +168,22 @@
   margin: 0;
   padding: 0 14px;
   box-sizing: border-box;
+  border: 1px solid transparent;
   border-radius: 6px;
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   line-height: 1;
   white-space: nowrap;
-  appearance: none;
-  -webkit-appearance: none;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease,
-    box-shadow 0.15s ease,
-    opacity 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
-
-/* 기본 버튼 */
 
 .primaryButton {
   min-width: 96px;
-  border: 1px solid #2563eb;
+  border-color: #2563eb;
   background: #2563eb;
-  color: #ffffff;
+  color: #fff;
 }
 
 .primaryButton:hover {
@@ -212,11 +201,9 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
 }
 
-/* 보조 버튼 */
-
 .secondaryButton {
-  border: 1px solid #d0d5dd;
-  background: #ffffff;
+  border-color: #d0d5dd;
+  background: #fff;
   color: #344054;
 }
 
@@ -230,11 +217,9 @@
   box-shadow: 0 0 0 3px rgba(98, 115, 135, 0.12);
 }
 
-/* 삭제 버튼 */
-
 .deleteButton {
-  border: 1px solid #f0b4b4;
-  background: #ffffff;
+  border-color: #f0b4b4;
+  background: #fff;
   color: #d92d20;
 }
 
@@ -248,8 +233,6 @@
   box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.1);
 }
 
-/* 비활성화 버튼 */
-
 .primaryButton:disabled,
 .secondaryButton:disabled,
 .deleteButton:disabled {
@@ -258,61 +241,69 @@
   pointer-events: none;
 }
 
-/* 차량 현황 요약 */
-
+/* 요약 카드: 차량 현황 */
 .vehicleSummary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   width: 100%;
   max-width: 100%;
   margin: 0 auto 20px;
+  padding: 12px;
   box-sizing: border-box;
+  gap: 10px;
   overflow: hidden;
-  background: #ffffff;
+  background: #f8fafc;
   border: 1px solid #e4e7ec;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .summaryItem {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
-  width: 100%;
   min-width: 0;
-  min-height: 82px;
-  padding: 16px 20px;
+  min-height: 88px;
+  padding: 16px 18px;
   box-sizing: border-box;
   overflow: hidden;
-  background: #ffffff;
-  border-right: 1px solid #edf0f3;
+  background: #fff;
+  border: 1px solid #edf0f3;
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.summaryItem:last-child {
-  border-right: 0;
+.summaryItem:hover {
+  border-color: #d0d5dd;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.05);
 }
 
 .summaryItem > span {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 9px;
   overflow: hidden;
   color: #667085;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 .summaryItem > strong {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
   color: #101828;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 25px;
+  font-weight: 750;
+  line-height: 1.15;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .summaryItem > strong small {
-  margin-left: 3px;
   color: #667085;
   font-size: 12px;
   font-weight: 500;
@@ -325,10 +316,65 @@
 .summaryStopped {
   color: #b42318 !important;
 }
-/* =====================================================
-   검색 및 필터
-===================================================== */
 
+.summaryCensle {
+  color: #db4848 !important;
+}
+
+/* 벌칙금 요약 */
+.fineSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 auto 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+}
+
+.fineSummaryItem {
+  min-width: 0;
+  min-height: 82px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: #fff;
+  border-right: 1px solid #edf0f3;
+}
+
+.fineSummaryItem:last-child {
+  border-right: 0;
+}
+
+.fineSummaryItem span {
+  display: block;
+  margin-bottom: 6px;
+  overflow: hidden;
+  color: #667085;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.fineSummaryItem strong {
+  color: #101828;
+  font-size: 22px;
+  white-space: nowrap;
+}
+
+.fineUnpaid {
+  color: #d92d20 !important;
+}
+
+.finePaid {
+  color: #027a48 !important;
+}
+
+/* 검색 및 필터 */
 .vehicleToolbar {
   display: flex;
   align-items: center;
@@ -348,12 +394,10 @@
   height: 40px;
   padding: 0 11px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .searchBox:focus-within {
@@ -386,8 +430,6 @@
   color: #98a2b3;
 }
 
-/* 필터 Select */
-
 .vehicleToolbar > select {
   flex: 0 0 110px;
   width: 110px;
@@ -396,7 +438,7 @@
   box-sizing: border-box;
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-  background: #ffffff;
+  background: #fff;
   color: #344054;
   font-family: inherit;
   font-size: 13px;
@@ -413,17 +455,17 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-/* 차량 테이블 영역 */
-
+/* 테이블 */
 .vehicleTableWrap {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
   overflow-x: auto;
   overflow-y: hidden;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #e4e7ec;
   border-radius: 8px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .vehicleTable {
@@ -432,10 +474,8 @@
   border-collapse: collapse;
   border-spacing: 0;
   table-layout: auto;
-  background: #ffffff;
+  background: #fff;
 }
-
-/* 테이블 헤더 */
 
 .vehicleTable thead th {
   height: 38px;
@@ -451,10 +491,8 @@
   letter-spacing: -0.2px;
 }
 
-/* 테이블 본문 */
-
 .vehicleTable tbody tr {
-  background: #ffffff;
+  background: #fff;
   transition: background 0.15s ease;
 }
 
@@ -462,7 +500,7 @@
   height: 50px;
   padding: 0 8px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #fff;
   border-bottom: 1px solid #edf0f3;
   color: #475467;
   font-size: 13px;
@@ -472,9 +510,7 @@
   text-align: center;
   white-space: nowrap;
   letter-spacing: -0.2px;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .vehicleTable tbody tr:last-child td {
@@ -484,8 +520,6 @@
 .vehicleTable tbody tr:hover td {
   background: #f8fafc;
 }
-
-/* 차량번호 */
 
 .vehicleTable tbody td .vehicleNumber {
   display: inline-block;
@@ -503,20 +537,12 @@
   letter-spacing: -0.2px;
 }
 
-/* 차주 */
-
-.vehicleTable tbody td .ownerName {
+.vehicleTable tbody td .ownerName,
+.ownerName {
   color: #344054;
   font-size: 13px;
   font-weight: 400;
 }
-
-.ownerName {
-  color: #344054;
-  font-size: 13px;
-}
-
-/* 세대 및 등록일 */
 
 .vehicleTable tbody td .unitInfo,
 .vehicleTable tbody td .registeredDate {
@@ -536,8 +562,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 차량 종류 */
-
 .vehicleTable .vehicleType {
   display: inline-flex;
   align-items: center;
@@ -556,8 +580,13 @@
   white-space: nowrap;
 }
 
-/* 테이블 하단 카운트 */
+.vehicleTable th:last-child,
+.vehicleTable td:last-child {
+  min-width: 200px;
+  max-width: 200px;
+}
 
+/* 테이블 하단 */
 .tableFooter {
   display: flex;
   align-items: center;
@@ -575,17 +604,7 @@
   font-weight: 700;
 }
 
-/* 마지막 관리 컬럼 */
-
-.vehicleTable th:last-child,
-.vehicleTable td:last-child {
-  width: 100px !important;
-  min-width: 200px !important;
-  max-width: 200px !important;
-}
-
-/* 차량 상세 보기 */
-
+/* 상세 보기 */
 .vehicleDetailLink {
   padding: 0;
   border: 0;
@@ -627,6 +646,7 @@
 .vehicleDetailActions,
 .formActions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -634,41 +654,9 @@
 .vehicleDetailActions {
   margin-top: 24px;
 }
-/* =====================================================
-   검색 결과 없음
-===================================================== */
-
-.emptySearch {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-width: 0;
-  min-height: 220px;
-  padding: 40px 20px;
-  box-sizing: border-box;
-  background: #fafbfc;
-  border: 1px dashed #d0d5dd;
-  border-radius: 8px;
-  text-align: center;
-}
-
-.emptySearch strong {
-  color: #475467;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.emptySearch p {
-  margin: 8px 0 18px;
-  color: #98a2b3;
-  font-size: 13px;
-  line-height: 1.6;
-}
 
 /* 빈 상태 */
-
+.emptySearch,
 .emptyVehicle,
 .emptyParkingEvent {
   display: flex;
@@ -677,7 +665,6 @@
   justify-content: center;
   width: 100%;
   min-width: 0;
-  min-height: 240px;
   padding: 40px 20px;
   box-sizing: border-box;
   background: #fafbfc;
@@ -686,19 +673,30 @@
   text-align: center;
 }
 
+.emptySearch {
+  min-height: 220px;
+}
+
+.emptyVehicle,
+.emptyParkingEvent {
+  min-height: 240px;
+}
+
+.emptySearch strong,
+.emptyVehicle strong,
+.emptyParkingEvent strong {
+  color: #475467;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.emptySearch p,
 .emptyVehicle p,
 .emptyParkingEvent p {
   margin: 8px 0 18px;
   color: #98a2b3;
   font-size: 13px;
   line-height: 1.7;
-}
-
-.emptyVehicle strong,
-.emptyParkingEvent strong {
-  color: #475467;
-  font-size: 14px;
-  font-weight: 600;
 }
 
 .emptyIcon {
@@ -714,7 +712,6 @@
 }
 
 /* 차량 등록 레이아웃 */
-
 .registerLayout {
   display: grid;
   width: 100%;
@@ -725,8 +722,6 @@
   align-items: start;
   box-sizing: border-box;
 }
-
-/* 아파트 지도 */
 
 .apartmentMapArea {
   width: 100%;
@@ -746,15 +741,14 @@
   box-sizing: border-box;
 }
 
-/* 차량 등록 폼 */
-
+/* 차량 폼 */
 .vehicleForm {
   width: 100%;
   min-width: 0;
   max-width: 100%;
   padding: 24px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #e3e7ed;
   border-radius: 8px;
   overflow: hidden;
@@ -768,8 +762,6 @@
   font-size: 16px;
   font-weight: 700;
 }
-
-/* 폼 그룹 */
 
 .formGroup {
   display: flex;
@@ -792,8 +784,6 @@
   font-weight: 600;
 }
 
-/* 입력창 및 Select */
-
 .formGroup input,
 .formGroup select {
   display: block;
@@ -804,14 +794,12 @@
   box-sizing: border-box;
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-  background: #ffffff;
+  background: #fff;
   color: #101828;
   font-family: inherit;
   font-size: 13px;
   outline: none;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .formGroup input:hover,
@@ -829,7 +817,30 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-/* 선택된 세대 */
+.formGroup textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 13px 14px;
+  box-sizing: border-box;
+  border: 1px solid #dbe2ea;
+  border-radius: 9px;
+  background: #fff;
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.7;
+  outline: none;
+  resize: vertical;
+}
+
+.formGroup textarea::placeholder {
+  color: #a0aab8;
+}
+
+.formGroup textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
 
 .selectedUnit {
   display: flex;
@@ -839,12 +850,12 @@
   min-height: 40px;
   padding: 0 11px;
   box-sizing: border-box;
+  overflow: hidden;
   background: #f8fafc;
   border: 1px solid #e3e7ed;
   border-radius: 6px;
   color: #667085;
   font-size: 13px;
-  overflow: hidden;
 }
 
 .selectedUnit strong {
@@ -855,13 +866,11 @@
 }
 
 .selectedUnit span {
+  overflow: hidden;
   color: #98a2b3;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* 입력창 + 버튼 */
 
 .inputWithButton {
   display: flex;
@@ -882,8 +891,6 @@
   min-width: 60px;
 }
 
-/* 차량 번호 조회 결과 */
-
 .predictionResult {
   width: 100%;
   min-width: 0;
@@ -902,8 +909,6 @@
   font-weight: 700;
 }
 
-/* 등록 버튼 */
-
 .vehicleForm > .primaryButton {
   display: flex;
   width: 100%;
@@ -912,7 +917,6 @@
 }
 
 /* 수정 및 삭제 목록 */
-
 .editVehicleList {
   display: flex;
   flex-direction: column;
@@ -922,8 +926,6 @@
   gap: 8px;
 }
 
-/* 수정 목록 행 */
-
 .editVehicleRow {
   display: flex;
   align-items: center;
@@ -932,21 +934,17 @@
   min-height: 76px;
   padding: 14px 16px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #e4e7ec;
   border-radius: 8px;
-  gap: 50px;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
+  gap: 24px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .editVehicleRow:hover {
   background: #fbfcfd;
   border-color: #cfd5dc;
 }
-
-/* 수정 차량 정보 */
 
 .editVehicleInfo {
   flex: 1 1 auto;
@@ -992,14 +990,12 @@
   border-radius: 50%;
 }
 
-/* 수정 및 삭제 버튼 */
-
 .editButtons {
   display: flex;
   align-items: center;
   flex: 0 0 auto;
   gap: 6px;
-  margin-left: 30px;
+  margin-left: 12px;
 }
 
 .editButtons button {
@@ -1011,21 +1007,18 @@
   font-size: 12px;
 }
 
-/* 주정차 및 벌칙금 관리 목록 */
-
+/* 주정차 및 벌칙금 목록 */
 .statusList {
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  background: #ffffff;
+  overflow: hidden;
+  background: #fff;
   border: 1px solid #e4e7ec;
   border-radius: 10px;
-  overflow: hidden;
 }
-
-/* 차량 행 */
 
 .statusRow {
   display: grid;
@@ -1037,7 +1030,7 @@
   gap: 20px;
   padding: 16px 20px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #fff;
   border-bottom: 1px solid #edf0f3;
   transition: background 0.15s ease;
 }
@@ -1049,8 +1042,6 @@
 .statusRow:hover {
   background: #f8fafc;
 }
-
-/* 차량 정보 */
 
 .statusInfo {
   min-width: 0;
@@ -1117,9 +1108,8 @@
   border-radius: 50%;
 }
 
-/* 벌칙금 정보 */
-
-.penaltyInfo {
+.penaltyInfo,
+.violationInfo {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1143,17 +1133,6 @@
   white-space: nowrap;
 }
 
-/* 위반 횟수 */
-
-.violationInfo {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  padding-left: 20px;
-  border-left: 1px solid #edf0f3;
-}
-
 .violationInfo span {
   margin-bottom: 4px;
   color: #98a2b3;
@@ -1166,8 +1145,6 @@
   font-size: 15px;
   font-weight: 700;
 }
-
-/* 상태 및 버튼 */
 
 .statusControl {
   display: flex;
@@ -1203,9 +1180,6 @@
   border: 1px solid #fecdca;
   color: #b42318;
 }
-/* =====================================================
-   벌칙금 등록 버튼
-===================================================== */
 
 .penaltyButton {
   display: inline-flex;
@@ -1216,17 +1190,14 @@
   box-sizing: border-box;
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-  background: #ffffff;
+  background: #fff;
   color: #344054;
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .penaltyButton:hover {
@@ -1239,64 +1210,7 @@
   background: #fef3f2;
 }
 
-/* 벌칙금 요약 */
-
-.fineSummary {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  margin: 0 auto 20px;
-  border: 1px solid #e4e7ec;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #ffffff;
-  box-sizing: border-box;
-}
-
-.fineSummaryItem {
-  min-width: 0;
-  min-height: 82px;
-  padding: 16px 20px;
-  box-sizing: border-box;
-  background: #ffffff;
-  border-right: 1px solid #edf0f3;
-  overflow: hidden;
-}
-
-.fineSummaryItem:last-child {
-  border-right: 0;
-}
-
-.fineSummaryItem span {
-  display: block;
-  margin-bottom: 6px;
-  color: #667085;
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.fineSummaryItem strong {
-  color: #101828;
-  font-size: 22px;
-  white-space: nowrap;
-}
-
-.fineUnpaid {
-  color: #d92d20 !important;
-}
-
-.finePaid {
-  color: #027a48 !important;
-}
-
-/* =====================================================
-   파일 선택 영역
-===================================================== */
-
+/* 파일 업로드 */
 .fileUpload {
   width: 100%;
   min-width: 0;
@@ -1316,8 +1230,6 @@
   border: 0;
 }
 
-/* 파일 선택 박스 */
-
 .fileUploadLabel {
   display: flex;
   align-items: center;
@@ -1326,14 +1238,11 @@
   min-height: 72px;
   padding: 12px 14px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #fff;
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .fileUploadLabel:hover {
@@ -1345,8 +1254,6 @@
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
-
-/* 파일 아이콘 */
 
 .fileUploadIcon {
   display: flex;
@@ -1362,8 +1269,6 @@
   color: #2563eb;
   font-size: 20px;
 }
-
-/* 파일 설명 */
 
 .fileUploadText {
   display: flex;
@@ -1385,8 +1290,6 @@
   line-height: 1.4;
 }
 
-/* 파일 선택 버튼 */
-
 .fileUploadButton {
   display: inline-flex;
   align-items: center;
@@ -1397,7 +1300,7 @@
   margin-left: auto;
   padding: 0 11px;
   box-sizing: border-box;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #d0d5dd;
   border-radius: 5px;
   color: #344054;
@@ -1405,10 +1308,7 @@
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .fileUploadLabel:hover .fileUploadButton {
@@ -1416,8 +1316,6 @@
   border-color: #93c5fd;
   color: #1d4ed8;
 }
-
-/* 선택된 파일 */
 
 .fileSelected {
   display: flex;
@@ -1469,8 +1367,6 @@
   font-size: 10px;
 }
 
-/* 파일 삭제 버튼 */
-
 .fileRemoveButton {
   display: flex;
   align-items: center;
@@ -1493,8 +1389,6 @@
   color: #d92d20;
 }
 
-/* Excel 파일 */
-
 .fileUpload.excel .fileUploadIcon {
   background: #ecfdf3;
   border-color: #bbf7d0;
@@ -1511,12 +1405,182 @@
   color: #15803d;
 }
 
-/* =====================================================
-   공통 최종 정렬
-===================================================== */
+/* 추가 차량 신청 관리 테이블 전용 보정 */
+.vehicleTable th,
+.vehicleTable td {
+  white-space: nowrap;
+}
 
+.vehicleTable td:nth-child(6) {
+  font-weight: 650;
+}
+
+/* 반려 모달 */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+.rejectModal {
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 28px;
+  box-sizing: border-box;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: rejectModalEnter 0.18s ease-out;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.modalHeader h3 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.modalHeader p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.modalCloseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modalCloseButton:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.modalRequestInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+  font-size: 14px;
+}
+
+.modalRequestInfo span {
+  color: #6b7280;
+}
+
+.modalRequestInfo strong {
+  color: #111827;
+}
+
+.rejectTextarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rejectTextarea:focus {
+  outline: none;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.rejectTextarea::placeholder {
+  color: #9ca3af;
+}
+
+.requiredMark {
+  color: #dc2626;
+}
+
+.characterCount {
+  display: block;
+  margin-top: 6px;
+  color: #9ca3af;
+  font-size: 12px;
+  text-align: right;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.dangerButton {
+  padding: 10px 18px;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dangerButton:hover {
+  background: #b91c1c;
+}
+
+@keyframes rejectModalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 공통 폭 보정 */
 .vehicleMenu,
-.contentHeader,
 .vehicleSummary,
 .fineSummary,
 .vehicleToolbar,
@@ -1533,763 +1597,146 @@
   box-sizing: border-box;
 }
 
-/* =====================================================
-   테이블 최종 보정
-===================================================== */
-
-.vehicleTableWrap {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  border: 1px solid #e4e7ec;
-  border-radius: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  background: #ffffff;
-}
-
-.vehicleTable {
-  width: max-content;
-  min-width: 100%;
-  border-collapse: collapse;
-  border-spacing: 0;
-  table-layout: auto;
-  background: #ffffff;
-}
-
-.vehicleTable thead th,
-.vehicleTable tbody td {
-  padding-left: 8px;
-  padding-right: 8px;
-  letter-spacing: -0.2px;
-}
-
-/* =====================================================
-   태블릿
-===================================================== */
-
-@media (max-width: 900px) {
-  .statusRow {
-    grid-template-columns: minmax(0, 1fr) 120px 90px 150px;
-    gap: 20px;
-    padding: 16px 20px;
-  }
-
-  .penaltyInfo,
-  .violationInfo {
-    padding-left: 20px;
-  }
-
-  .statusControl {
-    flex-wrap: nowrap;
-  }
-
-  .registerLayout {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-    gap: 24px;
-  }
-}
-
-/* =====================================================
-   모바일
-===================================================== */
-
-@media (max-width: 700px) {
-  .vehiclePage {
-    width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0 16px;
-    box-sizing: border-box;
-  }
-
-  .vehicleContent {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  .statusRow {
-    grid-template-columns: minmax(0, 1fr) 120px 90px 150px;
-    gap: 20px;
-    padding: 16px 20px;
-  }
-
-  .statusInfo,
-  .statusControl,
-  .penaltyInfo {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .statusControl {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: nowrap;
-  }
-
-  .penaltyInfo {
-    padding: 0 0 0 20px;
-    border-top: 0;
-    border-left: 1px solid #edf0f3;
-  }
-
-  .violationInfo {
-    display: flex;
-  }
-
-  .registerLayout {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-    gap: 24px;
-  }
-
-  .vehicleTableWrap {
-    width: 100%;
-    min-width: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .vehicleTable {
-    width: max-content;
-    min-width: 0;
-    table-layout: auto;
-  }
-}
-
-/* =====================================================
-   작은 모바일
-===================================================== */
-
-@media (max-width: 480px) {
-  .vehiclePage {
-    width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0 12px;
-    box-sizing: border-box;
-  }
-
-  .vehicleContent {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
-  .vehicleSummary,
-  .fineSummary {
+/* 태블릿 */
+@media (max-width: 1024px) {
+  .vehicleSummary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .summaryItem,
-  .fineSummaryItem {
-    min-height: 82px;
-    border-right: 1px solid #edf0f3;
-    border-bottom: 0;
-  }
-
-  .summaryItem:last-child,
-  .fineSummaryItem:last-child {
-    border-right: 0;
-  }
-
-  .statusRow {
-    grid-template-columns: minmax(0, 1fr) 120px 90px 150px;
-    gap: 20px;
-    padding: 16px 20px;
-  }
-
-  .statusInfo,
-  .penaltyInfo,
-  .statusControl {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .statusControl {
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: nowrap;
-  }
-
-  .penaltyInfo {
-    padding: 0 0 0 20px;
-    border-top: 0;
-    border-left: 1px solid #edf0f3;
-  }
-
-  .penaltyButton {
-    flex: 0 0 auto;
+  .summaryItem {
+    padding: 16px;
   }
 
   .registerLayout {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-    gap: 24px;
-  }
-
-  .vehicleTableWrap {
-    width: 100%;
-    min-width: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .vehicleTable {
-    width: max-content;
-    min-width: 0;
-    table-layout: auto;
-  }
-
-  .vehicleTable thead th,
-  .vehicleTable tbody td {
-    padding-left: 7px;
-    padding-right: 7px;
-  }
-}
-/* =====================================================
-   차량 추가 등록 관리
-   Vehicle.module.css
-===================================================== */
-
-/* 공통 변수 */
-
-.vehicleContent {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-text: #1e293b;
-  --color-muted: #64748b;
-  --color-border: #e2e8f0;
-  --color-surface: #ffffff;
-  --color-background: #f8fafc;
-
-  width: 100%;
-  min-width: 0;
-  padding: 28px;
-  color: var(--color-text);
-  background: var(--color-background);
-  border: 1px solid #edf0f5;
-  border-radius: 16px;
-  box-sizing: border-box;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    "Noto Sans KR",
-    sans-serif;
-}
-
-/* 페이지 헤더 */
-
-.contentHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 26px;
-}
-
-.contentHeader h3 {
-  margin: 0 0 9px;
-  color: #0f172a;
-  font-size: 23px;
-  font-weight: 750;
-  letter-spacing: -0.7px;
-  line-height: 1.4;
-}
-
-.contentHeader p {
-  margin: 0;
-  color: var(--color-muted);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-/* 요약 카드 */
-
-.vehicleSummary {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 26px;
-}
-
-.summaryItem {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 112px;
-  padding: 22px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 13px;
-  box-sizing: border-box;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.summaryItem:hover {
-  transform: translateY(-2px);
-  border-color: #cbd5e1;
-  box-shadow: 0 6px 18px rgb(15 23 42 / 5%);
-}
-
-.summaryItem > span {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.summaryItem strong {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  margin-top: 15px;
-  color: #1e293b;
-  font-size: 30px;
-  font-weight: 750;
-  letter-spacing: -1px;
-  line-height: 1.2;
-}
-
-.summaryItem strong small {
-  color: #94a3b8;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0;
-}
-
-.summaryItem .summaryStopped {
-  color: #d97706;
-}
-
-.summaryItem .summaryNormal {
-  color: #16a34a;
-}
-
-/* 검색 및 필터 */
-
-.vehicleToolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 18px;
-}
-
-.searchBox {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: min(100%, 380px);
-  min-height: 44px;
-  padding: 0 14px;
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
-  border-radius: 9px;
-  box-sizing: border-box;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.searchBox:focus-within {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
-}
-
-.searchBox > span {
-  flex-shrink: 0;
-  color: #94a3b8;
-  font-size: 25px;
-  line-height: 1;
-}
-
-.searchBox input {
-  width: 100%;
-  min-width: 0;
-  padding: 11px 0;
-  color: #1e293b;
-  background: transparent;
-  border: none;
-  outline: none;
-  font: inherit;
-  font-size: 13px;
-}
-
-.searchBox input::placeholder {
-  color: #a0aab8;
-}
-
-.vehicleToolbar select {
-  min-width: 145px;
-  min-height: 44px;
-  padding: 0 34px 0 13px;
-  color: #334155;
-  background-color: #ffffff;
-  border: 1px solid #dbe2ea;
-  border-radius: 9px;
-  outline: none;
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.vehicleToolbar select:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
-}
-
-/* 테이블 영역 */
-
-.vehicleTableWrap {
-  width: 100%;
-  overflow-x: auto;
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.vehicleTable {
-  width: 100%;
-  min-width: 800px;
-  border-collapse: separate;
-  border-spacing: 0;
-  text-align: center;
-  font-size: 13px;
-}
-
-.vehicleTable thead {
-  background: #f8fafc;
-}
-
-.vehicleTable th {
-  height: 52px;
-  padding: 0 15px;
-  color: #64748b;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.vehicleTable td {
-  height: 65px;
-  padding: 12px 15px;
-  color: #475569;
-  border-bottom: 1px solid #edf1f5;
-  box-sizing: border-box;
-  white-space: nowrap;
-}
-
-.vehicleTable tbody tr {
-  transition: background-color 0.15s ease;
-}
-
-.vehicleTable tbody tr:hover {
-  background: #f8fbff;
-}
-
-.vehicleTable tbody tr:last-child td {
-  border-bottom: none;
-}
-
-/* 차량번호 */
-
-.vehicleTable tbody td:first-child {
-  color: #1e293b;
-  font-weight: 700;
-  letter-spacing: 0.1px;
-}
-
-/* 차주 */
-
-.vehicleTable tbody td:nth-child(3) {
-  color: #334155;
-  font-weight: 600;
-}
-
-/* 승인 및 반려 버튼 */
-
-.formActions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.formActions button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 58px;
-  min-height: 34px;
-  padding: 7px 13px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 650;
-  line-height: 1.2;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.formActions button:active {
-  transform: scale(0.97);
-}
-
-.formActions button:focus-visible {
-  outline: 3px solid rgb(37 99 235 / 25%);
-  outline-offset: 2px;
-}
-
-.primaryButton {
-  color: #ffffff;
-  background: var(--color-primary, #2563eb);
-  border-color: var(--color-primary, #2563eb) !important;
-}
-
-.primaryButton:hover {
-  background: var(--color-primary-hover, #1d4ed8);
-  box-shadow: 0 3px 8px rgb(37 99 235 / 18%);
-}
-
-.secondaryButton {
-  color: #dc2626;
-  background: #ffffff;
-  border-color: #fecaca !important;
-}
-
-.secondaryButton:hover {
-  color: #b91c1c;
-  background: #fef2f2;
-  border-color: #fca5a5 !important;
-}
-
-/* 신청 상태 */
-
-.vehicleTable td:nth-child(6) {
-  font-weight: 650;
-}
-
-/* 빈 목록 */
-
-.emptyVehicle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 270px;
-  padding: 40px 20px;
-  background: #ffffff;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-  box-sizing: border-box;
-  text-align: center;
-}
-
-.emptyIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  margin-bottom: 18px;
-  background: #f1f5f9;
-  border-radius: 50%;
-  font-size: 29px;
-}
-
-.emptyVehicle > strong {
-  color: #334155;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.emptyVehicle > p {
-  margin: 9px 0 0;
-  color: #94a3b8;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-/* 반려 사유 입력 영역 */
-
-.vehicleContent > .vehicleContent {
-  margin-top: 24px;
-  padding: 25px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
-}
-
-.vehicleContent > .vehicleContent h3 {
-  margin: 0 0 15px;
-  color: #0f172a;
-  font-size: 18px;
-  font-weight: 750;
-}
-
-.vehicleContent > .vehicleContent > p {
-  margin: 0 0 22px;
-  padding: 13px 15px;
-  color: #334155;
-  background: #f8fafc;
-  border: 1px solid #edf1f5;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.formGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin-bottom: 22px;
-}
-
-.formGroup label {
-  color: #334155;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.formGroup textarea {
-  width: 100%;
-  min-height: 110px;
-  padding: 13px 14px;
-  color: #1e293b;
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
-  border-radius: 9px;
-  box-sizing: border-box;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.7;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.formGroup textarea::placeholder {
-  color: #a0aab8;
-}
-
-.formGroup textarea:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
-}
-
-/* 반려 창 하단 버튼 */
-
-.vehicleContent > .vehicleContent > .formActions {
-  justify-content: flex-end;
-  padding-top: 2px;
-}
-
-/* 태블릿 반응형 */
-
-@media (max-width: 1024px) {
-  .vehicleContent {
-    padding: 22px;
-  }
-
-  .vehicleSummary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .summaryItem {
-    min-height: 100px;
-    padding: 18px;
-  }
-
-  .summaryItem strong {
-    font-size: 27px;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    gap: 18px;
   }
 }
 
-/* 모바일 반응형 */
-
-@media (max-width: 600px) {
-  .vehicleContent {
+@media (max-width: 900px) {
+  .statusRow {
+    grid-template-columns: minmax(0, 1fr) 110px 80px 140px;
+    gap: 14px;
     padding: 16px;
-    border-radius: 12px;
+  }
+
+  .penaltyInfo,
+  .violationInfo {
+    padding-left: 12px;
+  }
+}
+
+/* 모바일 */
+@media (max-width: 700px) {
+  .vehiclePage {
+    padding: 0 16px;
+  }
+
+  .vehicleContent {
+    padding: 0;
   }
 
   .contentHeader {
     align-items: flex-start;
-    margin-bottom: 20px;
+    gap: 12px;
   }
 
   .contentHeader h3 {
-    font-size: 19px;
+    font-size: 18px;
   }
 
-  .contentHeader p {
-    font-size: 12px;
+  .registerLayout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
   }
 
-  .vehicleSummary {
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .summaryItem {
-    min-height: 90px;
-    padding: 14px;
-    border-radius: 10px;
-  }
-
-  .summaryItem > span {
-    font-size: 12px;
-  }
-
-  .summaryItem strong {
-    margin-top: 12px;
-    font-size: 24px;
+  .apartmentMapArea {
+    min-height: 360px;
   }
 
   .vehicleToolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    margin-bottom: 14px;
+    flex-wrap: wrap;
   }
 
   .searchBox {
-    width: 100%;
+    flex-basis: 100%;
   }
 
-  .vehicleToolbar select {
-    width: 100%;
+  .vehicleToolbar > select {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  .vehicleTableWrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .vehicleTable {
+    width: max-content;
     min-width: 760px;
+  }
+
+  .statusRow {
+    grid-template-columns: minmax(0, 1fr) 110px 80px 140px;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .statusControl {
+    flex-wrap: nowrap;
+  }
+
+  .editVehicleRow {
+    gap: 12px;
+  }
+
+  .editButtons {
+    margin-left: 0;
+  }
+
+  .vehicleSummary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .fineSummary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .vehiclePage {
+    padding: 0 16px;
+  }
+
+  .vehicleContent {
+    border-radius: 12px;
+  }
+
+  .vehicleSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .fineSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summaryItem,
+  .fineSummaryItem {
+    min-height: 76px;
+    padding: 12px;
+  }
+
+  .summaryItem > span,
+  .fineSummaryItem span {
+    font-size: 11px;
+  }
+
+  .summaryItem > strong,
+  .fineSummaryItem strong {
+    font-size: 21px;
   }
 
   .vehicleTable th {
@@ -2317,30 +1764,65 @@
     min-height: 230px;
     padding: 28px 16px;
   }
+}
 
-  .vehicleContent > .vehicleContent {
-    margin-top: 20px;
-    padding: 18px;
+@media (max-width: 480px) {
+  .vehiclePage {
+    padding: 0 12px;
   }
 
-  .vehicleContent > .vehicleContent h3 {
-    font-size: 16px;
+  .vehicleSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .vehicleContent > .vehicleContent > .formActions {
-    gap: 8px;
+  .fineSummary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .statusRow {
+    grid-template-columns: minmax(0, 1fr) 110px 80px 140px;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .penaltyButton {
+    flex: 0 0 auto;
+  }
+
+  .vehicleTable {
+    min-width: 760px;
+  }
+
+  .vehicleTable thead th,
+  .vehicleTable tbody td {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .rejectModal {
+    padding: 22px 18px;
+    border-radius: 12px;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalActions button {
+    width: 100%;
   }
 }
 
 /* 모션 최소화 설정 */
-
 @media (prefers-reduced-motion: reduce) {
   .summaryItem,
   .searchBox,
   .vehicleToolbar select,
   .vehicleTable tbody tr,
   .formActions button,
-  .formGroup textarea {
+  .formGroup textarea,
+  .rejectModal {
+    animation: none;
     transition: none;
   }
 }

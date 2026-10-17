@@ -2,13 +2,15 @@ import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import styles from './Vehicle.module.css';
 import { useVehicleStore } from './vehicleStore';
-import type { Fine, FineReason, FineStatus } from './vehicleStore';
-import type { FineForm, FineManagementProps } from './vehicleManage.interface';
+import type { Fine, FineStatus } from './vehicleStore';
+import type {FineForm, FineManagementProps } from './vehicleManage.interface';
+
 import { createInitialFineForm } from './vehicleUtils';
 
 export default function FineManagement({
   onVehicleDetail,
 }: FineManagementProps) {
+  // Zustand 스토어에서 차량 목록, 위반 목록 및 관련 액션 함수 가져오기
   const vehicles = useVehicleStore(
     (state) => state.vehicles,
   );
@@ -29,23 +31,29 @@ export default function FineManagement({
     (state) => state.deleteFine,
   );
 
+  // 주정차 위반 등록/수정 폼 입력 상태
   const [fineForm, setFineForm] =
     useState<FineForm>(createInitialFineForm());
 
+  // 현재 수정 중인 위반 정보의 ID (null인 경우 신규 등록)
   const [editingFineId, setEditingFineId] =
     useState<number | null>(null);
 
+  // 검색어 상태
   const [fineSearch, setFineSearch] =
     useState('');
 
+  // 위반 상태 필터 상태 ('전체' 또는 특정 상태)
   const [fineStatusFilter, setFineStatusFilter] =
     useState<'전체' | FineStatus>('전체');
 
+  // 폼 초기화 및 수정 모드 해제
   const resetFineForm = () => {
     setFineForm(createInitialFineForm());
     setEditingFineId(null);
   };
 
+  // 폼 입력 값 변경 핸들러
   const handleFineFormChange = (
     event: ChangeEvent<
       HTMLInputElement |
@@ -61,23 +69,24 @@ export default function FineManagement({
     }));
   };
 
+  // 주정차 위반 등록/수정 폼 제출 핸들러
   const handleFineSubmit = (
     event: FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
 
-    const vehicleId = Number(fineForm.vehicleId);
+    const vehicleid = Number(fineForm.vehicleid);
 
     const amount = Number(
       fineForm.amount.replace(/,/g, ''),
     );
 
-    if (!vehicleId) {
+    if (!vehicleid) {
       window.alert('차량을 선택해주세요.');
       return;
     }
 
-    if (!fineForm.violationDate) {
+    if (!fineForm.violationdate) {
       window.alert('주차위반 날짜를 선택해주세요.');
       return;
     }
@@ -89,8 +98,9 @@ export default function FineManagement({
       return;
     }
 
+    // 선택한 차량이 실제 존재하는지 확인 (vehicleid 기준)
     const vehicleExists = vehicles.some(
-      (vehicle) => vehicle.id === vehicleId,
+      (vehicle) => vehicle.vehicleid === vehicleid,
     );
 
     if (!vehicleExists) {
@@ -100,8 +110,8 @@ export default function FineManagement({
 
     const fine: Fine = {
       id: editingFineId ?? Date.now(),
-      vehicleId,
-      violationDate: fineForm.violationDate,
+      vehicleid,
+      violationdate: fineForm.violationdate,
       reason: fineForm.reason,
       amount,
       status: fineForm.status,
@@ -119,12 +129,13 @@ export default function FineManagement({
     resetFineForm();
   };
 
+  // 수정 모드 진입 핸들러
   const handleEditFine = (fine: Fine) => {
     setEditingFineId(fine.id);
 
     setFineForm({
-      vehicleId: String(fine.vehicleId),
-      violationDate: fine.violationDate,
+      vehicleid: String(fine.vehicleid),
+      violationdate: fine.violationdate,
       reason: fine.reason,
       amount: String(fine.amount),
       status: fine.status,
@@ -132,6 +143,7 @@ export default function FineManagement({
     });
   };
 
+  // 주정차 위반 삭제 핸들러
   const handleDeleteFine = (fine: Fine) => {
     const confirmed = window.confirm(
       '해당 주정차 위반 정보를 삭제하시겠습니까?',
@@ -152,17 +164,18 @@ export default function FineManagement({
 
   const keyword = fineSearch.trim().toLowerCase();
 
+  // 검색어 및 상태 필터가 적용된 위반 목록 필터링
   const filteredFines = fines.filter((fine) => {
     const vehicle = vehicles.find(
-      (item) => item.id === fine.vehicleId,
+      (item) => item.vehicleid === fine.vehicleid,
     );
 
     const matchesKeyword =
       !keyword ||
-      (vehicle?.vehicleNumber ?? '')
+      (vehicle?.vehiclenumber ?? '')
         .toLowerCase()
         .includes(keyword) ||
-      (vehicle?.ownerName ?? '')
+      (vehicle?.ownername ?? '')
         .toLowerCase()
         .includes(keyword) ||
       fine.reason.toLowerCase().includes(keyword);
@@ -173,6 +186,23 @@ export default function FineManagement({
 
     return matchesKeyword && matchesStatus;
   });
+
+  // 상태별 통계 카운트 계산
+  const untreatedFineCount = fines.filter(
+    (fine) => fine.status === '미조치',
+  ).length;
+
+  const processingFineCount = fines.filter(
+    (fine) => fine.status === '조치 중',
+  ).length;
+
+  const completedFineCount = fines.filter(
+    (fine) => fine.status === '조치 완료',
+  ).length;
+
+  const unprocessableFineCount = fines.filter(
+    (fine) => fine.status === '처리 불가',
+  ).length;
 
   return (
     <div className={styles.vehicleContent}>
@@ -185,6 +215,7 @@ export default function FineManagement({
         </div>
       </div>
 
+      {/* 요약 통계 영역 */}
       <div className={styles.vehicleSummary}>
         <div className={styles.summaryItem}>
           <span>전체 위반 건수</span>
@@ -195,13 +226,17 @@ export default function FineManagement({
         </div>
 
         <div className={styles.summaryItem}>
+          <span>미조치</span>
+          <strong>
+            {untreatedFineCount}
+            <small>건</small>
+          </strong>
+        </div>
+
+        <div className={styles.summaryItem}>
           <span>조치 중</span>
           <strong className={styles.summaryStopped}>
-            {
-              fines.filter(
-                (fine) => fine.status === '조치 중',
-              ).length
-            }
+            {processingFineCount}
             <small>건</small>
           </strong>
         </div>
@@ -209,16 +244,21 @@ export default function FineManagement({
         <div className={styles.summaryItem}>
           <span>조치 완료</span>
           <strong className={styles.summaryNormal}>
-            {
-              fines.filter(
-                (fine) => fine.status === '조치 완료',
-              ).length
-            }
+            {completedFineCount}
+            <small>건</small>
+          </strong>
+        </div>
+
+        <div className={styles.summaryItem}>
+          <span>처리 불가</span>
+          <strong>
+            {unprocessableFineCount}
             <small>건</small>
           </strong>
         </div>
       </div>
 
+      {/* 위반 등록/수정 폼 영역 */}
       <form
         className={styles.vehicleForm}
         onSubmit={handleFineSubmit}
@@ -228,40 +268,46 @@ export default function FineManagement({
 
           <select
             id="fineVehicleId"
-            name="vehicleId"
-            value={fineForm.vehicleId}
+            name="vehicleid"
+            value={fineForm.vehicleid}
             onChange={handleFineFormChange}
             required
           >
-            <option value="">차량을 선택해주세요</option>
+            <option value="">
+              차량을 선택해주세요
+            </option>
 
             {vehicles.map((vehicle) => (
               <option
-                key={vehicle.id}
-                value={vehicle.id}
+                key={vehicle.vehicleid}
+                value={vehicle.vehicleid}
               >
-                {vehicle.vehicleNumber} -{' '}
-                {vehicle.ownerName || '차주 미등록'}
+                {vehicle.vehiclenumber} -{' '}
+                {vehicle.ownername || '차주 미등록'}
               </option>
             ))}
           </select>
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="violationDate">위반일자</label>
+          <label htmlFor="violationDate">
+            위반일자
+          </label>
 
           <input
             id="violationDate"
             name="violationDate"
             type="date"
-            value={fineForm.violationDate}
+            value={fineForm.violationdate}
             onChange={handleFineFormChange}
             required
           />
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="fineReason">위반 사유</label>
+          <label htmlFor="fineReason">
+            위반 사유
+          </label>
 
           <select
             id="fineReason"
@@ -272,12 +318,15 @@ export default function FineManagement({
             <option value="지정구역 위반">
               지정구역 위반
             </option>
-            <option value="장기 주차">장기 주차</option>
-            <option value="통행 방해">통행 방해</option>
+            <option value="장기 주차">
+              장기 주차
+            </option>
+            <option value="통행 방해">
+              통행 방해
+            </option>
             <option value="기타">기타</option>
           </select>
         </div>
-
         <div className={styles.formGroup}>
           <label htmlFor="fineAmount">위반 금액</label>
 
@@ -293,7 +342,9 @@ export default function FineManagement({
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="fineStatus">현재 차량 상태</label>
+          <label htmlFor="fineStatus">
+            현재 차량 상태
+          </label>
 
           <select
             id="fineStatus"
@@ -343,6 +394,7 @@ export default function FineManagement({
         </div>
       </form>
 
+      {/* 검색 및 필터 툴바 영역 */}
       {fines.length > 0 && (
         <div className={styles.vehicleToolbar}>
           <div className={styles.searchBox}>
@@ -368,21 +420,23 @@ export default function FineManagement({
             }
           >
             <option value="전체">전체</option>
-            <option value="승인대기">승인대기</option>
+            <option value="미조치">미조치</option>
             <option value="조치 중">조치 중</option>
             <option value="조치 완료">조치 완료</option>
-            <option value="미조치">미조치</option>
             <option value="처리 불가">처리 불가</option>
           </select>
         </div>
       )}
 
+      {/* 목록 렌더링 영역 */}
       {fines.length === 0 ? (
         <div className={styles.emptyVehicle}>
           <div className={styles.emptyIcon}>📋</div>
+
           <strong>
             등록된 주정차 위반 정보가 없습니다.
           </strong>
+
           <p>
             차량을 선택하고 주정차 위반 사항을
             등록할 수 있습니다.
@@ -391,6 +445,7 @@ export default function FineManagement({
       ) : filteredFines.length === 0 ? (
         <div className={styles.emptySearch}>
           <strong>검색 결과가 없습니다.</strong>
+
           <p>검색어나 필터를 변경해주세요.</p>
 
           <button
@@ -421,7 +476,7 @@ export default function FineManagement({
             <tbody>
               {filteredFines.map((fine) => {
                 const vehicle = vehicles.find(
-                  (item) => item.id === fine.vehicleId,
+                  (item) => item.vehicleid === fine.vehicleid,
                 );
 
                 return (
@@ -431,16 +486,21 @@ export default function FineManagement({
                         type="button"
                         className={styles.vehicleDetailLink}
                         onClick={() =>
-                          onVehicleDetail(fine.vehicleId)
+                          onVehicleDetail(fine.vehicleid)
                         }
                       >
-                        {vehicle?.vehicleNumber ?? '-'}
+                        {vehicle?.vehiclenumber ?? '-'}
                       </button>
                     </td>
 
-                    <td>{fine.violationDate}</td>
+                    <td>{fine.violationdate}</td>
+
                     <td>{fine.reason}</td>
-                    <td>{fine.amount.toLocaleString()}원</td>
+
+                    <td>
+                      {fine.amount.toLocaleString()}원
+                    </td>
+
                     <td>{fine.status}</td>
 
                     <td>
