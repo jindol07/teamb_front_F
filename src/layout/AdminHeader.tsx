@@ -1,4 +1,6 @@
 import { useNavigate } from 'react-router-dom';
+import { adminLogoutAction } from '../auth/actions/authActions';
+import { useAppDispatch } from '../auth/reducers/store';
 
 /**
  * AdminHeader
@@ -6,8 +8,10 @@ import { useNavigate } from 'react-router-dom';
  */
 export default function AdminHeader() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const handleLogout = () => {
+    adminLogoutAction()(dispatch);
     navigate('/admin/login');
   };
 

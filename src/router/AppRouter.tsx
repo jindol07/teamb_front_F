@@ -17,11 +17,9 @@ export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 첫 화면 접속 시 사용자 로그인 화면으로 이동 */}
-        <Route path="/" element={<Navigate to="/user/login" replace />} />
 
-        {UserRoutes()}
         {AdminRoutes()}
+        {UserRoutes()}
 
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
