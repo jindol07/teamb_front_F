@@ -14,7 +14,7 @@ export default function VehicleFileUpload({
 
   // 지원하는 파일 형식 검사
   const isValidFile = (fileName: string): boolean => {
-    const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+    const allowedExtensions = ['.xlsx', '.xls'];
 
     return allowedExtensions.some((extension) =>
       fileName.toLowerCase().endsWith(extension),
@@ -34,7 +34,7 @@ export default function VehicleFileUpload({
 
     if (!isValidFile(file.name)) {
       window.alert(
-        'xlsx, xls, csv 파일만 업로드할 수 있습니다.',
+        'xlsx, xls 파일만 업로드할 수 있습니다.',
       );
 
       event.target.value = '';
@@ -87,7 +87,7 @@ export default function VehicleFileUpload({
           <h3>차량 정보 파일 업로드</h3>
 
           <p>
-            엑셀 또는 CSV 파일을 선택하여 차량 정보를
+            엑셀 파일을 선택하여 차량 정보를
             업로드합니다.
           </p>
         </div>
@@ -99,7 +99,7 @@ export default function VehicleFileUpload({
           ref={fileInputRef}
           id="vehicleFile"
           type="file"
-          accept=".xlsx,.xls,.csv"
+          accept=".xlsx,.xls "
           onChange={handleFileChange}
           disabled={isUploading}
         />
@@ -114,11 +114,11 @@ export default function VehicleFileUpload({
 
           <span className={styles.fileUploadText}>
             <span className={styles.fileUploadTitle}>
-              Excel / CSV 파일 선택
+              Excel 파일 선택
             </span>
 
             <span className={styles.fileUploadDescription}>
-              XLSX, XLS, CSV 파일을 지원합니다.
+              XLSX, XLS 파일을 지원합니다.
             </span>
           </span>
 

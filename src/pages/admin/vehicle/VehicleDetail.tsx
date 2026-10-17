@@ -3,47 +3,48 @@ import { useVehicleStore } from '../vehicle/vehicleStore';
 
 interface VehicleDetailProps {
   vehicleId?: number | string; // 부모 컴포넌트에서 전달받는 차량 ID
-  onBack?: () => void;         // 목록으로 돌아가기 콜백
+  onBack?: () => void; // 목록으로 돌아가기 콜백
   onEdit?: (id: number) => void; // 수정 화면으로 이동하기 콜백
 }
 
-export default function VehicleDetail({
-  vehicleId,
-  onBack,
-  onEdit,
-}: VehicleDetailProps) {
+export default function VehicleDetail({ vehicleId, onBack, onEdit }: VehicleDetailProps) {
   const vehicles = useVehicleStore((state) => state.vehicles);
   const fines = useVehicleStore((state) => state.fines);
   const deleteVehicle = useVehicleStore((state) => state.deleteVehicle);
 
   // 전달받은 ID를 안전하게 숫자로 변환
-  const numericId = vehicleId !== undefined && vehicleId !== '' ? Number(vehicleId) : null;
+  const numericId =
+    vehicleId !== undefined && vehicleId !== '' ? Number(vehicleId) : null;
 
-  // 스토어에서 차량 정보 찾기
-  const vehicle = numericId !== null 
-    ? vehicles.find((item) => item.id === numericId) ?? null 
-    : null;
+  // 스토어에서 차량 정보 찾기 (vehicleid 사용)
+  const vehicle =
+    numericId !== null
+      ? (vehicles.find((item) => item.vehicleid === numericId) ?? null)
+      : null;
 
   // 해당 차량의 주정차 위반 내역 필터링
-  const vehicleFines = numericId !== null 
-    ? fines.filter((fine) => fine.vehicleId === numericId) 
-    : [];
+  const vehicleFines =
+    numericId !== null ? fines.filter((fine) => fine.vehicleid === numericId) : [];
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!vehicle) return;
 
     const confirmed = window.confirm(
-      `"${vehicle.vehicleNumber}" 차량을 삭제하시겠습니까?\n\n차량과 연결된 주정차 위반 정보도 함께 삭제됩니다.`
+      `"${vehicle.vehiclenumber}" 차량을 삭제하시겠습니까?\n\n차량과 연결된 주정차 위반 정보도 함께 삭제됩니다.`,
     );
 
     if (!confirmed) return;
 
-    deleteVehicle(vehicle.id);
-    alert('차량이 삭제되었습니다.');
+    try {
+      await deleteVehicle(vehicle.vehicleid);
+      alert('차량이 삭제되었습니다.');
 
-    // 삭제 후 목록으로 복귀
-    if (onBack) {
-      onBack();
+      // 삭제 후 목록으로 복귀
+      if (onBack) {
+        onBack();
+      }
+    } catch (error) {
+      alert('차량 삭제에 실패했습니다.');
     }
   };
 
@@ -58,11 +59,7 @@ export default function VehicleDetail({
           <strong>차량 정보를 찾을 수 없습니다.</strong>
           <p>삭제되었거나 존재하지 않는 차량입니다.</p>
           {onBack && (
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={onBack}
-            >
+            <button type="button" className={styles.primaryButton} onClick={onBack}>
               차량 등록 현황
             </button>
           )}
@@ -82,16 +79,12 @@ export default function VehicleDetail({
       <div className={styles.vehicleContent}>
         <div className={styles.contentHeader}>
           <div>
-            <h3>{vehicle.vehicleNumber}</h3>
+            <h3>{vehicle.vehiclenumber}</h3>
             <p>차량 등록 정보를 확인해주세요.</p>
           </div>
 
           {onBack && (
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={onBack}
-            >
+            <button type="button" className={styles.secondaryButton} onClick={onBack}>
               목록으로
             </button>
           )}
@@ -100,35 +93,34 @@ export default function VehicleDetail({
         <div className={styles.vehicleDetail}>
           <div className={styles.vehicleDetailRow}>
             <span>차량번호</span>
-            <strong>{vehicle.vehicleNumber}</strong>
+            <strong>{vehicle.vehiclenumber}</strong>
           </div>
 
           <div className={styles.vehicleDetailRow}>
             <span>차량 형태</span>
-            <strong>{vehicle.vehicleType}</strong>
+            <strong>{vehicle.vehicletypecode}</strong>
           </div>
 
           <div className={styles.vehicleDetailRow}>
             <span>차량 모델</span>
-            <strong>{vehicle.vehicleModel || '-'}</strong>
+            <strong>{vehicle.vehiclemodel || '-'}</strong>
           </div>
 
           <div className={styles.vehicleDetailRow}>
             <span>차주</span>
-            <strong>{vehicle.ownerName || '-'}</strong>
+            <strong>{vehicle.ownername || '-'}</strong>
           </div>
 
           <div className={styles.vehicleDetailRow}>
             <span>상가 호수</span>
             <strong>
-              {vehicle.building ? `${vehicle.building}동` : '동 미지정'}
-              {vehicle.unit ? ` ${vehicle.unit}호` : ''}
+              {vehicle.officenumber ? `${vehicle.officenumber}호` : '호수 미지정'}
             </strong>
           </div>
 
           <div className={styles.vehicleDetailRow}>
             <span>등록일</span>
-            <strong>{vehicle.registeredAt}</strong>
+            <strong>{vehicle.registeredat || '-'}</strong>
           </div>
         </div>
 
@@ -137,17 +129,13 @@ export default function VehicleDetail({
             <button
               type="button"
               className={styles.secondaryButton}
-              onClick={() => onEdit(vehicle.id)}
+              onClick={() => onEdit(vehicle.vehicleid)}
             >
               수정
             </button>
           )}
 
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={handleDelete}
-          >
+          <button type="button" className={styles.secondaryButton} onClick={handleDelete}>
             삭제
           </button>
         </div>
@@ -182,7 +170,7 @@ export default function VehicleDetail({
               <tbody>
                 {vehicleFines.map((fine) => (
                   <tr key={fine.id}>
-                    <td>{fine.violationDate}</td>
+                    <td>{fine.violationdate}</td>
                     <td>{fine.reason}</td>
                     <td>{fine.status}</td>
                     <td>{fine.amount.toLocaleString('ko-KR')} 원</td>
