@@ -120,6 +120,29 @@ export const deleteAdminNotice = async (noticeId: number) => {
     );
     return response.data;
 };
+// 관리자 공지사항 첨부파일 다운로드 (현재 서버는 공지당 파일 1개 지원)
+// 일반 링크 대신 adminApi로 요청해야 기존 인터셉터가 JWT를 첨부합니다.
+export const downloadAdminNoticeFile = async (
+    noticeId: number,
+    fileName: string
+): Promise<void> => {
+    const response = await adminApi.get<Blob>(
+        `/api/notice/${noticeId}/file/download`,
+        { responseType: 'blob' }
+    );
+    const blobUrl = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    try {
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+    } finally {
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+    }
+};
+
 // 관리자 공지사항 첨부파일 응답 타입
 interface AdminNoticeAttachment {
     noticeAttachmentId: number;
