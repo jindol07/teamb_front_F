@@ -5,6 +5,7 @@ import {
     getAdminNoticeList,
     updateAdminNotice,
     deleteAdminNotice,
+    downloadAdminNoticeFile,
 } from '../../../api/adminNoticeApi';
 const categoryCodeMap: Record<string, string> = {
     이용안내: 'USAGE_GUIDE',
@@ -23,6 +24,7 @@ const categoryOptions = [
 export default function AdminNoticeDetail() {
     const navigate = useNavigate();
     const [isDeleting, setIsDeleting] = useState(false);
+    const [downloadingFileId, setDownloadingFileId] = useState<number | null>(null);
     const { id } = useParams();
     const [notice, setNotice] = useState<Notice | null>(null);
     const [loading, setLoading] = useState(true);
@@ -60,6 +62,18 @@ export default function AdminNoticeDetail() {
         };
         void fetchNotice();
     }, [id]);
+    // 인증된 API 요청으로 첨부파일 다운로드
+    const handleDownload = async (attachmentId: number, fileName: string) => {
+        if (!notice || downloadingFileId !== null) return;
+        try {
+            setDownloadingFileId(attachmentId);
+            await downloadAdminNoticeFile(notice.id, fileName);
+        } catch {
+            alert('첨부파일 다운로드에 실패했습니다. 로그인 상태와 서버 연결을 확인해주세요.');
+        } finally {
+            setDownloadingFileId(null);
+        }
+    };
     // 수정 버튼 클릭
     const handleEdit = () => {
         if (!notice) return;
@@ -287,12 +301,15 @@ export default function AdminNoticeDetail() {
                                     <div className="mt-2">
                                         {notice.attachments.map((file) => (
                                             <div key={file.id} className="mb-1">
-                                                <a
-                                                    href={file.url}
-                                                    className="text-decoration-none"
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-link text-decoration-none p-0"
+                                                    disabled={downloadingFileId !== null}
+                                                    onClick={() => void handleDownload(file.id, file.name)}
                                                 >
                                                     📎 {file.name}
-                                                </a>
+                                                    {downloadingFileId === file.id && ' (다운로드 중...)'}
+                                                </button>
                                             </div>
                                         ))}
                                     </div>
