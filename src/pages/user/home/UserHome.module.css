@@ -1,0 +1,73 @@
+.userHome {
+  width: 100%;
+  min-width: 0;
+}
+
+/* 기능 메뉴 전체 */
+.menuSection {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1180px; /* 1100px → 1180px */
+  margin: 28px auto 24px;
+}
+
+/* 각 메뉴 카드 */
+.menuSection > div {
+  width: auto;
+  min-width: 0;
+}
+
+.menuSection a {
+  display: block;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 20px !important;
+}
+
+.menuSection h5 {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+/* 주차장 배너 */
+.parkingBanner {
+  width: 100%;
+  max-width: 1180px; /* 메뉴와 너비 동일 */
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(22, 45, 80, 0.08);
+}
+
+/* 배너 이미지 */
+.parkingBannerImage {
+  display: block;
+  width: 100%;
+  height: 600px; /* 280px → 360px */
+  object-fit: cover;
+  object-position: center;
+}
+
+/* 태블릿 및 모바일 */
+@media (max-width: 768px) {
+  .menuSection {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .menuSection a {
+    padding: 14px !important;
+  }
+
+  .menuSection h5 {
+    font-size: 0.9rem;
+    white-space: normal;
+  }
+
+  .parkingBannerImage {
+    height: 240px;
+  }
+}
