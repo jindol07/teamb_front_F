@@ -3,7 +3,7 @@ import UserHeader from './UserHeader';
 import UserFooter from './UserFooter';
 import FloatingChatbot from '../components/FloatingChatbot';
 import { ChatbotProvider } from '../pages/user/chatbot/ChatbotContext';
-import RequireAuth from '../components/RequireAuth'; // 만약 경로가 다르다면 기존 경로를 확인해주세요!
+import RequireAuth from '../auth/RequireAuthProps'; // 만약 경로가 다르다면 기존 경로를 확인해주세요!
 
 /**
  * UserLayout
