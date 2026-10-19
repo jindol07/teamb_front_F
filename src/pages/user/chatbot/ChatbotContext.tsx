@@ -1,6 +1,8 @@
+import { v4 as uuidv4 } from 'uuid';
 import {
     createContext,
     useContext,
+    useEffect,
     useRef,
     useState
 } from 'react';
@@ -40,7 +42,51 @@ interface ChatbotContextValue {
 // 공통 Context 생성
 const ChatbotContext =
     createContext<ChatbotContextValue | null>(null);
+// =========================
+// 대화 저장 키
+// =========================
+const CHAT_MESSAGES_KEY = 'alpharking_chat_messages';
+const CHAT_CONVERSATION_KEY = 'alpharking_chat_conversation_id';
+// 기본 환영 메시지
+const initialMessages: ChatMessage[] = [
+    {
+        id: 1,
+        role: 'assistant',
+        content:
+            '안녕하세요! AI 주차 도우미 알파카입니다. 무엇을 도와드릴까요?'
+    }
+];
+// =========================
+// 브라우저에 저장된 대화 불러오기
+// =========================
+const loadSavedMessages = (): ChatMessage[] => {
+    try {
+        const saved = localStorage.getItem(CHAT_MESSAGES_KEY);
+        if (!saved) {
+            return initialMessages;
+        }
+        const parsed: unknown = JSON.parse(saved);
+        if (!Array.isArray(parsed)) {
+            return initialMessages;
+        }
+        const valid = parsed.every(
+            item =>
+                item !== null &&
+                typeof item === 'object' &&
+                typeof item.id === 'number' &&
+                (item.role === 'assistant' || item.role === 'user') &&
+                typeof item.content === 'string'
+        );
+        return valid && parsed.length > 0
+            ? parsed as ChatMessage[]
+            : initialMessages;
+    } catch {
+        return initialMessages;
+    }
+};
+// =========================
 // 챗봇 공통 상태 제공
+// =========================
 export function ChatbotProvider({
     children
 }: {
@@ -48,24 +94,55 @@ export function ChatbotProvider({
 }) {
     // 전체 화면과 플로팅이 공유하는 메시지
     const [messages, setMessages] =
-        useState<ChatMessage[]>([
-            {
-                id: 1,
-                role: 'assistant',
-                content:
-                    '안녕하세요! AI 주차 도우미 알파카입니다. 무엇을 도와드릴까요?'
-            }
-        ]);
+        useState<ChatMessage[]>(loadSavedMessages);
     const [input, setInput] = useState('');
     const [voiceError, setVoiceError] =
         useState<string | null>(null);
+    // API 통신 상태
     const [sending, setSending] = useState(false);
     const [error, setError] = useState('');
+    // =========================
+    // 대화 ID 생성 및 복원
+    // =========================
     // 두 챗봇에서 동일한 대화 ID 사용
-    const conversationId = useRef<string>(
-        crypto.randomUUID()
-    );
+    const conversationId = useRef<string | null>(null);
+    // 기존 대화 ID가 있다면 재사용
+    // 없다면 새로운 UUID 생성
+    if (conversationId.current === null) {
+        const savedId = localStorage.getItem(
+            CHAT_CONVERSATION_KEY
+        );
+        conversationId.current = savedId || uuidv4();
+    }
+    // 대화 ID를 브라우저에 저장
+    useEffect(() => {
+        if (conversationId.current) {
+            try {
+                localStorage.setItem(
+                    CHAT_CONVERSATION_KEY,
+                    conversationId.current
+                );
+            } catch (err) {
+                console.error('챗봇 대화 ID 저장 실패:', err);
+            }
+        }
+    }, []);
+    // =========================
+    // 메시지 변경 시 자동 저장
+    // =========================
+    useEffect(() => {
+        try {
+            localStorage.setItem(
+                CHAT_MESSAGES_KEY,
+                JSON.stringify(messages)
+            );
+        } catch (err) {
+            console.error('챗봇 대화 저장 실패:', err);
+        }
+    }, [messages]);
+    // =========================
     // 공통 메시지 전송 함수
+    // =========================
     const handleSendMessage = async (message?: string) => {
         const question = (message ?? input).trim();
         if (!question || sending) {
@@ -74,6 +151,7 @@ export function ChatbotProvider({
         setSending(true);
         setError('');
         setInput('');
+        // 사용자 메시지 표시
         const userMessage: ChatMessage = {
             id: Date.now(),
             role: 'user',
@@ -119,6 +197,7 @@ export function ChatbotProvider({
                     '상담 저장이 확인되지 않았습니다.'
                 );
             }
+            // 실제 AI 답변 표시
             const assistantMessage: ChatMessage = {
                 id: Date.now() + 1,
                 role: 'assistant',
@@ -157,7 +236,9 @@ export function ChatbotProvider({
         </ChatbotContext.Provider>
     );
 }
+// =========================
 // 다른 컴포넌트에서 공통 상태 사용
+// =========================
 export function useChatbot() {
     const context = useContext(ChatbotContext);
     if (!context) {
