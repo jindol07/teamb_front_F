@@ -60,17 +60,20 @@ export default function AdminNotice() {
       .includes(searchKeyword.toLowerCase());
     return categoryMatch && titleMatch;
   });
-  // 상단 고정 공지 우선 정렬
-  const pinnedNoticeList = filteredNoticeList.filter(
-    (notice) => notice.isPinned
-  );
-  const normalNoticeList = filteredNoticeList.filter(
-    (notice) => !notice.isPinned
-  );
-  const sortedNoticeList = [
-    ...pinnedNoticeList,
-    ...normalNoticeList,
-  ];
+  // 고정 → 중요 → 일반 공지 순으로, 같은 우선순위에서는 최신 등록일순 정렬
+  // 같은 날짜는 서버에서 내려준 등록 시각·공지 번호 내림차순을 유지합니다.
+  const sortedNoticeList = [...filteredNoticeList].sort((a, b) => {
+    if (Boolean(a.isPinned) !== Boolean(b.isPinned)) {
+      return a.isPinned ? -1 : 1;
+    }
+    if (Boolean(a.isImportant) !== Boolean(b.isImportant)) {
+      return a.isImportant ? -1 : 1;
+    }
+    return (
+      new Date(b.createdAt).getTime() -
+      new Date(a.createdAt).getTime()
+    );
+  });
   // 등록 폼 입력값 초기화
   const resetRegisterForm = () => {
     setRegisterCategory('USAGE_GUIDE');
