@@ -2,7 +2,6 @@ import { adminApi } from './axios';
 import type { Notice } from '../mock/noticeMock';
 // 공지사항 등록 요청 타입
 interface RegisterNoticeData {
-    writerAdminId: number;
     noticeTypeCode: string;
     title: string;
     content: string;
@@ -52,10 +51,7 @@ export const registerNotice = async (
     data: RegisterNoticeData
 ) => {
     const formData = new FormData();
-    formData.append(
-        'writerAdminId',
-        String(data.writerAdminId)
-    );
+    // 작성자 ID는 서버에서 인증된 관리자 정보로 결정합니다.
     formData.append('noticeTypeCode', data.noticeTypeCode);
     formData.append('title', data.title);
     formData.append('content', data.content);
@@ -113,24 +109,14 @@ export const updateAdminNotice = async (
 ) => {
     const response = await adminApi.put(
         `/api/notice/${noticeId}`,
-        data,
-        {
-            params: {
-                changedByAdminId: 1,
-            },
-        }
+        data
     );
     return response.data;
 };
 // 관리자 공지사항 삭제 API
 export const deleteAdminNotice = async (noticeId: number) => {
     const response = await adminApi.delete(
-        `/api/notice/${noticeId}`,
-        {
-            params: {
-                changedByAdminId: 1,
-            },
-        }
+        `/api/notice/${noticeId}`
     );
     return response.data;
 };

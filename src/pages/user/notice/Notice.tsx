@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import type { Notice as NoticeType } from '../../../mock/noticeMock';
 import { getUserNoticeList } from '../../../api/userNoticeApi';
@@ -6,24 +5,18 @@ import useAgent from '../../../hooks/useAgent';
 import NoticeSearch from './NoticeSearch';
 import NoticeTable from './NoticeTable';
 import NoticeMobileList from './NoticeMobileList';
-
 export default function Notice() {
   // 모바일 여부 확인
   const { isMobile } = useAgent();
-
   // DB 공지사항 목록
   const [noticeList, setNoticeList] = useState<NoticeType[]>([]);
-
   // 로딩 및 오류 상태
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
   // 공지 유형 필터
   const [selectedCategory, setSelectedCategory] = useState('전체');
-
   // 제목 검색어
   const [searchKeyword, setSearchKeyword] = useState('');
-
   // 페이지 진입 시 공지사항 목록 조회
   useEffect(() => {
     const fetchNotices = async () => {
@@ -37,43 +30,44 @@ export default function Notice() {
         setLoading(false);
       }
     };
-
     void fetchNotices();
   }, []);
-
   // 공지 유형 및 제목 검색
   const filteredNoticeList = noticeList.filter((notice) => {
     const categoryMatch =
       selectedCategory === '전체' ||
       notice.category === selectedCategory;
-
     const titleMatch = notice.title
       .toLowerCase()
       .includes(searchKeyword.toLowerCase());
-
     return categoryMatch && titleMatch;
   });
-
-  // 상단 고정 공지를 먼저 표시
+  // 공지사항 우선순위 정렬
+  // 1순위: 고정 공지 → 2순위: 중요 공지 → 3순위: 최신 공지
   const sortedNoticeList = [...filteredNoticeList].sort((a, b) => {
-    if (a.isPinned === b.isPinned) {
-      return 0;
+    // 1순위: 고정 공지 먼저 표시
+    if (Boolean(a.isPinned) !== Boolean(b.isPinned)) {
+      return a.isPinned ? -1 : 1;
     }
-
-    return a.isPinned ? -1 : 1;
+    // 2순위: 중요 공지 먼저 표시
+    if (Boolean(a.isImportant) !== Boolean(b.isImportant)) {
+      return a.isImportant ? -1 : 1;
+    }
+    // 3순위: 같은 우선순위 내에서는 최신순 정렬
+    return (
+      new Date(b.createdAt).getTime() -
+      new Date(a.createdAt).getTime()
+    );
   });
-
   return (
     <div className="container py-4">
       <h2 className="page-title">공지사항</h2>
-
       <NoticeSearch
         selectedCategory={selectedCategory}
         searchKeyword={searchKeyword}
         onCategoryChange={setSelectedCategory}
         onSearchKeywordChange={setSearchKeyword}
       />
-
       {loading ? (
         <div className="text-center py-5 text-muted">
           공지사항을 불러오는 중입니다.
