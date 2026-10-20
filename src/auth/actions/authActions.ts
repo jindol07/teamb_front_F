@@ -108,35 +108,35 @@ export const logoutAction = () => async (dispatch: AppDispatch) => {
     }
 };
 
-export const getOffice = async (dispatch: AppDispatch) => {
-        try {
-            const response = await axios.post(
-                import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/office'
-            );
+// export const getOffice = async (dispatch: AppDispatch) => {
+//         try {
+//             const response = await axios.post(
+//                 import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/office'
+//             );
 
-            const token = response.data.access_token;
-            console.log(response);
+//             const token = response.data.access_token;
+//             console.log(response);
 
-            if (typeof token !== 'string' || !token) {
-                dispatch(loginFailure('JWT 토큰이 없습니다.'));
-                return false;
-            }
-            console.log(token);
+//             if (typeof token !== 'string' || !token) {
+//                 dispatch(loginFailure('JWT 토큰이 없습니다.'));
+//                 return false;
+//             }
+//             console.log(token);
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('username', username);
+//             localStorage.setItem('token', token);
+//             localStorage.setItem('username', username);
 
-            dispatch(loginSuccess({ username, token }));
+//             dispatch(loginSuccess({ username, token }));
 
-            return true;
+//             return true;
 
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                dispatch(loginFailure('로그인에 실패했습니다.'));
-            } else {
-                dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
-            }
+//         } catch (error) {
+//             if (axios.isAxiosError(error)) {
+//                 dispatch(loginFailure('로그인에 실패했습니다.'));
+//             } else {
+//                 dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
+//             }
 
-            return false;
-        }
-    };
+//             return false;
+//         }
+//     };
