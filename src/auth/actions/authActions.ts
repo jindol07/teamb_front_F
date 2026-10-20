@@ -60,6 +60,40 @@ export const adminLogoutAction = () => async (dispatch: AppDispatch) => {
     }
 };
 
+export const getAdmin = async (/*dispatch: AppDispatch*/) => {
+    try {
+        const token = localStorage.getItem('token');
+
+        const response = await axios.get(
+            import.meta.env.VITE_BOOT_API_BASE_URL_A + '/api/auth/admin',
+             {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
+
+
+        if (typeof token !== 'string' || !token) {
+            // dispatch(loginFailure('JWT 토큰이 없습니다.'));
+            return null;
+        }
+
+        // dispatch(loginSuccess({ username, token }));
+
+        return response;
+
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            // dispatch(loginFailure('로그인에 실패했습니다.'));
+        } else {
+            // dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
+        }
+
+        return null;
+    }
+};
+
 
 // USER ---
 export const login = (username: string, password: string) =>
@@ -116,35 +150,36 @@ export const logoutAction = () => async (dispatch: AppDispatch) => {
     }
 };
 
-// export const getOffice = async (dispatch: AppDispatch) => {
-//         try {
-//             const response = await axios.post(
-//                 import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/office'
-//             );
+export const getOffice = async (/*dispatch: AppDispatch*/) => {
+    try {
+        const token = localStorage.getItem('token');
 
-//             const token = response.data.access_token;
-//             console.log(response);
+        const response = await axios.get(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/office',
+             {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
 
-//             if (typeof token !== 'string' || !token) {
-//                 dispatch(loginFailure('JWT 토큰이 없습니다.'));
-//                 return false;
-//             }
-//             console.log(token);
 
-//             localStorage.setItem('token', token);
-//             localStorage.setItem('username', username);
+        if (typeof token !== 'string' || !token) {
+            // dispatch(loginFailure('JWT 토큰이 없습니다.'));
+            return null;
+        }
 
-//             dispatch(loginSuccess({ username, token }));
+        // dispatch(loginSuccess({ username, token }));
 
-//             return true;
+        return response;
 
-//         } catch (error) {
-//             if (axios.isAxiosError(error)) {
-//                 dispatch(loginFailure('로그인에 실패했습니다.'));
-//             } else {
-//                 dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
-//             }
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            // dispatch(loginFailure('로그인에 실패했습니다.'));
+        } else {
+            // dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
+        }
 
-//             return false;
-//         }
-//     };
+        return null;
+    }
+};

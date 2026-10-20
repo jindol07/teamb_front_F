@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { currentUserMock } from '../mock/userMock';
-import { logoutAction } from '../auth/actions/authActions';
+import { getOffice, logoutAction } from '../auth/actions/authActions';
 import { useAppDispatch } from '../auth/reducers/store';
+import { useEffect, useState } from 'react';
 
 /**
  * UserHeader
@@ -11,11 +12,23 @@ import { useAppDispatch } from '../auth/reducers/store';
 export default function UserHeader() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [currentUser, setCurrentUser] = useState("");
 
   const handleLogout = () => {
     logoutAction()(dispatch);
     navigate('/user/login');
   };
+  useEffect(() => {
+    const fetchOffice = async () => {
+      const result = await getOffice();
+
+      if (result) {
+        setCurrentUser(result.data.office_number);
+      }
+    };
+
+    fetchOffice();
+  }, []);
 
   return (
     <header className="user-header d-flex align-items-center border-bottom">
@@ -26,13 +39,13 @@ export default function UserHeader() {
 
         <div className="d-flex align-items-center gap-3">
           <span className="text-secondary d-none d-sm-inline">
-            {currentUserMock.name}님
+            {currentUser} 님
           </span>
           <button
-           type="button" 
-           className="btn btn-sm btn-outline-secondary"
-           onClick={() => navigate('/user/mypage')}
-           >
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => navigate('/user/mypage')}
+          >
             마이페이지
           </button>
           <button
