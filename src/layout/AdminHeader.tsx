@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { adminLogoutAction } from '../auth/actions/authActions';
+import { adminLogoutAction, getAdmin } from '../auth/actions/authActions';
 import { useAppDispatch } from '../auth/reducers/store';
+import { useEffect, useState } from 'react';
 
 /**
  * AdminHeader
@@ -9,17 +10,30 @@ import { useAppDispatch } from '../auth/reducers/store';
 export default function AdminHeader() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [currentAdmin, setCurrentAdmin] = useState("");
 
   const handleLogout = () => {
     adminLogoutAction()(dispatch);
     navigate('/admin/login');
   };
 
+    useEffect(() => {
+      const fetchOffice = async () => {
+        const result = await getAdmin();
+  
+        if (result) {
+          setCurrentAdmin(result.data.admin_name);
+        }
+      };
+  
+      fetchOffice();
+    }, []);
+
   return (
     <header className="admin-header d-flex align-items-center justify-content-between px-3">
       <span className="fw-bold">주차관제 관리자 시스템</span>
       <div className="d-flex align-items-center gap-3">
-        <span className="small">관리자님</span>
+        <span className="small">{currentAdmin} 님</span>
         <button
           type="button"
           className="btn btn-sm btn-outline-light"
