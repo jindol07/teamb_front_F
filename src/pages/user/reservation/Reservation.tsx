@@ -31,11 +31,17 @@ export default function Reservation() {
 
   // 백엔드에서 최신 예약 정보 불러오기 (HTML 응답 에러 방어 로직 포함)
   const loadReservationFromApi = useCallback(async () => {
+    const token = localStorage.getItem('token');
     try {
-      const response = await fetch('/alpharking/api/reservation', {
+      const response = await fetch(import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/reservation', {
         method: 'GET',
         credentials: 'include',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
       });
+
 
       if (!response.ok) {
         throw new Error(`예약 정보를 불러오지 못했습니다. 상태 코드: ${response.status}`);
@@ -43,9 +49,11 @@ export default function Reservation() {
 
       // 서버가 JSON 대신 HTML(로그인/에러 페이지)을 줄 경우를 대비해 텍스트로 먼저 받기
       const text = await response.text();
+      console.log(text);
       if (
         !text ||
         text.trim().startsWith('<!DOCTYPE') ||
+        text.trim().startsWith('<!doctype') ||
         text.trim().startsWith('<html')
       ) {
         console.warn(
@@ -58,6 +66,7 @@ export default function Reservation() {
       const data = JSON.parse(text);
 
       if (Array.isArray(data) && data.length > 0) {
+
         const activeReservations = data.filter(
           (r: ReservationResponse) => r.status_code !== 'CANCELED',
         );
@@ -139,11 +148,16 @@ export default function Reservation() {
     if (!window.confirm('예약을 취소하시겠습니까?')) return;
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(
-        `/alpharking/api/reservation/${reservation.parking_reservation_id}`,
+        import.meta.env.VITE_BOOT_API_BASE_URL_U + `/api/reservation/${reservation.parking_reservation_id}`,
         {
           method: 'DELETE',
           credentials: 'include',
+          headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+          },
         },
       );
 
