@@ -1,18 +1,11 @@
-import { useState } from 'react';
-import {
-  ArrowUpRight,
-  CheckCircle2,
-  ChevronRight,
-  CircleHelp,
-  Coins,
-  Sparkles,
-  Wallet,
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CheckCircle2, ChevronRight, CircleHelp, Coins, Sparkles,Wallet } from 'lucide-react';
 import defaultMascot from '../../../assets/기본 마일리지.png';
 import earnedMascot from '../../../assets/마일리지 적립.png';
 import style from './MileageHistory.module.css';
-import usedMascot from '../../../assets/마일리지-사용완료.png';
+import usedMascot from '../../../assets/마일리지 사용완료.png';
 import MileageDetail from './MileageDetail';
+import { getSignedMileageAmount, mileageApi, type MileageHistoryDto } from '../../../api/mileageApi';
 
 type MileageStatus = 'default' | 'earned' | 'used';
 type MileageDetailType = 'earned' | 'used';
@@ -30,6 +23,31 @@ export default function MileageHistory() {
   const [status, setStatus] = useState<MileageStatus>('default');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [detailType, setDetailType] = useState<'earned' | 'used' | null>(null);
+  const [history, setHistory] = useState<MileageHistoryDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    mileageApi.getHistory()
+      .then((items) => { if (isMounted) setHistory(items); })
+      .catch(() => { if (isMounted) setLoadError('마일리지 정보를 불러오지 못했습니다.'); })
+      .finally(() => { if (isMounted) setIsLoading(false); });
+    return () => { isMounted = false; };
+  }, []);
+
+  const mileageSummary = useMemo(() => {
+    const now = new Date();
+    const monthItems = history.filter((item) => {
+      const date = new Date(item.createdat.replace(' ', 'T'));
+      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+    });
+    return {
+      balance: history.reduce((sum, item) => sum + getSignedMileageAmount(item), 0),
+      earned: monthItems.reduce((sum, item) => sum + Math.max(getSignedMileageAmount(item), 0), 0),
+      used: monthItems.reduce((sum, item) => sum + Math.abs(Math.min(getSignedMileageAmount(item), 0)), 0),
+    };
+  }, [history]);
 
   const openHistory = (type: MileageDetailType) => {
     setDetailType(type);
@@ -152,7 +170,7 @@ export default function MileageHistory() {
             </div>
             <p className="balance-label">사용 가능한 마일리지</p>
             <div className="balance-amount">
-              12,500<span>P</span>
+              {isLoading ? '불러오는 중' : `${mileageSummary.balance.toLocaleString('ko-KR')} `}<span>{isLoading ? '' : 'P'}</span>
             </div>
             <div className="balance-note">
               <Sparkles size={15} /> 주차 요금 결제 시 현금처럼 사용하세요.
@@ -160,12 +178,12 @@ export default function MileageHistory() {
             <div className="balance-bottom">
               <div>
                 <span>이번 달 적립</span>
-                <strong className="positive">+3,200 P</strong>
+                <strong className="positive">+{mileageSummary.earned.toLocaleString('ko-KR')} P</strong>
               </div>
               <div className="balance-separator" />
               <div>
                 <span>이번 달 사용</span>
-                <strong className="negative">−2,000 P</strong>
+                <strong className="negative">−{mileageSummary.used.toLocaleString('ko-KR')} P</strong>
               </div>
             </div>
             <div className="balance-watermark">
@@ -209,6 +227,8 @@ export default function MileageHistory() {
             <div className="mascot-glow" />
           </section>
         </div>
+
+        {loadError && <p role="alert" className="empty-state">{loadError}</p>}
 
         <section className="state-preview-section">
           <div className="section-title-row">

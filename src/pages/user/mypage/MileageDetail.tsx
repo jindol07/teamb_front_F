@@ -7,7 +7,8 @@ import {
   Clock3,
   Search,
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { getSignedMileageAmount, mileageApi, type MileageHistoryDto } from '../../../api/mileageApi';
 
 type MileageTransaction = {
   id: number;
@@ -17,48 +18,6 @@ type MileageTransaction = {
   date: string;
   amount: number;
 };
-const initialTransactions: MileageTransaction[] = [
-  {
-    id: 1,
-    type: 'earned',
-    title: '주차 이용 마일리지 적립',
-    detail: '알파킹 강남역점 · 차량 이용 완료',
-    date: '2026.10.17 14:32',
-    amount: 500,
-  },
-  {
-    id: 2,
-    type: 'used',
-    title: '마일리지 사용',
-    detail: '주차 요금 결제',
-    date: '2026.10.15 18:04',
-    amount: -1200,
-  },
-  {
-    id: 3,
-    type: 'earned',
-    title: '방문 이벤트 보너스',
-    detail: '이벤트 참여 리워드',
-    date: '2026.10.12 10:20',
-    amount: 1000,
-  },
-  {
-    id: 4,
-    type: 'earned',
-    title: '주차 이용 마일리지 적립',
-    detail: '알파킹 판교점 · 차량 이용 완료',
-    date: '2026.10.08 09:15',
-    amount: 300,
-  },
-  {
-    id: 5,
-    type: 'used',
-    title: '마일리지 사용',
-    detail: '주차 요금 할인 적용',
-    date: '2026.10.02 20:41',
-    amount: -800,
-  },
-];
 type TransactionType = 'earned' | 'used';
 type MileageTab = 'all' | TransactionType;
 type MileagePeriod = '이번 달' | '최근 3개월' | '전체 기간';
@@ -72,17 +31,45 @@ type MileageDetailProps = {
 
 export default function MileageDetail({ initialType }: MileageDetailProps) {
   const [activeTab, setActiveTab] = useState<MileageTab>(initialType);
-
+  const [history, setHistory] = useState<MileageHistoryDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [period, setPeriod] = useState<MileagePeriod>('전체 기간');
 
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+    mileageApi.getHistory()
+      .then((items) => { if (isMounted) setHistory(items); })
+      .catch(() => { if (isMounted) setLoadError('마일리지 내역을 불러오지 못했습니다.'); })
+      .finally(() => { if (isMounted) setIsLoading(false); });
+    return () => { isMounted = false; };
+  }, []);
+
+  const transactions: MileageTransaction[] = history.map((item) => {
+    const amount = getSignedMileageAmount(item);
+    const type: TransactionType = amount < 0 ? 'used' : 'earned';
+    const date = new Date(item.createdat.replace(' ', 'T'));
+    const formattedDate = Number.isNaN(date.getTime())
+      ? item.createdat
+      : `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    return {
+      id: item.mileagehistoryid,
+      type,
+      title: item.description || (type === 'used' ? '마일리지 사용' : '마일리지 적립'),
+      detail: [item.office?.officename || item.office?.officenumber, item.referencetypecode].filter(Boolean).join(' · '),
+      date: formattedDate,
+      amount,
+    };
+  });
 
   const filteredTransactions = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
     if (period === '최근 3개월') start.setMonth(now.getMonth() - 2, 1);
 
-    return initialTransactions.filter((item) => {
+    return transactions.filter((item) => {
       const [datePart = '', timePart = '00:00'] = item.date.split(' ');
       const [year = 0, month = 1, day = 1] = datePart.split('.').map(Number);
       const [hour = 0, minute = 0] = timePart.split(':').map(Number);
@@ -95,7 +82,7 @@ export default function MileageDetail({ initialType }: MileageDetailProps) {
         .includes(search.toLowerCase());
       return matchesPeriod && matchesTab && matchesSearch;
     });
-  }, [activeTab, period, search]);
+  }, [activeTab, period, search, history]);
   return (
     <div>
       <section className="history-section">
@@ -147,8 +134,8 @@ export default function MileageDetail({ initialType }: MileageDetailProps) {
               {label}
               <span>
                 {key === 'all'
-                  ? initialTransactions.length
-                  : initialTransactions.filter((item) => item.type === key).length}
+                  ? transactions.length
+                  : transactions.filter((item) => item.type === key).length}
               </span>
             </button>
           ))}
@@ -165,7 +152,7 @@ export default function MileageDetail({ initialType }: MileageDetailProps) {
               </tr>
             </thead>
             <tbody>
-              {filteredTransactions.map((item) => (
+              {!isLoading && filteredTransactions.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <span className={`transaction-symbol ${item.type}`}>
@@ -194,7 +181,9 @@ export default function MileageDetail({ initialType }: MileageDetailProps) {
                   </td>
                 </tr>
               ))}
-              {filteredTransactions.length === 0 && (
+              {isLoading && <tr><td colSpan={5} className="empty-state">마일리지 내역을 불러오는 중입니다.</td></tr>}
+              {loadError && <tr><td colSpan={5} className="empty-state" role="alert">{loadError}</td></tr>}
+              {!isLoading && !loadError && filteredTransactions.length === 0 && (
                 <tr>
                   <td colSpan={5} className="empty-state">
                     검색 결과가 없습니다.
@@ -223,7 +212,7 @@ export default function MileageDetail({ initialType }: MileageDetailProps) {
       </section>
       <footer className="page-footer">
         <span>© 2026 AI Alpha Parking</span>
-        <span>본 화면의 잔액과 거래 정보는 프런트엔드 확인용 예시 데이터입니다.</span>
+        <span>마일리지 적립 및 사용 내역</span>
       </footer>
     </div>
   );

@@ -122,49 +122,74 @@ export default function AdditionalVehicleManagement({
 
       {/* 요약 통계 영역 */}
       <div className={styles.vehicleSummary}>
-        <div className={styles.summaryItem}>
+        <button
+          type="button"
+          className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '전체' ? styles.summaryItemActive : ''}`}
+          aria-pressed={statusFilter === '전체'}
+          onClick={() => setStatusFilter('전체')}
+        >
           <span>전체 신청</span>
 
           <strong>
             {requests.length}
             <small>건</small>
           </strong>
-        </div>
+        </button>
 
-        <div className={styles.summaryItem}>
+        <button
+          type="button"
+          className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '접수' ? styles.summaryItemActive : ''}`}
+          aria-pressed={statusFilter === '접수'}
+          onClick={() => setStatusFilter('접수')}
+        >
           <span>접수</span>
 
           <strong className={styles.summaryStopped}>
             {requests.filter((request) => request.requeststatus === '접수').length}
             <small>건</small>
           </strong>
-        </div>
+        </button>
 
-        <div className={styles.summaryItem}>
+        <button
+          type="button"
+          className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '승인' ? styles.summaryItemActive : ''}`}
+          aria-pressed={statusFilter === '승인'}
+          onClick={() => setStatusFilter('승인')}
+        >
           <span>승인</span>
 
           <strong className={styles.summaryNormal}>
             {requests.filter((request) => request.requeststatus === '승인').length}
             <small>건</small>
           </strong>
-        </div>
+        </button>
 
-        <div className={styles.summaryItem}>
+        <button
+          type="button"
+          className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '반려' ? styles.summaryItemActive : ''}`}
+          aria-pressed={statusFilter === '반려'}
+          onClick={() => setStatusFilter('반려')}
+        >
           <span>반려</span>
 
           <strong>
             {requests.filter((request) => request.requeststatus === '반려').length}
             <small>건</small>
           </strong>
-        </div>
-        <div className={styles.summaryItem}>
+        </button>
+        <button
+          type="button"
+          className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '취소' ? styles.summaryItemActive : ''}`}
+          aria-pressed={statusFilter === '취소'}
+          onClick={() => setStatusFilter('취소')}
+        >
           <span>취소</span>
 
           <strong>
             {requests.filter((request) => request.requeststatus === '취소').length}
             <small>건</small>
           </strong>
-        </div>
+        </button>
       </div>
 
       {/* 검색 및 필터 툴바 영역 */}
@@ -180,19 +205,6 @@ export default function AdditionalVehicleManagement({
           />
         </div>
 
-        <select
-          aria-label="신청 상태 필터"
-          value={statusFilter}
-          onChange={(event) =>
-            setStatusFilter(event.target.value as '전체' | AdditionalVehicleStatus)
-          }
-        >
-          <option value="전체">전체 상태</option>
-          <option value="접수">접수</option>
-          <option value="승인">승인</option>
-          <option value="반려">반려</option>
-          <option value="취소">취소</option>
-        </select>
       </div>
 
       {/* 목록 렌더링 영역 */}
