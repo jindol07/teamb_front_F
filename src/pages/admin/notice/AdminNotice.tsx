@@ -30,43 +30,18 @@ export default function AdminNotice() {
   const [registerPinned, setRegisterPinned] = useState(false);
   const [registerFiles, setRegisterFiles] = useState<File[]>([]);
   /*
-   * 첨부파일 추가
-   * - 여러 파일 선택 가능
-   * - 기존 파일 유지
-   * - 이름과 크기가 같은 파일 중복 방지
+   * 첨부파일 선택
+   * - 서버 정책에 맞춰 1개만 선택 가능
+   * - 새 파일을 선택하면 기존 선택 파일을 교체
+   * - 파일 선택을 취소하면 기존 선택 유지
    */
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const selectedFiles = Array.from(e.target.files ?? []);
-    const duplicateFiles = selectedFiles.filter(
-      (selectedFile) =>
-        registerFiles.some(
-          (file) =>
-            file.name === selectedFile.name &&
-            file.size === selectedFile.size
-        )
-    );
-    if (duplicateFiles.length > 0) {
-      const duplicateFileNames = duplicateFiles
-        .map((file) => file.name)
-        .join(', ');
-      alert(`이미 선택된 파일입니다.\n${duplicateFileNames}`);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setRegisterFiles([selectedFile]);
     }
-    const newFiles = selectedFiles.filter(
-      (selectedFile, index) =>
-        !registerFiles.some(
-          (file) =>
-            file.name === selectedFile.name &&
-            file.size === selectedFile.size
-        ) &&
-        selectedFiles.findIndex(
-          (file) =>
-            file.name === selectedFile.name &&
-            file.size === selectedFile.size
-        ) === index
-    );
-    setRegisterFiles((prev) => [...prev, ...newFiles]);
     // 같은 파일을 다시 선택할 수 있도록 초기화
     e.target.value = '';
   };
@@ -85,17 +60,20 @@ export default function AdminNotice() {
       .includes(searchKeyword.toLowerCase());
     return categoryMatch && titleMatch;
   });
-  // 상단 고정 공지 우선 정렬
-  const pinnedNoticeList = filteredNoticeList.filter(
-    (notice) => notice.isPinned
-  );
-  const normalNoticeList = filteredNoticeList.filter(
-    (notice) => !notice.isPinned
-  );
-  const sortedNoticeList = [
-    ...pinnedNoticeList,
-    ...normalNoticeList,
-  ];
+  // 고정 → 중요 → 일반 공지 순으로, 같은 우선순위에서는 최신 등록일순 정렬
+  // 같은 날짜는 서버에서 내려준 등록 시각·공지 번호 내림차순을 유지합니다.
+  const sortedNoticeList = [...filteredNoticeList].sort((a, b) => {
+    if (Boolean(a.isPinned) !== Boolean(b.isPinned)) {
+      return a.isPinned ? -1 : 1;
+    }
+    if (Boolean(a.isImportant) !== Boolean(b.isImportant)) {
+      return a.isImportant ? -1 : 1;
+    }
+    return (
+      new Date(b.createdAt).getTime() -
+      new Date(a.createdAt).getTime()
+    );
+  });
   // 등록 폼 입력값 초기화
   const resetRegisterForm = () => {
     setRegisterCategory('USAGE_GUIDE');
@@ -117,7 +95,6 @@ export default function AdminNotice() {
     }
     try {
       await registerNotice({
-        writerAdminId: 1,
         noticeTypeCode: registerCategory,
         title: registerTitle,
         content: registerContent,
@@ -276,9 +253,11 @@ export default function AdminNotice() {
             <input
               type="file"
               className="form-control"
-              multiple
               onChange={handleFileChange}
             />
+            <div className="form-text">
+              첨부파일은 1개만 등록할 수 있습니다. 새 파일을 선택하면 기존 선택 파일이 교체됩니다.
+            </div>
             {/* 선택한 첨부파일 목록 */}
             {registerFiles.length > 0 && (
               <div className="mt-2">

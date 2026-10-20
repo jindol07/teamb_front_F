@@ -2,7 +2,6 @@ import { adminApi } from './axios';
 import type { Notice } from '../mock/noticeMock';
 // 공지사항 등록 요청 타입
 interface RegisterNoticeData {
-    writerAdminId: number;
     noticeTypeCode: string;
     title: string;
     content: string;
@@ -52,10 +51,7 @@ export const registerNotice = async (
     data: RegisterNoticeData
 ) => {
     const formData = new FormData();
-    formData.append(
-        'writerAdminId',
-        String(data.writerAdminId)
-    );
+    // 작성자 ID는 서버에서 인증된 관리자 정보로 결정합니다.
     formData.append('noticeTypeCode', data.noticeTypeCode);
     formData.append('title', data.title);
     formData.append('content', data.content);
@@ -113,27 +109,40 @@ export const updateAdminNotice = async (
 ) => {
     const response = await adminApi.put(
         `/api/notice/${noticeId}`,
-        data,
-        {
-            params: {
-                changedByAdminId: 1,
-            },
-        }
+        data
     );
     return response.data;
 };
 // 관리자 공지사항 삭제 API
 export const deleteAdminNotice = async (noticeId: number) => {
     const response = await adminApi.delete(
-        `/api/notice/${noticeId}`,
-        {
-            params: {
-                changedByAdminId: 1,
-            },
-        }
+        `/api/notice/${noticeId}`
     );
     return response.data;
 };
+// 관리자 공지사항 첨부파일 다운로드 (현재 서버는 공지당 파일 1개 지원)
+// 일반 링크 대신 adminApi로 요청해야 기존 인터셉터가 JWT를 첨부합니다.
+export const downloadAdminNoticeFile = async (
+    noticeId: number,
+    fileName: string
+): Promise<void> => {
+    const response = await adminApi.get<Blob>(
+        `/api/notice/${noticeId}/file/download`,
+        { responseType: 'blob' }
+    );
+    const blobUrl = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    try {
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+    } finally {
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+    }
+};
+
 // 관리자 공지사항 첨부파일 응답 타입
 interface AdminNoticeAttachment {
     noticeAttachmentId: number;

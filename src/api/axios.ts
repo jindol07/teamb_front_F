@@ -11,17 +11,27 @@ export const adminApi = axios.create({
     baseURL: import.meta.env.VITE_BOOT_API_BASE_URL_A,
 });
 
+// =========================
+// JWT 인증 토큰 자동 추가
+// =========================
+
+// 사용자 API 요청 시 JWT 첨부
 userApi.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
 
-    console.log('accessToken:', localStorage.getItem('token'));
-    console.log('localStorage 전체:', Object.keys(localStorage));
+    if (token) {
+        config.headers.set('Authorization', `Bearer ${token}`);
+    }
 
-    console.log('[Axios] 요청 URL:', config.baseURL, config.url);
-    console.log('[Axios] 토큰 존재 여부:', !!token);
+    return config;
+});
+
+// 관리자 API 요청 시 JWT 첨부
+adminApi.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
 
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers.set('Authorization', `Bearer ${token}`);
     }
 
     return config;

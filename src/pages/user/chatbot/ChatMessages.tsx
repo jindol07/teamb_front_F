@@ -10,21 +10,47 @@ export default function ChatMessages({
     messages
 }: ChatMessagesProps) {
     /*
-      채팅창 가장 아래 위치를 가리키는 ref
+      채팅 메시지 영역을 가리키는 ref
     */
-    const messagesEndRef =
-        useRef<HTMLDivElement>(null);
+    const messagesRef = useRef<HTMLDivElement>(null);
     /*
-      메시지가 변경될 때마다
-      채팅창 가장 아래로 이동
+      사용자가 하단 근처에 있는지 확인
+    */
+    const shouldAutoScroll = useRef(true);
+    /*
+      사용자가 직접 스크롤했을 때 위치 확인
+    */
+    const handleScroll = () => {
+        const element = messagesRef.current;
+        if (!element) return;
+        const distanceFromBottom =
+            element.scrollHeight -
+            element.scrollTop -
+            element.clientHeight;
+        // 하단에서 80px 이내라면 자동 스크롤 허용
+        shouldAutoScroll.current =
+            distanceFromBottom < 80;
+    };
+    /*
+      메시지가 변경되면 필요한 경우에만
+      채팅 영역 내부를 아래로 스크롤
     */
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({
+        const element = messagesRef.current;
+        if (!element || !shouldAutoScroll.current) {
+            return;
+        }
+        element.scrollTo({
+            top: element.scrollHeight,
             behavior: 'smooth'
         });
     }, [messages]);
     return (
-        <div className="alpaca-chat-messages">
+        <div
+            ref={messagesRef}
+            className="alpaca-chat-messages"
+            onScroll={handleScroll}
+        >
             {messages.map((message) => (
                 <div
                     key={message.id}
@@ -48,8 +74,6 @@ export default function ChatMessages({
                     </div>
                 </div>
             ))}
-            {/* 자동 스크롤 위치 */}
-            <div ref={messagesEndRef} />
         </div>
     );
 }
