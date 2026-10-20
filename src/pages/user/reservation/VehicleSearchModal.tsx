@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import './VehicleSearchModal.css';
 
 export interface VehicleItem {
@@ -11,7 +11,7 @@ export interface VehicleItem {
 interface VehicleSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectVehicle: (vehicleNumber: string) => void;
+  onSelectVehicle: (vehicle: Pick<VehicleItem, 'id' | 'number'>) => void;
 }
 
 export default function VehicleSearchModal({
@@ -23,61 +23,75 @@ export default function VehicleSearchModal({
   const [vehicles, setVehicles] = useState<VehicleItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 💡 모달이 열릴 때 백엔드 전체 목록 API 호출
-  const fetchVehicles = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('token');
-
-      setLoading(true);
-      const response = await fetch(import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/vehicles', {
-        method: 'GET',
-        credentials: 'include',
-                  headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-          },
-      });
-
-      if (!response.ok) {
-        throw new Error('차량 목록을 불러오지 못했습니다.');
-      }
-
-      const text = await response.text();
-      if (
-        !text ||
-        text.trim().startsWith('<!DOCTYPE') ||
-        text.trim().startsWith('<html')
-      ) {
-        console.warn('로그인이 필요하거나 인증이 만료되었습니다.');
-        setVehicles([]);
-        return;
-      }
-
-      const data = JSON.parse(text);
-
-      if (Array.isArray(data)) {
-        const mappedVehicles: VehicleItem[] = data.map((v: any) => ({
-          id: v.vehicleId ?? v.vehicle_id ?? 1,
-          visitDate:
-            v.registeredAt ?? v.registered_at ?? v.createdAt ?? v.created_at ?? '-',
-          number: v.vehicleNumber ?? v.vehicle_number ?? '',
-          isFavorite: false,
-        }));
-        setVehicles(mappedVehicles);
-      }
-    } catch (error) {
-      console.error('차량 목록 조회 에러:', error);
-      setVehicles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    if (isOpen) {
-      fetchVehicles();
+    if (!isOpen) return;
+
+    const query = searchTerm.trim();
+    if (!query) {
+      setVehicles([]);
+      setLoading(false);
+      return;
     }
-  }, [isOpen, fetchVehicles]);
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const token = localStorage.getItem('token');
+        setLoading(true);
+        const response = await fetch(
+          import.meta.env.VITE_BOOT_API_BASE_URL_U +
+            `/api/vehicles/number/${encodeURIComponent(query)}`,
+          {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            signal: controller.signal,
+          },
+        );
+
+        if (response.status === 404) {
+          setVehicles([]);
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(`차량 검색에 실패했습니다. (${response.status})`);
+        }
+
+        const data = await response.json();
+        if (!Array.isArray(data)) {
+          setVehicles([]);
+          return;
+        }
+
+        const mappedVehicles: VehicleItem[] = data
+          .map((vehicle: any) => ({
+            id: Number(vehicle.vehicleId ?? vehicle.vehicle_id ?? vehicle.vehicleid),
+            visitDate:
+              vehicle.registeredAt ?? vehicle.registered_at ?? vehicle.registeredat ??
+              vehicle.createdAt ?? vehicle.created_at ?? vehicle.createdat ?? '-',
+            number:
+              vehicle.vehicleNumber ?? vehicle.vehicle_number ?? vehicle.vehiclenumber ?? '',
+            isFavorite: false,
+          }))
+          .filter((vehicle: VehicleItem) => Number.isSafeInteger(vehicle.id) && vehicle.id > 0 && vehicle.number);
+        setVehicles(mappedVehicles);
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        console.error('차량 검색 에러:', error);
+        setVehicles([]);
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [isOpen, searchTerm]);
 
   // 즐겨찾기 토글
   const handleToggleFavorite = (e: React.MouseEvent, id: number) => {
@@ -109,8 +123,8 @@ export default function VehicleSearchModal({
     onClose();
   };
 
-  const handleSelectVehicle = (vehicleNumber: string) => {
-    onSelectVehicle(vehicleNumber);
+  const handleSelectVehicle = (vehicle: Pick<VehicleItem, 'id' | 'number'>) => {
+    onSelectVehicle(vehicle);
     setSearchTerm('');
     onClose();
   };
@@ -162,13 +176,13 @@ export default function VehicleSearchModal({
                   </div>
                 ) : (
                   <div className="list-group list-group-flush">
-                    {filteredVehicles.map((vehicle) => (
+                  {filteredVehicles.map((vehicle) => (
                       <div
                         key={vehicle.id}
                         className={`vehicle-item d-flex justify-content-between align-items-center p-2 border-bottom ${
                           vehicle.isFavorite ? 'vehicle-item-favorite' : ''
                         }`}
-                        onClick={() => handleSelectVehicle(vehicle.number)}
+                        onClick={() => handleSelectVehicle(vehicle)}
                         style={{ cursor: 'pointer' }}
                       >
                         <div className="vehicle-info">
