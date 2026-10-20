@@ -3,6 +3,7 @@ import MyBookingModal from './MyBookingModal';
 import RecommendationModal from './RecommendationModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
+import { useParkingSpaceSync } from '../../../shared/parking/useParkingSpaceSync';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import './Reservation.css';
 
@@ -18,6 +19,7 @@ interface ReservationResponse {
 }
 
 export default function Reservation() {
+  const { refresh: refreshParkingSpaces } = useParkingSpaceSync('user');
   const [reservation, setReservation] = useState<ReservationResponse | null>(null);
   const rawSlots = useParkingStore((state) => state.slots);
 
@@ -27,6 +29,7 @@ export default function Reservation() {
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingSlot, setBookingSlot] = useState<ExtendedParkingSlot | null>(null);
+  const [bookingDates, setBookingDates] = useState<{ startDate: Date; endDate: Date } | null>(null);
   const [isRecommendationModalOpen, setIsRecommendationModalOpen] = useState(false);
 
   // 백엔드에서 최신 예약 정보 불러오기 (HTML 응답 에러 방어 로직 포함)
@@ -177,35 +180,11 @@ export default function Reservation() {
     }
   };
 
-  const slots = rawSlots.map((slot) => {
-    if (!reservation) return slot;
-
-    const resSpaceId = reservation.parking_space_id;
-    let computedId = 16;
-    const slotIndex = rawSlots.findIndex((s) => s.id === slot.id);
-    if (slotIndex !== -1) {
-      computedId = 16 + slotIndex;
-    } else {
-      const numericMatch = slot.slotNumber?.replace(/[^0-9]/g, '');
-      computedId = numericMatch ? 15 + Number(numericMatch) : 16;
-    }
-
-    const isMatch = Number(resSpaceId) === Number(computedId);
-    const isCanceled = reservation.status_code === 'CANCELED';
-
-    if (isMatch && !isCanceled) {
-      return { ...slot, status: 'RESERVED' as const };
-    }
-    return slot;
-  });
-
+  const slots = rawSlots;
   const currentSlot =
     slots.find((s) => {
       if (!reservation) return false;
-      const resSpaceId = reservation.parking_space_id;
-      const slotIndex = rawSlots.findIndex((raw) => raw.id === s.id);
-      let computedId = slotIndex !== -1 ? 16 + slotIndex : 16;
-      return Number(resSpaceId) === Number(computedId);
+      return Number(reservation.parking_space_id) === Number(s.parkingSpaceId);
     }) ?? null;
 
   const currentFloor = currentSlot?.floor ?? 1;
@@ -298,11 +277,6 @@ export default function Reservation() {
 
                 <div className="reservation-info">
                   <div className="info-item">
-                    <span>주차 자리 ID</span>
-                    <strong>{reservation.parking_space_id}번 구획</strong>
-                  </div>
-
-                  <div className="info-item">
                     <span>예약 기간</span>
                     <strong>
                       {reservation.reservation_start_at?.split('T')[0]} ~{' '}
@@ -370,9 +344,15 @@ export default function Reservation() {
       {isBookingModalOpen && (
         <MyBookingModal
           slot={bookingSlot}
+          initialStartDate={bookingDates?.startDate ?? null}
+          initialEndDate={bookingDates?.endDate ?? null}
           onClose={() => {
             setIsBookingModalOpen(false);
             setBookingSlot(null);
+            setBookingDates(null);
+            void refreshParkingSpaces().catch((error) => {
+              console.error('주차 현황 새로고침 실패:', error);
+            });
             loadReservationFromApi();
           }}
         />
@@ -382,8 +362,9 @@ export default function Reservation() {
         isOpen={isRecommendationModalOpen}
         onClose={() => setIsRecommendationModalOpen(false)}
         slots={slots}
-        onSelectAndBook={(selectedSlot) => {
+        onSelectAndBook={(selectedSlot, selectedStartDate, selectedEndDate) => {
           setBookingSlot(selectedSlot);
+          setBookingDates({ startDate: selectedStartDate, endDate: selectedEndDate });
           setIsBookingModalOpen(true);
         }}
       />

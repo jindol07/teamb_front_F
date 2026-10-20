@@ -353,10 +353,10 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
         <VehicleSearchModal
           isOpen={isVehicleModalOpen}
           onClose={() => setIsVehicleModalOpen(false)}
-          onSelectVehicle={(vehicleNumber) => {
+          onSelectVehicle={(vehicle) => {
             setSelectedVisitorVehicle({
-              id: 0,
-              number: vehicleNumber,
+              id: vehicle.id,
+              number: vehicle.number,
             });
             setMessage('');
           }}
