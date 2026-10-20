@@ -25,8 +25,6 @@ export const adminLogin = (username: string, password: string) =>
 
             localStorage.setItem('token', token);
             localStorage.setItem('username', username);
-            // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-            window.dispatchEvent(new Event('parking-auth-changed'));
 
             dispatch(loginSuccess({ username, token }));
 
@@ -46,8 +44,6 @@ export const adminLogoutAction = () => async (dispatch: AppDispatch) => {
     // 로컬 스토리지에서 토큰 제거
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-    // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-    window.dispatchEvent(new Event('parking-auth-changed'));
     
     try {
         //백앤드로 로그 아웃 요청
@@ -82,8 +78,6 @@ export const login = (username: string, password: string) =>
 
             localStorage.setItem('token', token);
             localStorage.setItem('username', username);
-            // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-            window.dispatchEvent(new Event('parking-auth-changed'));
 
             dispatch(loginSuccess({ username, token }));
 
@@ -103,8 +97,6 @@ export const logoutAction = () => async (dispatch: AppDispatch) => {
     // 로컬 스토리지에서 토큰 제거
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-    // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-    window.dispatchEvent(new Event('parking-auth-changed'));
 
     try {
         //백앤드로 로그 아웃 요청
