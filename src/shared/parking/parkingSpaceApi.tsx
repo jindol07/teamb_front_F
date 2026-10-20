@@ -1,24 +1,35 @@
 /**
- * Spring Boot 관리자 서버(apcms_a)의 주차구획 API 통신 모듈.
+ * Spring Boot A·U 서버의 주차구획 API 통신 모듈.
  *
  * 원칙:
  * - 임의의 Mock 데이터는 반환하지 않음. 오류면 예외를 던짐.
  * - 관리자/사용자 조회 API를 분리하여 관리자 메모를 사용자에게 노출하지 않음.
- * - VITE_BOOT_API_BASE_URL(.env)로 각 개발자의 백엔드에 직접 요청.
- * - 운영에서는 /public 읽기 API를 apcms_u로 분리하고 권한/배포 경로를 확정해야 함.
+ * - 관리자 조회·수정은 A, 사용자 현황 조회는 U 서버로 요청.
+ * - 공개용 DTO는 민감 정보를 제외한다는 의미이며, 로그인 정책은 서버가 적용.
  */
-// 개인별 서버 주소는 Vite 환경변수(.env, .env.local)에서 읽습니다.
-const API_ORIGIN = (import.meta.env.VITE_BOOT_API_BASE_URL ?? '').replace(/\/$/, '');
-const BASE_URL = `${API_ORIGIN}/alpharking/admin/api/parking/spaces`;
+import type { AxiosRequestConfig } from 'axios';
+import { adminApi, userApi } from '../../api/axios';
+import { normalizeParkingSpace, normalizeParkingSpaces } from './parkingSpaceResponse';
 
-/** 공개 현황 소켓도 기존 주차구획 GET과 동일한 서버를 사용합니다. */
-export function getParkingWebSocketUrl(): string {
-  const url = new URL(`${API_ORIGIN}/alpharking/admin/ws/parking/spaces`, window.location.origin);
+// 개인별 서버 주소는 Vite 환경변수(.env, .env.local)에서 읽습니다.
+const API_ORIGIN = (import.meta.env.VITE_BOOT_API_BASE_URL ?? '').replace(/\/+$/, '');
+// _A·_U에는 context-path가 포함되어 있으므로 /alpharking을 다시 붙이지 않는다.
+const ADMIN_CONTEXT = (import.meta.env.VITE_BOOT_API_BASE_URL_A
+  ?? `${API_ORIGIN}/alpharking/admin`).replace(/\/+$/, '');
+const USER_CONTEXT = (import.meta.env.VITE_BOOT_API_BASE_URL_U
+  ?? '/alpharking').replace(/\/+$/, '');
+
+export type ParkingServer = 'admin' | 'user';
+
+/** 화면 역할에 맞는 서버의 현황 소켓에 연결합니다. */
+export function getParkingWebSocketUrl(server: ParkingServer = 'admin'): string {
+  const context = server === 'user' ? USER_CONTEXT : ADMIN_CONTEXT;
+  const url = new URL(`${context}/ws/parking/spaces`, window.location.origin);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   return url.toString();
 }
 
-/** 실제 Oracle 테이블 JOIN 결과에 해당하는 서버 응답 JSON. */
+/** 서버 응답을 화면용 camelCase로 정규화한 주차구획 데이터. */
 export interface ParkingSpaceDto {
   parkingSpaceId: number;
   floorNo: number;
@@ -39,56 +50,60 @@ export interface ParkingSpaceDto {
   updatedAt?: string | null;
 }
 
-/** 서버 메시지를 숨기지 않고 호출자에게 전달하는 공통 fetch 함수. */
-async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(url, {
-    // 관리자 로그인 시 세션 쿠키를 전송하도록 준비. 현재 로그인 페이지는 아직 시연용.
-    credentials: 'include',
-    cache: 'no-store',
+/** 기존 axios 인터셉터로 로그인 JWT를 첨부하고 HTTP 오류를 전달한다. */
+async function request<T>(path: string, init: AxiosRequestConfig = {}, server: ParkingServer = 'admin'): Promise<T> {
+  const client = server === 'user' ? userApi : adminApi;
+  const response = await client.request<T>({
     ...init,
+    baseURL: server === 'user' ? USER_CONTEXT : ADMIN_CONTEXT,
+    url: `/api/parking/spaces${path}`,
+    withCredentials: true,
+    validateStatus: () => true,
+    headers: { ...init.headers, 'Cache-Control': 'no-cache' },
   });
-  if (!response.ok) {
-    // 로그인 미구현(401), 서버 장애(5xx), 경로 오류(404) 등을 UI에서 구분할 수 있음.
+  if (response.status < 200 || response.status >= 300) {
+    if (response.status === 401) throw new Error('로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해 주세요.');
+    if (response.status === 403) throw new Error('주차구획 조회·변경 권한이 없거나 인증을 확인할 수 없습니다.');
     throw new Error(`주차구획 API 오류: HTTP ${response.status}`);
   }
-  const contentType = response.headers.get('content-type') ?? '';
+  const contentType = String(response.headers['content-type'] ?? '');
   if (!contentType.includes('application/json')) {
     throw new Error(`주차구획 API가 JSON이 아닌 응답을 반환했습니다: ${contentType || 'Content-Type 없음'}`);
   }
-  return (await response.json()) as T;
+  return response.data;
 }
 
-/** 관리자는 메모를 포함한 구획 목록 조회. 세션의 adminId가 있어야 성공. */
+/** 관리자는 JWT 인증 후 메모를 포함한 구획 목록 조회. */
 export function fetchAdminParkingSpaces(signal?: AbortSignal) {
-  return request<ParkingSpaceDto[]>(BASE_URL, { signal });
+  return request<unknown>('', { signal }).then(normalizeParkingSpaces);
 }
 
-/** 일반 사용자는 메모/민감 정보를 제외한 구획 목록 조회. */
-export function fetchPublicParkingSpaces(signal?: AbortSignal) {
-  return request<ParkingSpaceDto[]>(`${BASE_URL}/public`, { signal });
+/** 공통 스토어에는 화면 역할에 관계없이 메모/민감 정보를 제외한 현황만 저장한다. */
+export function fetchPublicParkingSpaces(signal?: AbortSignal, server: ParkingServer = 'admin') {
+  return request<unknown>(server === 'user' ? '' : '/public', { signal }, server).then(normalizeParkingSpaces);
 }
 
 /**
  * 관리자 메모 변경. 변경 성공 후 서버가 DB의 최신 구획 1개를 다시 반환함.
  * 변경 ID는 프론트 임시 id가 아닌 실제 PARKING_SPACE_ID여야 함.
- * 서버에서는 adminId를 요청 본문에서 신뢰하지 않고 세션에서 가져옴.
+ * 서버에서는 adminId를 요청 본문에서 신뢰하지 않고 JWT 인증 정보에서 가져옴.
  */
 export function saveParkingMemo(parkingSpaceId: number, memo: string) {
-  return request<ParkingSpaceDto>(`${BASE_URL}/${parkingSpaceId}/memo`, {
+  return request<unknown>(`/${parkingSpaceId}/memo`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ memo }),
-  });
+    data: { memo },
+  }).then(normalizeParkingSpace);
 }
 
-/** 관리자 구획 강제 변경: 인증 세션이 없으면 HTTP 401. */
+/** 관리자 구획 강제 변경: JWT 인증 및 ADMIN 권한이 필요하다. */
 export function saveParkingSpace(
   parkingSpaceId: number,
   input: { spaceStatusCode: string; spaceTypeCode: string; memo: string; changeReason: string }
 ) {
-  return request<ParkingSpaceDto>(`${BASE_URL}/${parkingSpaceId}`, {
+  return request<unknown>(`/${parkingSpaceId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
+    data: input,
+  }).then(normalizeParkingSpace);
 }
