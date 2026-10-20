@@ -23,6 +23,7 @@ export default function AlpacaChatbot({
         setVoiceError,
         sending,
         error,
+        storageNotice,
         handleSendMessage
     } = useChatbot();
     const quickQuestions: QuickQuestion[] = [
@@ -69,6 +70,11 @@ export default function AlpacaChatbot({
 
             <div className="alpaca-chatbot">
                 <ChatHeader />
+                {storageNotice && (
+                    <div className="small text-muted px-3 py-2" role="status">
+                        {storageNotice}
+                    </div>
+                )}
                 <ChatMessages messages={messages} />
                 {sending && (
                     <div

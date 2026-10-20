@@ -4,7 +4,7 @@
   assistant : 알파카
 */
 export interface ChatMessage {
-    id: number;
+    id: number | string;
     role: 'user' | 'assistant';
     content: string;
 }
