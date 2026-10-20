@@ -1,4 +1,5 @@
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useState } from 'react';
+import { adminApi } from '../../../api/axios';
 import styles from './Vehicle.module.css';
 import ApartmentMap from './apartment/ApartmentMap';
 import VehicleDetail from './VehicleDetail';
@@ -119,6 +120,8 @@ export default function VehicleManage() {
   const rejectAdditionalVehicleRequest = useVehicleStore(
     (state) => state.rejectAdditionalVehicleRequest,
   );
+  const fetchFines = useVehicleStore((state) => state.fetchFines);
+  const [fineLoadError, setFineLoadError] = useState('');
 
   const handleApproveRequest = async (request: AdditionalVehicleRequest) => {
     // 지금은 Admin 계정을 1로 임시 지정
@@ -155,7 +158,14 @@ export default function VehicleManage() {
     fetchVehicles().catch((error) => {
       console.error('차량 목록 조회 실패:', error);
     });
-  }, [fetchVehicles]);
+    fetchAdditionalVehicleRequests().catch((error) => {
+      console.error('추가 차량 신청 목록 조회 실패:', error);
+    });
+    fetchFines().then(() => setFineLoadError('')).catch((error) => {
+      console.error('주정차 위반 목록 조회 실패:', error);
+      setFineLoadError('주정차 위반 목록을 불러오지 못했습니다. API 주소와 서버 상태를 확인해주세요.');
+    });
+  }, [fetchVehicles, fetchAdditionalVehicleRequests, fetchFines]);
 
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>('list');
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
@@ -167,11 +177,39 @@ export default function VehicleManage() {
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [fineForm, setFineForm] = useState<FineForm>(createInitialFineForm());
   const [editingFineId, setEditingFineId] = useState<number | null>(null);
+  const [deletingFine, setDeletingFine] = useState<Fine | null>(null);
   const [fineSearch, setFineSearch] = useState('');
   const [fineStatusFilter, setFineStatusFilter] = useState<'전체' | FineStatus>('전체');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isFileDragging, setIsFileDragging] = useState(false);
 
-  const filteredVehicles = vehicles.filter((vehicle) => {
+  const registeredNumbers = new Set(
+    vehicles.map((vehicle) => vehicle.vehiclenumber.replace(/\s/g, '').toLowerCase()),
+  );
+  const approvedRequestRows = additionalVehicleRequests
+    .filter(
+      (request) =>
+        request.requesttypecode === 'ADD' &&
+        request.requeststatus === '승인' &&
+        !registeredNumbers.has(request.vehiclenumber.replace(/\s/g, '').toLowerCase()),
+    )
+    .map((request) => ({
+      vehicleid: -request.id,
+      vehiclenumber: request.vehiclenumber,
+      vehicletypecode: request.vehicletype,
+      vehiclemodel: request.vehiclemodel,
+      ownername: request.ownername,
+      officenumber: request.officenumber,
+      registeredat: request.registeredat || request.requestedat,
+      registrationtypecode: 'ADDITIONAL',
+      isApprovedRequest: true,
+    }));
+  const vehicleRows = [
+    ...vehicles.map((vehicle) => ({ ...vehicle, isApprovedRequest: false })),
+    ...approvedRequestRows,
+  ];
+
+  const filteredVehicles = vehicleRows.filter((vehicle) => {
     const keyword = vehicleSearch.trim().toLowerCase();
 
     if (!keyword) return true;
@@ -361,8 +399,37 @@ export default function VehicleManage() {
     const { name, value } = e.target;
     setVehicleForm((prev) => ({ ...prev, [name]: value }));
   };
+  const handleFileSelection = (file: File | undefined) => {
+    if (!file) return;
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
+      alert('xlsx, xls 파일만 업로드할 수 있습니다.');
+      return;
+    }
+    setSelectedFile(file);
+  };
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSelectedFile(e.target.files?.[0] ?? null);
+    handleFileSelection(e.target.files?.[0]);
+    e.target.value = '';
+  };
+
+  const handleFileDragOver = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsFileDragging(true);
+  };
+
+  const handleFileDragLeave = (e: DragEvent<HTMLLabelElement>) => {
+    const nextTarget = e.relatedTarget;
+    if (!(nextTarget instanceof Node) || !e.currentTarget.contains(nextTarget)) {
+      setIsFileDragging(false);
+    }
+  };
+
+  const handleFileDrop = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsFileDragging(false);
+    handleFileSelection(e.dataTransfer.files?.[0]);
   };
 
   const handleFileUpload = async (): Promise<void> => {
@@ -385,25 +452,21 @@ export default function VehicleManage() {
     formData.append('file', selectedFile);
 
     try {
-      const response = await fetch('/api/vehicle/upload-excel', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('파일 업로드에 실패했습니다.');
-      }
-
-      const result = await response.json();
-
-      alert(`업로드가 완료되었습니다.\n${JSON.stringify(result, null, 2)}`);
+      const response = await adminApi.post('/api/vehicleup/upload-excel', formData);
+      await fetchVehicles();
+      setSelectedFile(null);
+      alert(`업로드가 완료되었습니다.\n${JSON.stringify(response.data, null, 2)}`);
     } catch (error) {
       console.error('차량 파일 업로드 오류:', error);
-      alert('파일 업로드에 실패했습니다. 다시 시도해주세요.');
+      const message =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      alert(message || '파일 업로드에 실패했습니다. 파일 형식과 서버 연결을 확인해주세요.');
     }
   };
 
-  const handleFineSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleFineSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const vehicleid = Number(fineForm.vehicleid);
     const amount = Number(fineForm.amount.replace(/,/g, ''));
@@ -431,14 +494,15 @@ export default function VehicleManage() {
       memo: fineForm.memo.trim(),
     };
 
-    if (editingFineId !== null) {
-      updateFine(fine);
-      alert('주정차 위반 정보가 수정되었습니다.');
-    } else {
-      addFine(fine);
-      alert('주정차 위반 정보가 등록되었습니다.');
+    const saved = editingFineId !== null
+      ? await updateFine(fine)
+      : await addFine(fine);
+    if (!saved) {
+      alert(`주정차 위반 ${editingFineId !== null ? '수정' : '등록'}에 실패했습니다. 입력값과 관리자 권한을 확인해주세요.`);
+      return;
     }
     resetFineForm();
+    alert(`주정차 위반 정보가 ${editingFineId !== null ? '수정' : '등록'}되었습니다.`);
   };
 
   const handleFineFormChange = (
@@ -460,12 +524,14 @@ export default function VehicleManage() {
     });
   };
 
-  const handleDeleteFine = (fine: Fine) => {
-    const confirmed = window.confirm('해당 주정차 위반 정보를 삭제하시겠습니까?');
-    if (!confirmed) return;
-    deleteFine(fine.id);
+  const handleDeleteFine = async (fine: Fine) => {
+    const deleted = await deleteFine(fine.id);
+    if (!deleted) {
+      alert('주정차 위반 정보 삭제에 실패했습니다. 서버 연결과 관리자 권한을 확인해주세요.');
+      return;
+    }
     if (editingFineId === fine.id) resetFineForm();
-    alert('주정차 위반 정보가 삭제되었습니다.');
+    setDeletingFine(null);
   };
 
   return (
@@ -532,7 +598,7 @@ export default function VehicleManage() {
                 <div className={styles.summaryItem}>
                   <span>전체 차량</span>
                   <strong>
-                    {vehicles.length}
+                    {vehicleRows.length}
                     <small>대</small>
                   </strong>
                 </div>
@@ -540,7 +606,12 @@ export default function VehicleManage() {
                   <span>등록된 차량</span>
                   <strong className={styles.summaryNormal}>
                     {
-                      vehicles.filter((v) => v.registrationstatuscode === 'REGISTERED')
+                      vehicleRows.filter(
+                        (v) =>
+                          v.isApprovedRequest ||
+                          ('registrationstatuscode' in v &&
+                            v.registrationstatuscode === 'REGISTERED'),
+                      )
                         .length
                     }
                     <small>대</small>
@@ -550,7 +621,7 @@ export default function VehicleManage() {
                   <span>추가 등록 차량</span>
                   <strong>
                     {
-                      vehicles.filter((v) => v.registrationtypecode === 'ADDITIONAL')
+                      vehicleRows.filter((v) => v.registrationtypecode === 'ADDITIONAL')
                         .length
                     }
                     <small>대</small>
@@ -575,7 +646,7 @@ export default function VehicleManage() {
                 </div>
               </div>
 
-              {vehicles.length > 0 && (
+              {vehicleRows.length > 0 && (
                 <div className={styles.vehicleToolbar}>
                   <div className={styles.searchBox}>
                     <span aria-hidden="true">⌕</span>
@@ -589,7 +660,7 @@ export default function VehicleManage() {
                 </div>
               )}
 
-              {vehicles.length === 0 ? (
+              {vehicleRows.length === 0 ? (
                 <div className={styles.emptyVehicle}>
                   <div className={styles.emptyIcon}>🚗</div>
                   <strong>등록된 차량이 없습니다.</strong>
@@ -624,33 +695,44 @@ export default function VehicleManage() {
                         <th>차량 모델</th>
                         <th>차주</th>
                         <th>호수</th>
-                        <th>등록일</th>
+                        <th>등록일 / 신청일</th>
+                        <th>등록 구분</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredVehicles.map((vehicle) => (
                         <tr key={vehicle.vehicleid}>
                           <td>
-                            <button
-                              type="button"
-                              className={styles.vehicleDetailLink}
-                              onClick={() => {
-                                setSelectedVehicleId(vehicle.vehicleid);
-                                setActiveMenu('detail');
-                              }}
-                            >
-                              {vehicle.vehiclenumber}
-                            </button>
+                            {vehicle.isApprovedRequest ? (
+                              <span>{vehicle.vehiclenumber}</span>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.vehicleDetailLink}
+                                onClick={() => {
+                                  setSelectedVehicleId(vehicle.vehicleid);
+                                  setActiveMenu('detail');
+                                }}
+                              >
+                                {vehicle.vehiclenumber}
+                              </button>
+                            )}
                           </td>
                           <td>{vehicle.vehicletypecode}</td>
                           <td>{vehicle.vehiclemodel || '-'}</td>
                           <td>{vehicle.ownername || '-'}</td>
                           <td>
                             {(vehicle as any).officenumber
-                              ? ` ${(vehicle as any).officenumber}호`
+                              ? `${vehicle.officenumber}호`
                               : '-'}
                           </td>
                           <td>{vehicle.registeredat}</td>
+                          <td>
+                            {vehicle.registrationtypecode === 'ADDITIONAL'
+                              ? '추가 등록'
+                              : '기존 등록'}
+                            {vehicle.isApprovedRequest && <small> · 신청 승인</small>}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -661,7 +743,7 @@ export default function VehicleManage() {
           )}
 
           {activeMenu === 'register' && (
-            <div className={styles.vehicleContent}>
+            <div className={`${styles.vehicleContent} ${styles.vehicleRegistrationScreen}`}>
               <div className={styles.contentHeader}>
                 <div>
                   <h3>{editingVehicleId !== null ? '차량 정보 수정' : '차량 등록'}</h3>
@@ -805,6 +887,46 @@ export default function VehicleManage() {
                   </div>
                 </form>
               </div>
+
+              {approvedRequestRows.length > 0 && (
+                <section className={styles.approvedVehicleSection} aria-labelledby="approvedVehicleTitle">
+                  <div className={styles.contentHeader}>
+                    <div>
+                      <h3 id="approvedVehicleTitle">승인된 추가 차량</h3>
+                      <p>승인된 추가 차량 신청 내역입니다.</p>
+                    </div>
+                    <span>{approvedRequestRows.length}대</span>
+                  </div>
+                  <div className={styles.vehicleTableWrap}>
+                    <table className={styles.vehicleTable}>
+                      <thead>
+                        <tr>
+                          <th>차량번호</th>
+                          <th>차종</th>
+                          <th>차량 모델</th>
+                          <th>차주</th>
+                          <th>호수</th>
+                          <th>신청일</th>
+                          <th>구분</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {approvedRequestRows.map((vehicle) => (
+                          <tr key={vehicle.vehicleid}>
+                            <td>{vehicle.vehiclenumber}</td>
+                            <td>{vehicle.vehicletypecode}</td>
+                            <td>{vehicle.vehiclemodel || '-'}</td>
+                            <td>{vehicle.ownername || '-'}</td>
+                            <td>{vehicle.officenumber ? `${vehicle.officenumber}호` : '-'}</td>
+                            <td>{vehicle.registeredat || '-'}</td>
+                            <td>추가 등록 · 신청 승인</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
             </div>
           )}
 
@@ -831,12 +953,20 @@ export default function VehicleManage() {
                   accept=".xlsx,.xls"
                   onChange={handleFileChange}
                 />
-                <label htmlFor="vehicleFile" className={styles.fileUploadLabel}>
+                <label
+                  htmlFor="vehicleFile"
+                  className={`${styles.fileUploadLabel} ${isFileDragging ? styles.fileUploadDragging : ''}`}
+                  onDragOver={handleFileDragOver}
+                  onDragLeave={handleFileDragLeave}
+                  onDrop={handleFileDrop}
+                >
                   <span className={styles.fileUploadIcon}>📊</span>
                   <span className={styles.fileUploadText}>
-                    <span className={styles.fileUploadTitle}>Excel 파일 선택</span>
+                    <span className={styles.fileUploadTitle}>
+                      {isFileDragging ? '파일을 여기에 놓으세요' : 'Excel 파일 선택'}
+                    </span>
                     <span className={styles.fileUploadDescription}>
-                      XLSX, XLS 파일을 지원합니다.
+                      XLSX, XLS 파일을 끌어다 놓거나 파일 선택 버튼을 누르세요.
                     </span>
                   </span>
                   <span className={styles.fileUploadButton}>파일 선택</span>
@@ -905,6 +1035,7 @@ export default function VehicleManage() {
                   <h3>주정차 관리</h3>
                   <p>차량의 주정차 위반 정보를 관리합니다.</p>
                 </div>
+                <span className={styles.headerCount}>위반 <strong>{fines.length}</strong>건</span>
               </div>
 
               <div className={styles.vehicleSummary}>
@@ -945,7 +1076,17 @@ export default function VehicleManage() {
                 </div>
               </div>
 
-              <form className={styles.vehicleForm} onSubmit={handleFineSubmit}>
+              <div className={styles.fineWorkspace}>
+              <div className={editingFineId !== null ? styles.modalOverlay : undefined} onMouseDown={(event) => { if (editingFineId !== null && event.target === event.currentTarget) resetFineForm(); }}>
+              <section className={editingFineId !== null ? `${styles.rejectModal} ${styles.fineEditModal}` : undefined} role={editingFineId !== null ? 'dialog' : undefined} aria-modal={editingFineId !== null ? true : undefined} aria-labelledby={editingFineId !== null ? 'fineEditTitle' : undefined}>
+              {editingFineId !== null && <div className={styles.modalHeader}><div><h3 id="fineEditTitle">주정차 위반 수정</h3><p>위반 정보와 처리 상태를 수정해주세요.</p></div><button type="button" className={styles.modalCloseButton} aria-label="닫기" onClick={resetFineForm}>×</button></div>}
+              <form className={`${styles.vehicleForm} ${styles.fineForm}`} onSubmit={handleFineSubmit}>
+                <div className={styles.fineFormIntro}>
+                  <span className={styles.fineFormEyebrow}>PARKING VIOLATION</span>
+                  <h3>{editingFineId !== null ? '위반 정보 수정' : '새 위반 내역 등록'}</h3>
+                  <p>차량과 위반 내용을 입력해 관리 기록을 남깁니다.</p>
+                </div>
+                <div className={styles.fineFormGrid}>
                 <div className={styles.formGroup}>
                   <label htmlFor="fineVehicleId">차량</label>
                   <select
@@ -990,6 +1131,24 @@ export default function VehicleManage() {
                 </div>
 
                 <div className={styles.formGroup}>
+                  <label htmlFor="fineAmount">벌칙금</label>
+                  <div className={styles.fineAmountField}>
+                    <input
+                      id="fineAmount"
+                      name="amount"
+                      type="number"
+                      min="1"
+                      step="1000"
+                      value={fineForm.amount}
+                      onChange={handleFineFormChange}
+                      placeholder="벌칙금을 입력하세요"
+                      required
+                    />
+                    <span>원</span>
+                  </div>
+                </div>
+
+                <div className={styles.formGroup}>
                   <label htmlFor="fineStatus">현재 차량 상태</label>
                   <select
                     id="fineStatus"
@@ -1003,8 +1162,9 @@ export default function VehicleManage() {
                     <option value="처리 불가">처리 불가</option>
                   </select>
                 </div>
+                </div>
 
-                <div className={styles.formGroup}>
+                <div className={`${styles.formGroup} ${styles.fineMemoGroup}`}>
                   <label htmlFor="fineMemo">메모</label>
                   <textarea
                     id="fineMemo"
@@ -1016,7 +1176,7 @@ export default function VehicleManage() {
                   />
                 </div>
 
-                <div className={styles.formActions}>
+                <div className={`${styles.formActions} ${styles.fineFormActions}`}>
                   {editingFineId !== null && (
                     <button
                       type="button"
@@ -1031,7 +1191,11 @@ export default function VehicleManage() {
                   </button>
                 </div>
               </form>
+              </section></div>
 
+              <section className={styles.fineListPanel} aria-labelledby="fineListTitle">
+                  <div className={styles.fineListHeader}><div><h3 id="fineListTitle">위반 목록</h3><p>항목을 확인하고 필요한 작업을 선택하세요.</p></div><span>{fines.length}건</span></div>
+              {fineLoadError && <div className="alert alert-danger py-2" role="alert">{fineLoadError}</div>}
               {fines.length > 0 && (
                 <div className={styles.vehicleToolbar}>
                   <div className={styles.searchBox}>
@@ -1081,65 +1245,66 @@ export default function VehicleManage() {
                   </button>
                 </div>
               ) : (
-                <div className={styles.vehicleTableWrap}>
-                  <table className={styles.vehicleTable}>
-                    <thead>
-                      <tr>
-                        <th>차량번호</th>
-                        <th>위반일자</th>
-                        <th>위반 사유</th>
-                        <th>상태</th>
-                        <th>관리</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredFines.map((fine) => {
-                        const vehicle = vehicles.find(
-                          (item) => item.vehicleid === fine.vehicleid,
-                        );
+                <div className={styles.fineRecordList}>
+                  {filteredFines.map((fine) => {
+                    const vehicle = vehicles.find(
+                      (item) => item.vehicleid === fine.vehicleid,
+                    );
+                    const statusStyle = fine.status === '조치 완료'
+                      ? styles.fineStatusDone
+                      : fine.status === '조치 중'
+                        ? styles.fineStatusProgress
+                        : fine.status === '처리 불가'
+                          ? styles.fineStatusBlocked
+                          : styles.fineStatusPending;
 
-                        return (
-                          <tr key={fine.id}>
-                            <td>
-                              <button
-                                type="button"
-                                className={styles.vehicleDetailLink}
-                                onClick={() => {
-                                  setSelectedVehicleId(fine.vehicleid);
-                                  setActiveMenu('detail');
-                                }}
-                              >
-                                {vehicle?.vehiclenumber ?? '-'}
-                              </button>
-                            </td>
-                            <td>{fine.violationdate}</td>
-                            <td>{fine.reason}</td>
-                            <td>{fine.status}</td>
-                            <td>
-                              <div className={styles.formActions}>
-                                <button
-                                  type="button"
-                                  className={styles.secondaryButton}
-                                  onClick={() => handleEditFine(fine)}
-                                >
-                                  수정
-                                </button>
-                                <button
-                                  type="button"
-                                  className={styles.secondaryButton}
-                                  onClick={() => handleDeleteFine(fine)}
-                                >
-                                  삭제
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                    return (
+                      <article className={styles.fineRecord} key={fine.id}>
+                        <div className={styles.fineRecordMain}>
+                          <div className={styles.fineRecordHeading}>
+                            <button
+                              type="button"
+                              className={styles.fineVehicleLink}
+                              onClick={() => {
+                                setSelectedVehicleId(fine.vehicleid);
+                                setActiveMenu('detail');
+                              }}
+                            >
+                              {vehicle?.vehiclenumber ?? '차량 정보 없음'}
+                            </button>
+                            <span className={`${styles.fineStatusBadge} ${statusStyle}`}>
+                              {fine.status}
+                            </span>
+                          </div>
+                          <div className={styles.fineRecordMeta}>
+                            <span>{fine.violationdate}</span>
+                            <span>{fine.reason}</span>
+                          </div>
+                          {fine.memo && <p className={styles.fineRecordMemo}>{fine.memo}</p>}
+                        </div>
+                        <div className={styles.fineRecordSide}>
+                          <strong className={styles.fineRecordAmount}>
+                            {fine.amount.toLocaleString()}<small>원</small>
+                          </strong>
+                          <div className={styles.fineRecordActions}>
+                            <button type="button" onClick={() => handleEditFine(fine)}>수정</button>
+                            <button type="button" onClick={() => setDeletingFine(fine)}>삭제</button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
+                </section>
+              </div>
+
+              {deletingFine && <div className={styles.modalOverlay} onMouseDown={(event) => { if (event.target === event.currentTarget) setDeletingFine(null); }}>
+                <section className={styles.rejectModal} role="alertdialog" aria-modal="true" aria-labelledby="deleteFineTitle">
+                  <div className={styles.modalHeader}><div><h3 id="deleteFineTitle">위반 정보 삭제</h3><p>이 주정차 위반 정보를 삭제하시겠습니까? 삭제한 정보는 복구할 수 없습니다.</p></div><button type="button" className={styles.modalCloseButton} aria-label="닫기" onClick={() => setDeletingFine(null)}>×</button></div>
+                  <div className={styles.modalRequestInfo}><span>차량번호 · 위반일자</span><strong>{vehicles.find((vehicle) => vehicle.vehicleid === deletingFine.vehicleid)?.vehiclenumber ?? '-'} · {deletingFine.violationdate}</strong></div>
+                  <div className={styles.modalActions}><button type="button" className={styles.secondaryButton} onClick={() => setDeletingFine(null)}>취소</button><button type="button" className={styles.dangerButton} onClick={() => handleDeleteFine(deletingFine)}>삭제</button></div>
+                </section></div>}
             </div>
           )}
         </>

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 // 경로가 프로젝트 구조에 맞게 정확한지 확인해주세요 (예시: 상위 폴더로 가는 경로)
 import { adminApi, vehicleChangeRequestApi } from '../../../api/vehicleApi';
+import { vehiclePenaltyApi } from '../../../api/vehiclePenaltyApi';
+import type { VehiclePenaltyDto } from '../../../api/vehiclePenaltyApi';
 // ========================================
 // 1. 타입 정의
 // ========================================
@@ -18,7 +20,7 @@ export interface Vehicle {
   vehiclenumber: string;
   vehiclemodel: string;
   ownername: string;
-  officenumber?:string | null;
+  officenumber?: string | null;
   vehicletypecode: string;
   registrationtypecode: string;
   registrationstatuscode: string;
@@ -41,8 +43,9 @@ export interface Fine {
 
 export interface AdditionalVehicleRequest {
   id: number;
+  requesttypecode?: string;
   vehiclenumber: string;
-  vehicletype: VehicleType;
+  vehicletype: string;
   vehiclemodel: string;
   building?: string | null;
   officenumber?: string | null;
@@ -109,6 +112,39 @@ function mapVehicle(item: VehicleApiDTO): Vehicle {
   };
 }
 
+function mapVehiclePenalty(item: VehiclePenaltyDto): Fine {
+  const imposedDate = item.imposedat == null ? null : new Date(item.imposedat);
+  const violationdate =
+    imposedDate && !Number.isNaN(imposedDate.getTime())
+      ? `${imposedDate.getFullYear()}-${String(imposedDate.getMonth() + 1).padStart(2, '0')}-${String(imposedDate.getDate()).padStart(2, '0')}`
+      : '';
+  const knownReasons: FineReason[] = ['지정구역 위반', '장기 주차', '통행 방해', '기타'];
+  const knownStatuses: FineStatus[] = ['조치 중', '조치 완료', '미조치', '처리 불가'];
+  const reason = item.violationtypecode as FineReason;
+  const status = item.statuscode as FineStatus;
+
+  return {
+    id: Number(item.vehiclepenaltyid),
+    vehicleid: Number(item.vehicleid ?? item.vehicle?.vehicleid ?? 0),
+    violationdate,
+    reason: knownReasons.includes(reason) ? reason : '기타',
+    amount: Number(item.penaltyamount ?? 0),
+    status: knownStatuses.includes(status) ? status : '미조치',
+    memo: item.reason ?? '',
+  };
+}
+
+function toVehiclePenaltyPayload(fine: Fine) {
+  return {
+    vehicleid: fine.vehicleid,
+    violationtypecode: fine.reason,
+    penaltyamount: fine.amount,
+    reason: fine.memo,
+    imposedat: new Date(`${fine.violationdate}T12:00:00`).getTime(),
+    statuscode: fine.status,
+  };
+}
+
 function toApiPayload(vehicle: Vehicle): VehicleApiPayload {
   return {
     officeid: vehicle.officeid,
@@ -157,9 +193,10 @@ interface VehicleStore {
   updateVehicle: (vehicle: Vehicle) => Promise<boolean>;
   deleteVehicle: (vehicleid: number) => Promise<void>;
 
-  addFine: (fine: Fine) => void;
-  updateFine: (fine: Fine) => void;
-  deleteFine: (fineid: number) => void;
+  fetchFines: () => Promise<void>;
+  addFine: (fine: Fine) => Promise<boolean>;
+  updateFine: (fine: Fine) => Promise<boolean>;
+  deleteFine: (fineid: number) => Promise<boolean>;
 
   getVehicleById: (vehicleid: number) => Vehicle | undefined;
 
@@ -191,8 +228,9 @@ export const useVehicleStore = create<VehicleStore>((set, get) => ({
 
       const requests: AdditionalVehicleRequest[] = response.map((item) => ({
         id: Number(item.vehiclechangerequestid ?? 0),
+        requesttypecode: item.requesttypecode,
         vehiclenumber: item.requestedvehiclenumber ?? '',
-        vehicletype: '승용차',
+        vehicletype: item.requestedvehicletypecode ?? '',
         vehiclemodel: item.requestedvehiclemodel ?? '',
         ownername: item.requestedownername ?? '',
         registeredat: item.requestedat ?? '',
@@ -238,6 +276,16 @@ export const useVehicleStore = create<VehicleStore>((set, get) => ({
       set({ vehicles: mappedVehicles });
     } catch (error) {
       console.error('차량 목록 조회 실패:', error);
+    }
+  },
+
+  fetchFines: async () => {
+    try {
+      const penalties = await vehiclePenaltyApi.list();
+      set({ fines: penalties.map(mapVehiclePenalty) });
+    } catch (error) {
+      console.error('주정차 위반 목록 조회 실패:', error);
+      throw error;
     }
   },
 
@@ -309,28 +357,49 @@ export const useVehicleStore = create<VehicleStore>((set, get) => ({
     }
   },
 
-  // 과태료 관련 로컬 상태 함수들
-  addFine: (fine) => {
+  // 주정차 위반 API
+  addFine: async (fine) => {
     const state = get();
     const vehicleExists = state.vehicles.some((v) => v.vehicleid === fine.vehicleid);
-    if (!vehicleExists) return;
-
-    const fineExists = state.fines.some((item) => item.id === fine.id);
-    if (fineExists) return;
-
-    set((current) => ({ fines: [...current.fines, fine] }));
+    if (!vehicleExists) return false;
+    try {
+      await vehiclePenaltyApi.create(toVehiclePenaltyPayload(fine));
+      await get()
+        .fetchFines()
+        .catch((error) => {
+          console.error('등록 후 주정차 위반 목록 새로고침 실패:', error);
+        });
+      return true;
+    } catch (error) {
+      console.error('주정차 위반 등록 실패:', error);
+      return false;
+    }
   },
 
-  updateFine: (fine) => {
-    set((state) => ({
-      fines: state.fines.map((item) => (item.id === fine.id ? fine : item)),
-    }));
+  updateFine: async (fine) => {
+    try {
+      await vehiclePenaltyApi.update(fine.id, toVehiclePenaltyPayload(fine));
+      await get()
+        .fetchFines()
+        .catch((error) => {
+          console.error('수정 후 주정차 위반 목록 새로고침 실패:', error);
+        });
+      return true;
+    } catch (error) {
+      console.error('주정차 위반 수정 실패:', error);
+      return false;
+    }
   },
 
-  deleteFine: (fineId) => {
-    set((state) => ({
-      fines: state.fines.filter((fine) => fine.id !== fineId),
-    }));
+  deleteFine: async (fineId) => {
+    try {
+      await vehiclePenaltyApi.remove(fineId);
+      set((state) => ({ fines: state.fines.filter((fine) => fine.id !== fineId) }));
+      return true;
+    } catch (error) {
+      console.error('주정차 위반 삭제 실패:', error);
+      return false;
+    }
   },
   getVehicleById: (vehicleId) =>
     get().vehicles.find((vehicle) => vehicle.vehicleid === vehicleId),
