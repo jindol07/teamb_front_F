@@ -7,7 +7,7 @@
  * 2. 전체 주차장 통계 및 층별 주차현황 표시
  * 3. 층별 카드 클릭 시 해당 층의 React Konva 도면 표시
  * 4. 사용 가능한 주차구획 클릭 시 예약 모달 호출
- * 5. 5초 주기 서버 조회 결과를 Zustand에서 공유
+ * 5. U 서버 웹소켓 수신 결과를 Zustand에서 공유하며 연결 중단 시 5초 주기 조회
  *
  * [주의사항]
  * - 관리자와 동일한 주차구획 데이터를 사용합니다.
@@ -121,8 +121,8 @@ function getAvailablePercent(
  * 사용자 주차현황 메인 페이지
  */
 export default function ParkingStatus() {
-  // 서버 주차구획을 조회해 Zustand에 동기화합니다.
-  useParkingSpaceSync();
+  // 사용자 현황은 U 서버의 조회 API·웹소켓을 사용합니다.
+  useParkingSpaceSync('user');
 
   // 관리자와 공유하는 주차구획 데이터입니다.
   const slots = useParkingStore((state) => state.slots);

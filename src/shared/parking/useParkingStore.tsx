@@ -22,6 +22,7 @@ interface ParkingState {
   setSelectedSlot: (slot: ExtendedParkingSlot | null) => void;
   startSync: () => void;
   failSync: (message: string) => void;
+  resetParking: () => void;
   replaceFromServer: (rows: ParkingSpaceDto[]) => void;
 }
 
@@ -42,6 +43,10 @@ export const useParkingStore = create<ParkingState>((set) => ({
     syncError: null,
   })),
   failSync: (syncError) => set({ syncState: 'error', syncError, slots: [], selectedSlot: null }),
+  resetParking: () => set({
+    slots: [], selectedFloor: 1, selectedSlot: null, syncState: 'idle',
+    syncError: null, lastSyncedAt: null, unmappedNumbers: [],
+  }),
   replaceFromServer: (rows) => {
     const { slots, unmappedNumbers } = mergeParkingSpaces(rows);
     set((state) => ({
