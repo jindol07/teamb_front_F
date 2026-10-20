@@ -45,10 +45,10 @@
 
 .mileageHistory :global(.page-content) {
   width: 100%;
-  max-width: 1560px;
+  max-width: 1800px;
   min-width: 0;
   margin: 0 auto;
-  padding: 8px 30px 24px;
+  padding: 8px 36px 24px;
 }
 .mileageHistory :global(.page-heading) {
   display: flex;
@@ -108,6 +108,11 @@
   border-color: #b8cff3;
   color: #1d60bf;
   background: #f9fbff;
+}
+
+/* 상세 화면의 돌아가기 버튼과 내역 사이 간격 */
+.mileageHistory > :global(.outline-button) {
+  margin-bottom: 16px;
 }
 
 .mileageHistory :global(.hero-grid) {
@@ -314,6 +319,15 @@
 .mileageHistory :global(.state-used .status-chip > span) {
   background: #e1a32c;
 }
+/* 사용 완료 안내 문구가 캐릭터와 겹치지 않도록 아래 줄로 여유 있게 배치 */
+.mileageHistory :global(.state-used .mascot-copy) {
+  max-width: 48%;
+}
+.mileageHistory :global(.state-used .mascot-copy p) {
+  max-width: none;
+  margin-top: 12px;
+  color: #66758c;
+}
 .mileageHistory :global(.mascot-copy h2) {
   margin: 15px 0 9px;
   max-width: 360px;
@@ -366,8 +380,9 @@
   z-index: 1;
   right: 10px;
   bottom: 4px;
-  width: 43%;
-  max-width: 245px;
+  /* 캐릭터와 이미지 안의 안내 문구가 더 잘 보이도록 크기 확대 */
+  width: 48%;
+  max-width: 270px;
   height: 90%;
   object-fit: contain;
   object-position: center bottom;
@@ -537,6 +552,9 @@
 }
 
 .mileageHistory :global(.history-section) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
   overflow: hidden;
   margin-bottom: 25px;
   border: 1px solid #e8edf5;
@@ -545,7 +563,7 @@
   box-shadow: 0 5px 20px rgba(35, 58, 95, 0.025);
 }
 .mileageHistory :global(.history-header) {
-  padding: 23px 24px 20px;
+  padding: 28px 28px 24px;
 }
 .mileageHistory :global(.history-tools) {
   display: flex;
@@ -603,6 +621,7 @@
 }
 .mileageHistory :global(.history-tabs) {
   display: flex;
+  align-items: center;
   gap: 24px;
   padding: 0 24px;
   border-bottom: 1px solid #edf0f6;
@@ -612,27 +631,28 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 0 13px;
+  padding: 9px 12px;
   border: 0;
+  border-radius: 9px;
   background: transparent;
   color: #8996a9;
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+  transition: color 0.18s ease, background-color 0.18s ease;
+}
+.mileageHistory :global(.history-tabs button:hover:not(.active)) {
+  background: #f4f7fc;
+  color: #52647f;
 }
 .mileageHistory :global(.history-tabs button.active) {
-  color: #1e60c3;
+  background: #2868c7;
+  color: #fff;
   font-weight: 850;
+  box-shadow: 0 3px 8px rgba(40, 104, 199, 0.22);
 }
 .mileageHistory :global(.history-tabs button.active::after) {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  border-radius: 2px 2px 0 0;
-  background: #286bd0;
+  content: none;
 }
 .mileageHistory :global(.history-tabs button span) {
   min-width: 19px;
@@ -647,8 +667,8 @@
   font-weight: 800;
 }
 .mileageHistory :global(.history-tabs button.active span) {
-  background: #e8f1ff;
-  color: #2866bf;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 .mileageHistory :global(.table-wrap) {
   width: 100%;
@@ -677,11 +697,11 @@
   width: 68px;
 }
 .mileageHistory :global(.table-wrap td) {
-  height: 68px;
-  padding: 12px 18px;
+  height: 82px;
+  padding: 15px 20px;
   border-top: 1px solid #f0f2f7;
   color: #64758c;
-  font-size: 11px;
+  font-size: 12px;
   vertical-align: middle;
 }
 .mileageHistory :global(.transaction-symbol) {
@@ -757,7 +777,7 @@
   color: #9aa5b5 !important;
 }
 .mileageHistory :global(.table-footer) {
-  min-height: 56px;
+  min-height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -946,7 +966,8 @@
 }
 @media (max-width: 1180px) {
   .mileageHistory :global(.page-content) {
-    padding: 26px 24px 22px;
+    /* 화면 상단 여백을 없애 마일리지 콘텐츠를 더 위로 올림 */
+    padding: 0 24px 22px;
   }
   .mileageHistory :global(.hero-grid) {
     grid-template-columns: minmax(270px, 0.9fr) minmax(350px, 1.1fr);
@@ -959,7 +980,7 @@
   }
   .mileageHistory :global(.mascot-image) {
     right: 0;
-    width: 42%;
+    width: 46%;
   }
   .mileageHistory :global(.history-header) {
     align-items: flex-start;
@@ -968,7 +989,8 @@
 }
 @media (max-width: 900px) {
   .mileageHistory :global(.page-content) {
-    padding: 26px 20px 20px;
+    /* 화면 상단 여백을 없애 마일리지 콘텐츠를 더 위로 올림 */
+    padding: 0 20px 20px;
   }
   .mileageHistory :global(.hero-grid) {
     grid-template-columns: 1fr;
@@ -983,7 +1005,8 @@
 }
 @media (max-width: 600px) {
   .mileageHistory :global(.page-content) {
-    padding: 22px 12px 16px;
+    /* 화면 상단 여백을 없애 마일리지 콘텐츠를 더 위로 올림 */
+    padding: 0 12px 16px;
   }
   .mileageHistory :global(.page-heading) {
     align-items: flex-start;
@@ -1021,6 +1044,9 @@
     padding: 20px 17px;
     border-radius: 18px;
   }
+  .mileageHistory :global(.mascot-card.state-used) {
+    min-height: 260px;
+  }
   .mileageHistory :global(.mascot-copy) {
     max-width: 68%;
   }
@@ -1031,10 +1057,13 @@
     font-size: 10px;
   }
   .mileageHistory :global(.mascot-image) {
-    width: 40%;
-    max-width: 160px;
+    width: 44%;
+    max-width: 175px;
     height: 80%;
     right: 0;
+  }
+  .mileageHistory :global(.state-used .mascot-image) {
+    height: 75%;
   }
   .mileageHistory :global(.primary-button) {
     padding: 0 10px;
