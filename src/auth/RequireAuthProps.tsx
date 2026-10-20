@@ -70,14 +70,14 @@ const RequireAuth: React.FC<RequireAuthProps> = ({
             return (
                 <div className="container mt-5">
                     <h3>정상적인 접근이 아닙니다.</h3>
-                    <p>토큰이 일치하지 않습니다. 다시 로그인 하십시오.</p>
+                    <p>토큰이 일치하지 않습니다.</p>
                 </div>
             );
         } else if (location.pathname.startsWith("/user") && !userRole.includes("OFFICE")) {
             return (
                 <div className="container mt-5">
                     <h3>정상적인 접근이 아닙니다.</h3>
-                    <p>토큰이 일치하지 않습니다. 다시 로그인 하십시오.</p>
+                    <p>토큰이 일치하지 않습니다.</p>
                 </div>
             );
         }

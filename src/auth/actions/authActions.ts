@@ -9,7 +9,7 @@ export const adminLogin = (username: string, password: string) =>
 
         try {
             const response = await axios.post(
-                'http://localhost:81/alpharking/admin/api/auth/login',
+                import.meta.env.VITE_BOOT_API_BASE_URL_A + '/api/auth/login',
                 { username, password }
             );
 
@@ -47,7 +47,7 @@ export const adminLogoutAction = () => async (dispatch: AppDispatch) => {
     
     try {
         //백앤드로 로그 아웃 요청
-        await axios.get('http://localhost:81/alpharking/admin/api/auth/logout');
+        await axios.get(import.meta.env.VITE_BOOT_API_BASE_URL_A + '/api/auth/logout');
 
         // Redux 상태 업데이트
         dispatch(logout());
@@ -63,7 +63,7 @@ export const login = (username: string, password: string) =>
 
         try {
             const response = await axios.post(
-                'http://localhost:80/alpharking/api/auth/login',
+                import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/login',
                 { username, password }
             );
 
@@ -100,7 +100,7 @@ export const logoutAction = () => async (dispatch: AppDispatch) => {
 
     try {
         //백앤드로 로그 아웃 요청
-        await axios.get('http://localhost:80/alpharking/api/auth/logout');
+        await axios.get(import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/logout');
         // Redux 상태 업데이트
         dispatch(logout());
     } catch (error) {
@@ -108,24 +108,35 @@ export const logoutAction = () => async (dispatch: AppDispatch) => {
     }
 };
 
+// export const getOffice = async (dispatch: AppDispatch) => {
+//         try {
+//             const response = await axios.post(
+//                 import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/office'
+//             );
 
+//             const token = response.data.access_token;
+//             console.log(response);
 
+//             if (typeof token !== 'string' || !token) {
+//                 dispatch(loginFailure('JWT 토큰이 없습니다.'));
+//                 return false;
+//             }
+//             console.log(token);
 
+//             localStorage.setItem('token', token);
+//             localStorage.setItem('username', username);
 
+//             dispatch(loginSuccess({ username, token }));
 
+//             return true;
 
+//         } catch (error) {
+//             if (axios.isAxiosError(error)) {
+//                 dispatch(loginFailure('로그인에 실패했습니다.'));
+//             } else {
+//                 dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
+//             }
 
-
-
-
-const fakeApiLogin = (username: string, password: string): Promise<{ data: { token: string } }> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (username === 'test' && password === '11') {
-                resolve({ data: { token: 'fake-jwt-token2' } });
-            } else {
-                reject(new Error('Invalid credentials'));
-            }
-        }, 1000);
-    });
-};
+//             return false;
+//         }
+//     };
