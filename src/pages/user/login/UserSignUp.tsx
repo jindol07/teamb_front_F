@@ -4,19 +4,22 @@ import VehicleList from '../../../components/common/VehicleList';
 
 /**
  * 입주민 회원가입 페이지 (/user/signup)
- * 현재는 실제 회원가입/인증 기능을 구현하지 않습니다.
  */
+
+interface userInfo {
+    
+}
 
 export default function UserSignUp() {
     const [isCheckbox1, setIsCheckbox1] = useState(false);
     const [isCheckbox2, setIsCheckbox2] = useState(false);
+    const [userInfo, setUserInfo] = useState({});
 
     const navigate = useNavigate();
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        // TODO: 추후 Axios로 회원가입 API를 호출합니다.
         navigate('/user/login');
     };
 

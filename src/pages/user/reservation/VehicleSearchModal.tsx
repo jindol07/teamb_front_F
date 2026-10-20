@@ -26,10 +26,16 @@ export default function VehicleSearchModal({
   // 💡 모달이 열릴 때 백엔드 전체 목록 API 호출
   const fetchVehicles = useCallback(async () => {
     try {
+      const token = localStorage.getItem('token');
+
       setLoading(true);
-      const response = await fetch('/alpharking/api/vehicles', {
+      const response = await fetch(import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/vehicles', {
         method: 'GET',
         credentials: 'include',
+                  headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+          },
       });
 
       if (!response.ok) {

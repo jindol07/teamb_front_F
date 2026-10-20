@@ -183,10 +183,12 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
     setIsSubmitting(true);
 
     try {
-      const targetUrl = '/alpharking/api/reservation';
-      const response = await fetch(targetUrl, {
+      const token = localStorage.getItem('token');
+      const targetUrl = '/api/reservation';
+      const response = await fetch(import.meta.env.VITE_BOOT_API_BASE_URL_U + targetUrl, {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         credentials: 'include',
