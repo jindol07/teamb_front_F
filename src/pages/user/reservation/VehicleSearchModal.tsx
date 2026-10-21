@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { FaCarSide, FaRegClock, FaRegStar, FaStar } from 'react-icons/fa';
 import './VehicleSearchModal.css';
 
 export interface VehicleItem {
@@ -187,10 +188,12 @@ export default function VehicleSearchModal({
                       >
                         <div className="vehicle-info">
                           <span className="vehicle-visit-date text-muted small d-block">
-                            🕒 {vehicle.visitDate}
+                            <FaRegClock className="vehicle-row-icon" aria-hidden="true" />
+                            {vehicle.visitDate}
                           </span>
                           <span className="vehicle-number fw-bold">
-                            🚗 {vehicle.number}
+                            <FaCarSide className="vehicle-row-icon" aria-hidden="true" />
+                            {vehicle.number}
                           </span>
                         </div>
                         <div className="d-flex align-items-center gap-2">
@@ -200,7 +203,11 @@ export default function VehicleSearchModal({
                             onClick={(e) => handleToggleFavorite(e, vehicle.id)}
                             title={vehicle.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 등록'}
                           >
-                            {vehicle.isFavorite ? '★' : '☆'}
+                            {vehicle.isFavorite ? (
+                              <FaStar className="vehicle-favorite-icon" aria-hidden="true" />
+                            ) : (
+                              <FaRegStar className="vehicle-favorite-icon" aria-hidden="true" />
+                            )}
                           </button>
                           <span className="text-primary small fw-bold">선택 &gt;</span>
                         </div>
