@@ -132,6 +132,29 @@
 }
 
 /* 기본 말풍선 */
+.alpharking-waiting-dots {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 6px;
+    font-size: 7px;
+}
+
+.alpharking-waiting-dots span {
+    animation: alpharking-dot 1.2s ease-in-out infinite;
+}
+
+.alpharking-waiting-dots span:nth-child(2) { animation-delay: 0.2s; }
+.alpharking-waiting-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes alpharking-dot {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .alpharking-waiting-dots span { animation: none; }
+}
+
 .message-bubble {
     max-width: 70%;
     padding: 10px 14px;

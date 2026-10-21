@@ -97,7 +97,7 @@ export default function ChatMessages({
                         <div className="message-profile">
                             <img
                                 src="/images/alpha1.png"
-                                alt="알파카"
+                                alt="알파킹"
                             />
                         </div>
                     )}
