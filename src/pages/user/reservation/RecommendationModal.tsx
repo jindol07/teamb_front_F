@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { LuBot } from 'react-icons/lu';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
@@ -180,7 +181,7 @@ export default function RecommendationModal({
       setResultMessage(
         `지하 ${recommendation.floor_no}층 ${recommendation.zone_code}구역 ${String(
           recommendation.space_number,
-        ).padStart(2, '0')}번 자리입니다. 해당 자리로 예약하시겠습니까?`,
+        ).padStart(2, '0')}번 자리입니다. 해당 자리로\n예약하시겠습니까?`,
       );
     } catch (error) {
       console.error('AI 주차 추천 실패:', error);
@@ -207,7 +208,9 @@ export default function RecommendationModal({
       >
         <div className="ai-recommend-header">
           <div>
-            <h3>🤖 AI 스마트 주차 추천</h3>
+            <h3>
+              <LuBot className="ai-recommend-title-icon" aria-hidden="true" /> AI 스마트 주차 추천
+            </h3>
             <p>
               현재 주차장 상태와 사용자 패턴을 분석하여 가장 적합한 주차 구역을 추천해
               드립니다.
@@ -251,19 +254,24 @@ export default function RecommendationModal({
               <h4>분석 결과</h4>
               <div className="ai-recommend-item">
                 <div>
-                  <strong>
-                    {recommendedSlot
-                      ? `${recommendedSlot.floor}층 - ${recommendedSlot.zoneCode ?? recommendedSlot.slotNumber.replace(/[0-9]/g, '')}구역 ${recommendedSlot.slotNumber.replace(/^[^0-9]*/, '').padStart(2, '0')}번`
-                      : '추천 결과 없음'}
-                  </strong>
-                  <p>{resultMessage}</p>
+                  {recommendedSlot ? (
+                    <p>
+                      <span className="ai-recommend-location">
+                        {`지하 ${recommendedSlot.floor}층 - ${recommendedSlot.zoneCode ?? recommendedSlot.slotNumber.replace(/[0-9]/g, '')}구역 ${recommendedSlot.slotNumber.replace(/^[^0-9]*/, '').padStart(2, '0')}번`}
+                      </span>{' '}자리입니다.
+                      <br />
+                      해당 자리로 예약하시겠습니까?
+                    </p>
+                  ) : (
+                    <p>{resultMessage}</p>
+                  )}
                 </div>
 
                 {recommendedSlot && (
                   <div className="d-flex gap-2">
                     <button
                       type="button"
-                      className="btn btn-success"
+                      className="btn btn-success ai-recommend-book-button"
                       onClick={() => {
                         if (!startDate || !endDate) return;
                         onSelectAndBook(recommendedSlot, startDate, endDate);

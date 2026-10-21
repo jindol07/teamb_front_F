@@ -133,3 +133,12 @@
         max-height: 250px;
     }
 }
+.vehicle-row-icon {
+    margin-right: 0.35rem;
+    color: #64748b;
+    vertical-align: -0.08em;
+}
+
+.vehicle-favorite-icon {
+    vertical-align: -0.05em;
+}
