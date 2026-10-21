@@ -1,157 +1,221 @@
-/**
- * 관리자/사용자 공용 React Konva 도면.
- * Stage(640x480)와 외곽선, 램프, 주행 화살표, 보행자 코어의 기준좌표 유지.
- * slots prop으로 전달되는 구획만 그림: 관리자 UI 클릭→상세패널, 사용자 UI 클릭→예약모달.
- * mode는 안내 문구용이며 권한 통제 수단이 아닙니다. 서버에서 권한을 검증해야 합니다.
- * 구획별 좌표는 DB를 기준으로 하며 AI팀 종이도면과 일치해야 합니다.
- */
-import React, { useState } from 'react';
-import { Stage, Layer, Rect, Text, Group, Arc, Arrow } from 'react-konva';
-import { ExtendedParkingSlot, ParkingMapProps } from './parking';
+/** DB 좌표는 유지하고 화면 크기에 맞춰 확대·축소하는 관리자/사용자 공통 도면. */
+import { useEffect, useRef, useState } from 'react';
+import { Stage, Layer, Rect, Text, Group, Arc, Arrow, Path, Circle } from 'react-konva';
+import type { ExtendedParkingSlot, ParkingMapProps } from './parking';
 import { PARKING_FLOORS, PARKING_STAGE_SIZE, PARKING_MAP_BOUNDS } from './parkingLayout';
+import './ParkingMapView.css';
 
-/** 학습 해설: 논리 도면 크기를 상수 별칭으로 참조합니다. DOM의 실제 반응형 폭과는 별개입니다. */
-const STAGE_CONFIG = PARKING_STAGE_SIZE;
-const MAP_BOUNDS = PARKING_MAP_BOUNDS;
+const STATUS = {
+  EMPTY: {
+    label: '사용가능',
+    color: '#236b56',
+    background: '#e4f2eb',
+    border: '#afd3c2',
+  },
+  OCCUPIED: {
+    label: '사용중',
+    color: '#a63850',
+    background: '#fbe7ec',
+    border: '#e6b5c1',
+  },
+  RESERVED: {
+    label: '예약됨',
+    color: '#885b16',
+    background: '#fff2d8',
+    border: '#e5cd98',
+  },
+  DISABLED: {
+    label: '사용불가',
+    color: '#526177',
+    background: '#e9edf3',
+    border: '#c2ccd9',
+  },
+  UNKNOWN: {
+    label: '확인필요',
+    color: '#685780',
+    background: '#f0eaf7',
+    border: '#d0c2e0',
+  },
+};
+const statusFor = (slot: ExtendedParkingSlot) =>
+  STATUS[slot.slotType === 'DISABLED' ? 'DISABLED' : slot.status] ?? STATUS.UNKNOWN;
+const TYPE_COLORS = { ELECTRIC: '#0f6d82', DISABLED_PERSON: '#2458b5' };
+// 24×24 벡터 아이콘으로 운영체제별 이모지 모양 차이를 없앤다.
+const boltPath = 'M14 2L5 13h6l-1 9 9-12h-6z';
+const wheelchairPath = 'M8 7l1 6h6l4 7 3-2M9 9h6M6 10a6 6 0 1 0 7 8';
 
-/** 학습 해설: 엘리베이터·계단 영역이 놓일 좌표 및 크기를 정의합니다. */
-const CENTRAL_CORE = { x: 220, y: 195, width: 180, height: 85 };
-
-/** 학습 해설: React.FC<ParkingMapProps>가 Props를 구조분해합니다. mode는 UI 설명이며 권한 확인은 서버 책임입니다. */
-export const ParkingMapView: React.FC<ParkingMapProps> = ({
+export function ParkingMapView({
   mode,
   slots,
   currentFloor,
   onFloorChange,
   onSlotClick,
   selectedSlotId,
-}) => {
-  /** 학습 해설: 동선 표시 여부에 대한 지역 상태입니다. setShowPath가 호출되면 컴포넌트가 다시 렌더링됩니다. */
-  const [showPath, setShowPath] = useState<boolean>(true);
+}: ParkingMapProps) {
+  const [showPath, setShowPath] = useState(true);
+  const [canvasWidth, setCanvasWidth] = useState<number>(PARKING_STAGE_SIZE.width);
+  const viewport = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = viewport.current;
+    if (!element) return;
+    const resize = () => {
+      if (element.clientWidth > 0) setCanvasWidth(Math.min(800, element.clientWidth));
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
-  // 현재 선택된 층에 해당하는 구획만 필터링
-  /** 학습 해설: filter는 원본 slots를 수정하지 않고 현재 층의 새 배열을 만듭니다. */
-  const currentFloorSlots = slots.filter((s) => s.floor === currentFloor);
+  const scale = canvasWidth / PARKING_STAGE_SIZE.width;
+  const floorSlots = slots.filter((slot) => slot.floor === currentFloor);
+  const electric = floorSlots.filter((slot) => slot.slotType === 'ELECTRIC').length;
+  const accessible = floorSlots.filter(
+    (slot) => slot.slotType === 'DISABLED_PERSON',
+  ).length;
+  const selected = floorSlots.find((slot) => slot.id === selectedSlotId);
 
-  // 구획 상태 및 전용 구분에 따른 채우기 색상
-  /** 학습 해설: 선택 표시를 먼저 판단하기 때문에 클릭한 구획은 실제 점유 색 대신 파란색입니다. */
-  const getSlotColor = (slot: ExtendedParkingSlot, isSelected: boolean) => {
-    if (isSelected) return '#2563eb'; // 선택 시 파란색
-    if (slot.slotType === 'DISABLED' || slot.status === 'DISABLED') return '#64748b'; // 사용불가 회색
-
-    switch (slot.status) {
-      case 'OCCUPIED': return '#ef4444'; // 사용중 빨간색
-      case 'RESERVED': return '#f59e0b'; // 예약됨 주황색
-      case 'EMPTY': default: return '#10b981'; // 사용가능 초록색
-    }
-  };
-
-  // 전용 구분 표시용 텍스트 배지
-  /** 학습 해설: 전용 구획 유형을 사용자가 볼 짧은 라벨로 변환합니다. */
-  const getTypeBadge = (type?: string) => {
-    switch (type) {
-      case 'ELECTRIC': return '⚡전기';
-      case 'DISABLED_PERSON': return '♿장애인';
-      case 'DISABLED': return '🚫불가';
-      default: return '';
-    }
-  };
-
-  /** 학습 해설: JSX는 React가 화면을 구성할 선언적 트리입니다. HTML처럼 보여도 style은 JS 객체, 이벤트는 함수입니다. */
   return (
-    <div style={{ width: '100%', maxWidth: `${STAGE_CONFIG.width}px`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* 층 선택 및 동선 보기 컨트롤러 */}
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <div style={{ display: 'inline-flex', padding: '3px', backgroundColor: '#f1f5f9', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+    <div className="parking-map-view">
+      <div className="parking-map-toolbar">
+        <div className="parking-map-floors" role="group" aria-label="도면 층 선택">
           {PARKING_FLOORS.map((floor) => (
             <button
               key={floor}
-              onClick={() => onFloorChange?.(floor)}
-              style={{
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: currentFloor === floor ? 'bold' : 'normal',
-                backgroundColor: currentFloor === floor ? '#ffffff' : 'transparent',
-                color: currentFloor === floor ? '#2563eb' : '#475569',
-                border: 'none',
-         
-                borderRadius: '6px',
-                cursor: 'pointer',
-                boxShadow: currentFloor === floor ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
-                transition: 'all 0.2s'
-              }}
+              type="button"
+              aria-pressed={currentFloor === floor}
+              className={currentFloor === floor ? 'is-active' : ''}
+              onClick={() => onFloorChange(floor)}
             >
               지하 {floor}층
             </button>
           ))}
         </div>
-
         <button
-          onClick={() => setShowPath(!showPath)}
-          style={{
-            padding: '6px 14px',
-            fontSize: '12px',
-            backgroundColor: '#1e293b',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
+          type="button"
+          className="parking-map-path"
+          aria-pressed={showPath}
+          onClick={() => setShowPath((value) => !value)}
         >
-          <span>🛣</span>
-          <span>{showPath ? '동선 숨기기' : '동선 보기'}</span>
+          <span aria-hidden="true">↳</span> {showPath ? '동선 숨기기' : '동선 보기'}
         </button>
       </div>
-
-      {/* 2D Konva Canvas 렌더링 영역 */}
-      <div style={{ width: '100%', overflowX: 'auto', border: '1px solid #cbd5e1', borderRadius: '10px', backgroundColor: '#f8fafc' }}>
-        <Stage width={STAGE_CONFIG.width} height={STAGE_CONFIG.height}>
+      <div className="parking-map-meta">
+        <span>
+          지하 {currentFloor}층 <strong>{floorSlots.length}면</strong>
+        </span>
+        <span className="parking-map-special-counts">
+          <span>⚡ 전기차 {electric}</span>
+          <span>♿ 장애인 {accessible}</span>
+        </span>
+      </div>
+      <div
+        ref={viewport}
+        className="parking-map-viewport"
+        role="group"
+        aria-label={`지하 ${currentFloor}층 주차 도면`}
+      >
+        <Stage
+          width={canvasWidth}
+          height={PARKING_STAGE_SIZE.height * scale}
+          scaleX={scale}
+          scaleY={scale}
+        >
           <Layer>
-            {/* 외곽선 매핑 */}
+            <Rect width={640} height={480} fill="#f7f9fc" listening={false} />
             <Rect
-              x={MAP_BOUNDS.x}
-              y={MAP_BOUNDS.y}
-              width={MAP_BOUNDS.width}
-              height={MAP_BOUNDS.height}
-              stroke="#334155"
-              strokeWidth={3}
-              fill="#FFFFFF"
-              cornerRadius={4}
+              {...PARKING_MAP_BOUNDS}
+              stroke="#53657d"
+              strokeWidth={2}
+              fill="#ffffff"
+              cornerRadius={8}
+              listening={false}
             />
-
-            {/* 지하 램프 구역 */}
-            <Group x={570} y={240}>
-              <Arc angle={180} innerRadius={20} outerRadius={40} fill="#94A3B8" stroke="#475569" strokeWidth={1.5} rotation={270} />
-              <Text x={-15} y={-22} text="OUT ▲" fontSize={9} fontStyle="bold" fill="#DC2626" />
-              <Text x={-12} y={12} text="IN  ▼" fontSize={9} fontStyle="bold" fill="#16A34A" />
-              <Text x={-32} y={-4} text="지하램프" fontSize={10} fontStyle="bold" fill="#0F172A" />
+            <Group x={570} y={240} listening={false}>
+              <Arc
+                angle={180}
+                innerRadius={20}
+                outerRadius={40}
+                fill="#e1e8f1"
+                stroke="#94a3b8"
+                strokeWidth={1.5}
+                rotation={270}
+              />
+              <Text
+                x={-15}
+                y={-22}
+                text="OUT ▲"
+                fontSize={9}
+                fontStyle="bold"
+                fill="#dc5263"
+              />
+              <Text
+                x={-12}
+                y={12}
+                text="IN  ▼"
+                fontSize={9}
+                fontStyle="bold"
+                fill="#16856a"
+              />
+              <Text x={-32} y={-4} text="지하램프" fontSize={10} fill="#334155" />
             </Group>
-
-            {/* 보행자 코어 구역 */}
-            <Group x={CENTRAL_CORE.x} y={CENTRAL_CORE.y}>
-              <Rect width={CENTRAL_CORE.width} height={CENTRAL_CORE.height} fill="#F1F5F9" stroke="#CBD5E1" strokeWidth={2} cornerRadius={4} />
-              <Text x={15} y={18} text="E/V / Stair" fontSize={11} fontStyle="bold" fill="#334155" />
-              <Text x={15} y={48} text="[보행자 전용 코어 구역]" fontSize={10} fill="#64748B" />
+            <Group x={220} y={195} listening={false}>
+              <Rect
+                width={180}
+                height={85}
+                fill="#f1f5f9"
+                stroke="#d8e1ed"
+                cornerRadius={7}
+              />
+              <Text
+                x={16}
+                y={19}
+                text="E/V · Stair"
+                fontSize={12}
+                fontStyle="bold"
+                fill="#475569"
+              />
+              <Text x={16} y={48} text="보행자 전용 구역" fontSize={10} fill="#7c8ba0" />
             </Group>
-
-            {/* 주차 동선 가이드 */}
             {showPath && (
-              <Group>
-                <Arrow points={[540, 315, 500, 315]} stroke="#16A34A" fill="#16A34A" strokeWidth={2.5} pointerLength={6} pointerWidth={6} />
-                <Arrow points={[500, 315, 160, 315, 160, 150, 500, 150]} stroke="#0284C7" fill="#0284C7" strokeWidth={2.5} pointerLength={6} pointerWidth={6} />
-                <Arrow points={[500, 150, 540, 150]} stroke="#DC2626" fill="#DC2626" strokeWidth={2.5} pointerLength={6} pointerWidth={6} />
+              <Group listening={false} opacity={0.8}>
+                <Arrow
+                  points={[540, 315, 500, 315]}
+                  stroke="#16856a"
+                  fill="#16856a"
+                  strokeWidth={2}
+                  pointerLength={6}
+                  pointerWidth={6}
+                />
+                <Arrow
+                  points={[500, 315, 160, 315, 160, 150, 500, 150]}
+                  stroke="#4d8ac1"
+                  fill="#4d8ac1"
+                  strokeWidth={2}
+                  pointerLength={6}
+                  pointerWidth={6}
+                />
+                <Arrow
+                  points={[500, 150, 540, 150]}
+                  stroke="#dc5263"
+                  fill="#dc5263"
+                  strokeWidth={2}
+                  pointerLength={6}
+                  pointerWidth={6}
+                />
               </Group>
             )}
-
-            {/* 주차 구획 그리드 목록 */}
-            {currentFloorSlots.map((slot) => {
+            {floorSlots.map((slot) => {
               const isSelected = selectedSlotId === slot.id;
-              const slotColor = getSlotColor(slot, isSelected);
-              const badgeText = getTypeBadge(slot.slotType);
-
+              const state = statusFor(slot);
+              const special =
+                slot.slotType === 'ELECTRIC' || slot.slotType === 'DISABLED_PERSON';
+              const vertical = slot.height >= 68;
+              const iconScale = vertical ? 0.8 : 0.6;
+              const typeColor =
+                slot.slotType === 'ELECTRIC'
+                  ? TYPE_COLORS.ELECTRIC
+                  : TYPE_COLORS.DISABLED_PERSON;
               return (
                 <Group
                   key={slot.id}
@@ -159,37 +223,85 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
                   y={slot.y}
                   onClick={() => onSlotClick(slot)}
                   onTap={() => onSlotClick(slot)}
+                  onMouseEnter={(event) => {
+                    event.target.getStage()!.container().style.cursor = 'pointer';
+                  }}
+                  onMouseLeave={(event) => {
+                    event.target.getStage()!.container().style.cursor = 'default';
+                  }}
                 >
+                  {isSelected && (
+                    <Rect
+                      x={-4}
+                      y={-4}
+                      width={slot.width + 8}
+                      height={slot.height + 8}
+                      stroke="#2563eb"
+                      strokeWidth={2.5}
+                      cornerRadius={7}
+                      listening={false}
+                    />
+                  )}
                   <Rect
                     width={slot.width}
                     height={slot.height}
-                    fill={slotColor}
-                    opacity={0.88}
-                    stroke={isSelected ? '#1D4ED8' : '#334155'}
-                    strokeWidth={isSelected ? 2.5 : 1}
-                    cornerRadius={3}
+                    fill={state.background}
+                    stroke={state.border}
+                    strokeWidth={1.2}
+                    cornerRadius={4}
                   />
-                  <Text x={5} y={5} text={slot.slotNumber} fontSize={10} fontStyle="bold" fill="#FFFFFF" />
+                  {special && (
+                    <Group listening={false}>
+                      <Group
+                        x={vertical ? (slot.width - 24 * iconScale) / 2 : slot.width - 21}
+                        y={vertical ? 43 : 20}
+                        scaleX={iconScale}
+                        scaleY={iconScale}
+                      >
+                        <Path
+                          data={slot.slotType === 'ELECTRIC' ? boltPath : wheelchairPath}
+                          fill={slot.slotType === 'ELECTRIC' ? typeColor : undefined}
+                          stroke={typeColor}
+                          strokeWidth={1.8}
+                          lineCap="round"
+                          lineJoin="round"
+                        />
+                        {slot.slotType === 'DISABLED_PERSON' && (
+                          <Circle x={9} y={3} radius={2} fill={typeColor} />
+                        )}
+                      </Group>
+                    </Group>
+                  )}
                   <Text
                     x={5}
-                    y={19}
-                    text={
-                      slot.slotType === 'DISABLED' || slot.status === 'DISABLED'
-                        ? '🚫 점검'
-                        : slot.status === 'OCCUPIED'
-                        ? '🚗 주차'
-                        : slot.status === 'RESERVED'
-                        ? '📅 예약'
-                        : '✅ 가능'
-                    }
-                    fontSize={9}
-                    fill="#FFFFFF"
+                    y={6}
+                    width={Math.max(10, slot.width - 10)}
+                    text={slot.slotNumber}
+                    fontSize={10}
+                    fontStyle="bold"
+                    fill={state.color}
+                    listening={false}
                   />
-                  {badgeText && (
-                    <Text x={5} y={32} text={badgeText} fontSize={8} fontStyle="bold" fill="#FEF08A" />
-                  )}
-                  {mode === 'admin' && slot.vehicleNumber && (
-                    <Text x={4} y={slot.height - 13} text={slot.vehicleNumber} fontSize={8} fontStyle="bold" fill="#FEF08A" />
+                  <Text
+                    x={5}
+                    y={21}
+                    width={Math.max(10, slot.width - (special && !vertical ? 27 : 10))}
+                    text={state.label}
+                    fontSize={8.5}
+                    fill={state.color}
+                    listening={false}
+                  />
+                  {mode === 'admin' && slot.vehicleNumber && slot.height >= 45 && (
+                    <Text
+                      x={3}
+                      y={slot.height - 12}
+                      width={slot.width - 6}
+                      align="center"
+                      text={slot.vehicleNumber}
+                      fontSize={7.5}
+                      fill={state.color}
+                      listening={false}
+                    />
                   )}
                 </Group>
               );
@@ -197,14 +309,99 @@ export const ParkingMapView: React.FC<ParkingMapProps> = ({
           </Layer>
         </Stage>
       </div>
-      {currentFloorSlots.length === 0 && (
-        <p role="status" style={{ marginTop: 12, fontSize: 13, color: '#64748b' }}>
-          주차구획 데이터가 없습니다. 백엔드 조회 API 연결 후 도면에 표시됩니다.
+      {floorSlots.length === 0 && (
+        <p className="parking-map-empty" role="status">
+          조회된 주차구획이 없습니다.
         </p>
       )}
-      <span style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-        {mode === 'user' ? '구획 클릭 시 예약 창을 엽니다.' : '구획 클릭 시 관리 설정 패널을 엽니다.'}
-      </span>
+      <div className="parking-map-legend" aria-label="구획 표시 범례">
+        <div className="parking-map-legend-status">
+          {Object.entries(STATUS).map(([code, item]) => (
+            <span key={code}>
+              <i
+                style={{
+                  backgroundColor: item.background,
+                  border: `1px solid ${item.border}`,
+                }}
+                aria-hidden="true"
+              />
+              {item.label}
+            </span>
+          ))}
+        </div>
+        <div className="parking-map-legend-types">
+          <span>
+            <i
+              className="parking-map-type-key"
+              style={{ color: TYPE_COLORS.ELECTRIC }}
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d={boltPath} fill="currentColor" />
+              </svg>
+            </i>
+            전기차 전용
+          </span>
+          <span>
+            <i
+              className="parking-map-type-key"
+              style={{ color: TYPE_COLORS.DISABLED_PERSON }}
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="9" cy="3" r="2" fill="currentColor" stroke="none" />
+                <path d={wheelchairPath} />
+              </svg>
+            </i>
+            장애인 전용
+          </span>
+          <span>
+            <i className="parking-map-selected-key" aria-hidden="true" />
+            선택 구획
+          </span>
+        </div>
+      </div>
+      <p className="parking-map-hint">
+        {selected ? `${selected.spaceCode} · ${statusFor(selected).label} · ` : ''}
+        {mode === 'admin'
+          ? '구획을 선택하면 관리 패널이 열립니다.'
+          : '사용가능 구획을 선택해 예약 정보를 확인하세요.'}
+      </p>
+      {/* 캔버스를 조작할 수 없는 환경에서도 같은 구획 선택 기능을 제공한다. */}
+      <details className="parking-map-list">
+        <summary>구획 목록으로 선택</summary>
+        <div>
+          {floorSlots.map((slot) => (
+            <button
+              key={slot.id}
+              type="button"
+              aria-pressed={slot.id === selectedSlotId}
+              onClick={() => onSlotClick(slot)}
+            >
+              {slot.slotNumber} · {statusFor(slot).label}
+              {slot.slotType === 'ELECTRIC'
+                ? ' · 전기차'
+                : slot.slotType === 'DISABLED_PERSON'
+                  ? ' · 장애인'
+                  : ''}
+            </button>
+          ))}
+        </div>
+      </details>
     </div>
   );
-};
+}
