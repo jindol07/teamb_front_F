@@ -26,12 +26,20 @@
 }
 
 /* 메시지 영역만 스크롤 */
+#floating-alpaca-chat .floating-message-container {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 #floating-alpaca-chat .alpaca-chat-messages {
     flex: 1;
     min-height: 0;
     height: auto;
     overflow-y: auto;
-    padding: 14px;
+    padding: 14px 14px 48px;
 }
 
 /* 빠른 질문 영역 */
@@ -55,6 +63,6 @@
 
     #floating-alpaca-chat .alpaca-chat-messages {
         height: auto;
-        padding: 12px;
+        padding: 12px 12px 48px;
     }
 }

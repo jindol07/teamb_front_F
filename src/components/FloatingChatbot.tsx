@@ -46,7 +46,7 @@ export default function FloatingChatbot() {
                     marginBottom: '12px',
                 }}
             >
-                <AlpacaChatbot floating />
+                <AlpacaChatbot floating visible={isOpen && !isChatbotPage} />
             </div>
 
             {/* 챗봇 열기 / 닫기 버튼 */}
