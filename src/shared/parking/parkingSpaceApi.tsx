@@ -50,6 +50,54 @@ export interface ParkingSpaceDto {
   updatedAt?: string | null;
 }
 
+export interface ParkingUsageRecord {
+  parkingUsageId: number;
+  vehicleId: number | null;
+  vehicleNumber: string;
+  parkingSpaceId: number | null;
+  spaceCode: string | null;
+  entryAt: string;
+  exitAt: string | null;
+  parkingTypeCode: string;
+}
+
+export interface ParkingSpaceHistory {
+  parkingSpaceHistoryId: number;
+  spaceStatusCode: string;
+  spaceTypeCode: string;
+  memo: string | null;
+  changeReason: string | null;
+  changedByAdminId: number | null;
+  changeSourceCode: string;
+  validFrom: string;
+  validTo: string | null;
+}
+
+export interface ParkingCorrectionDetail {
+  space: ParkingSpaceDto;
+  activeUsages: ParkingUsageRecord[];
+  history: ParkingSpaceHistory[];
+}
+
+export type ParkingUsageAction = 'KEEP' | 'ASSIGN' | 'DETACH' | 'EXIT';
+
+export interface ParkingCorrectionInput {
+  spaceStatusCode: string;
+  spaceTypeCode: string;
+  memo: string;
+  changeReason: string;
+  usageAction: ParkingUsageAction;
+  parkingUsageId: number | null;
+  vehicleNumber: string | null;
+  exitAt: string | null;
+  expectedStatus: string;
+  expectedType: string;
+  expectedMemo: string | null;
+  expectedUpdatedAt: string | null;
+  expectedHistoryId: number | null;
+  expectedActiveUsageIds: number[];
+}
+
 /** 기존 axios 인터셉터로 로그인 JWT를 첨부하고 HTTP 오류를 전달한다. */
 async function request<T>(path: string, init: AxiosRequestConfig = {}, server: ParkingServer = 'admin'): Promise<T> {
   const client = server === 'user' ? userApi : adminApi;
@@ -64,6 +112,11 @@ async function request<T>(path: string, init: AxiosRequestConfig = {}, server: P
   if (response.status < 200 || response.status >= 300) {
     if (response.status === 401) throw new Error('로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해 주세요.');
     if (response.status === 403) throw new Error('주차구획 조회·변경 권한이 없거나 인증을 확인할 수 없습니다.');
+    const errorBody: unknown = response.data;
+    if (errorBody && typeof errorBody === 'object' && 'message' in errorBody
+        && typeof errorBody.message === 'string' && errorBody.message) {
+      throw new Error(errorBody.message);
+    }
     throw new Error(`주차구획 API 오류: HTTP ${response.status}`);
   }
   const contentType = String(response.headers['content-type'] ?? '');
@@ -99,11 +152,21 @@ export function saveParkingMemo(parkingSpaceId: number, memo: string) {
 /** 관리자 구획 강제 변경: JWT 인증 및 ADMIN 권한이 필요하다. */
 export function saveParkingSpace(
   parkingSpaceId: number,
-  input: { spaceStatusCode: string; spaceTypeCode: string; memo: string; changeReason: string }
+  input: ParkingCorrectionInput
 ) {
   return request<unknown>(`/${parkingSpaceId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     data: input,
   }).then(normalizeParkingSpace);
+}
+
+/** 메모·차량 기록·이력은 관리자 패널 안에서만 보관한다. */
+export async function fetchParkingCorrection(parkingSpaceId: number, signal?: AbortSignal): Promise<ParkingCorrectionDetail> {
+  const detail = await request<ParkingCorrectionDetail>(`/${parkingSpaceId}/correction`, { signal });
+  return { ...detail, space: normalizeParkingSpace(detail.space) };
+}
+
+export function searchParkingUsageRecords(vehicleNumber: string, signal?: AbortSignal) {
+  return request<ParkingUsageRecord[]>('/usage-candidates', { params: { vehicleNumber }, signal });
 }
