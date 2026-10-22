@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import { useCompactChatbot } from './useCompactChatbot';
 
 type Point = { x: number; y: number };
 const clamp = (point: Point): Point => ({
@@ -12,6 +13,7 @@ export function useAlpharkingRoaming(
     ref: RefObject<HTMLDivElement>,
     options: { open: boolean; hidden: boolean; quiet: boolean; sleeping: boolean; position: Point | null; page: string }
 ) {
+    const compact = useCompactChatbot();
     const [modalOpen, setModalOpen] = useState(false);
     const lastPosition = useRef<Point | null>(null);
     useEffect(() => {
@@ -29,6 +31,8 @@ export function useAlpharkingRoaming(
         element.dataset.motion = 'idle';
         for (const property of ['position', 'left', 'top']) element.style.removeProperty(property);
         if (open || hidden || modalOpen) return;
+        // 모바일 위치는 CSS의 오른쪽 아래 배치에 맡기고 저장된 PC 위치를 적용하지 않습니다.
+        if (compact) return;
         const home = { x: innerWidth - 152, y: innerHeight - 156 };
         // 조용한 모드는 기본 위치로 복귀하고, 이후 직접 드래그한 위치만 별도로 사용합니다.
         const initial = quiet ? clamp(position ?? home) : clamp(lastPosition.current ?? home);
@@ -108,6 +112,6 @@ export function useAlpharkingRoaming(
             cancelAnimationFrame(frame);
             window.removeEventListener('pointermove', track);
         };
-    }, [ref, open, hidden, quiet, sleeping, position, page, modalOpen]);
+    }, [ref, open, hidden, quiet, sleeping, position, page, modalOpen, compact]);
     return modalOpen;
 }

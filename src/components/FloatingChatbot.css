@@ -2,6 +2,18 @@
    플로팅 챗봇 전용 스타일
    ========================= */
 /* 최상위 영역 높이 */
+.alpharking-floating-root {
+    right: 24px;
+    bottom: 24px;
+}
+
+#floating-alpaca-chat {
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    height: 540px;
+    max-height: calc(100dvh - 200px);
+}
+
 .alpharking-launcher {
     pointer-events: none;
     position: relative;
@@ -336,7 +348,48 @@
 }
 
 /* 모바일 */
-@media (max-width: 768px) {
+@media (max-width: 768px), (hover: none) {
+    .alpharking-floating-root {
+        right: max(12px, env(safe-area-inset-right));
+        bottom: calc(12px + env(safe-area-inset-bottom) + var(--chat-viewport-bottom, 0px));
+    }
+
+    .alpharking-launcher:not(.is-open) {
+        width: 88px;
+        height: 92px;
+    }
+
+    .alpharking-launcher.is-open {
+        width: 44px;
+        height: 44px;
+    }
+
+    .alpharking-open-button { touch-action: manipulation; }
+    .alpharking-launcher:not(.is-open) .alpharking-open-button {
+        /* 캐릭터 주위의 투명 여백은 터치 영역에서 제외합니다. */
+        clip-path: inset(4% 17% 6% 17%);
+    }
+
+    .alpharking-motion-toggle {
+        left: auto;
+        right: 0;
+        transform: none;
+        bottom: -6px;
+        height: 25px;
+        gap: 2px;
+        padding: 0 5px;
+        font-size: 10px;
+    }
+
+    .alpharking-motion-toggle button { width: 22px; height: 22px; font-size: 13px; }
+
+    #floating-alpaca-chat {
+        width: min(380px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+        max-width: none;
+        height: min(540px, calc(var(--chat-viewport-height, 100dvh) - 88px - env(safe-area-inset-bottom)));
+        max-height: none;
+    }
+
     #floating-alpaca-chat .alpaca-chatbot {
         margin-top: 0;
     }
@@ -345,4 +398,16 @@
         height: auto;
         padding: 12px 12px 48px;
     }
+
+    #floating-alpaca-chat .alpaca-chat-input-wrapper { padding: 8px; }
+    #floating-alpaca-chat .alpaca-chat-input-area { gap: 6px; }
+    #floating-alpaca-chat .alpaca-chat-input-area input { min-width: 0; font-size: 16px; }
+    #floating-alpaca-chat .alpaca-chat-input-area button { flex-shrink: 0; min-height: 44px; }
+    #floating-alpaca-chat .quick-question-area { padding: 6px 8px; gap: 4px; }
+    #floating-alpaca-chat .quick-question-button { padding: 6px 9px; }
+
+    /* 키보드·가로 화면으로 공간이 부족하면 입력·대화 영역을 우선합니다. */
+    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .quick-question-area { display: none; }
+    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .alpaca-chat-header { padding: 6px 10px; }
+    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .alpaca-profile-icon { width: 30px; height: 30px; }
 }
