@@ -71,3 +71,364 @@
     height: 240px;
   }
 }
+/* 메인 화면 헤더 */
+.homeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 5;
+}
+
+/* 알림 버튼 */
+.alpacaMascot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: alpacaFloat 2.5s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.notificationWrapper {
+  position: relative;
+}
+
+.notificationButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #dbe5f0;
+  border-radius: 50%;
+  background: #fff;
+  color: #2563eb;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.notificationButton:hover {
+  background: #eff6ff;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.15);
+  transform: translateY(-2px);
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  border-radius: 20px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* 알림 애니메이션 */
+.notificationShake {
+  animation: notificationShake 0.8s ease-in-out infinite;
+}
+
+.notificationBounce {
+  animation: notificationBounce 1s ease-in-out infinite;
+}
+
+.notificationPulse {
+  animation: notificationPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes notificationShake {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(12deg); }
+  30% { transform: rotate(-12deg); }
+  45% { transform: rotate(9deg); }
+  60% { transform: rotate(-9deg); }
+  75% { transform: rotate(4deg); }
+}
+
+@keyframes notificationBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes notificationPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.25); }
+  50% { box-shadow: 0 0 0 9px rgba(37, 99, 235, 0); }
+}
+
+@keyframes alpacaFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-5px) rotate(2deg); }
+}
+
+/* 알림 패널 */
+.notificationPanel {
+  position: absolute;
+  top: 58px;
+  right: 0;
+  width: min(370px, calc(100vw - 32px));
+  max-height: min(520px, calc(100vh - 120px));
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.16);
+  z-index: 1000;
+  animation: notificationPanelIn 0.18s ease-out;
+}
+
+@keyframes notificationPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notificationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #eaf0f6;
+}
+
+.notificationHeader strong {
+  color: #172554;
+  font-size: 17px;
+}
+
+.notificationHeader p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.notificationHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.notificationIconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.notificationIconButton:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.notificationCount {
+  padding: 10px 16px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  border-bottom: 1px solid #eaf0f6;
+}
+
+.notificationCount strong {
+  color: #2563eb;
+}
+
+.notificationEmpty {
+  padding: 32px 16px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.notificationEmpty p {
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.notificationError {
+  margin: 0;
+  padding: 16px;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.notificationItem {
+  display: block;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.notificationItem:hover {
+  background: #f8fafc;
+}
+
+.notificationUnread {
+  background: #eff6ff;
+}
+
+.notificationUnread:hover {
+  background: #dbeafe;
+}
+
+.notificationItemTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.notificationItemTop strong {
+  color: #1e293b;
+  font-size: 13px;
+}
+
+.notificationItem p {
+  margin: 7px 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.notificationDate {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.unreadDot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+/* 알림 커스텀 설정 */
+.notificationSettings {
+  padding: 15px 16px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.settingsTitle {
+  margin-bottom: 13px;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.settingsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.settingsRow input {
+  flex-shrink: 0;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.settingsField {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 14px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.settingsField select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+}
+
+.settingsField input[type='range'] {
+  width: 100%;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.resetSettingsButton {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #475569;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.resetSettingsButton:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+@media (max-width: 480px) {
+  .homeHeader {
+    align-items: flex-start;
+  }
+
+  .alpacaMascot svg {
+    width: 48px;
+    height: 55px;
+  }
+
+  .notificationButton {
+    width: 44px;
+    height: 44px;
+  }
+
+  .notificationPanel {
+    right: -4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notificationShake,
+  .notificationBounce,
+  .notificationPulse,
+  .alpacaMascot {
+    animation: none;
+  }
+}
