@@ -1,4 +1,4 @@
-import { CircleDot, Mic, Square, CircleAlert } from "lucide-react";
+import { CircleDot, Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 // 브라우저 SpeechRecognition 타입 정의
 interface SpeechRecognitionResultItem {
