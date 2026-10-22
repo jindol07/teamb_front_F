@@ -8,7 +8,8 @@
  * 4) rawStatusCode/rawTypeCode: 실제 DB 코드값. 임의로 EMPTY 등으로 추측하지 않음.
  */
 export type SlotStatusType = 'EMPTY' | 'OCCUPIED' | 'RESERVED' | 'DISABLED' | 'UNKNOWN';
-export type ExtendedSlotType = 'NORMAL' | 'ELECTRIC' | 'DISABLED_PERSON' | 'DISABLED' | 'UNKNOWN';
+export type ExtendedSlotType =
+  'NORMAL' | 'ELECTRIC' | 'DISABLED_PERSON' | 'DISABLED' | 'UNKNOWN';
 
 export interface ParkingSlot {
   /** React key / 선택 비교용. DB에 연결되면 숫자 PK를 문자열로 변환한 값. */
@@ -49,4 +50,8 @@ export interface ParkingMapProps {
   onFloorChange: (floor: number) => void;
   onSlotClick: (slot: ExtendedParkingSlot) => void;
   selectedSlotId?: string | null;
+  /** 호출 페이지에 층 선택이 있을 때 모바일에서 중복 도구를 줄이는 표시 옵션. */
+  compactControls?: boolean;
+  /** 관리자만 전달. 현재 점유 상태와 별개인 진행 중·향후 확정 예약 건수. */
+  reservationCounts?: Record<number, number>;
 }

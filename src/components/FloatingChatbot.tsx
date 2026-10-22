@@ -1,11 +1,12 @@
 
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LuX } from 'react-icons/lu';
 import AlpharkingCharacter from './AlpharkingCharacter';
 import AlpacaChatbot from '../pages/user/chatbot/AlpacaChatbot';
 import './FloatingChatbot.css';
 import { useAlpharkingRoaming } from './useAlpharkingRoaming';
+import { useAlpharkingAnnouncements } from './useAlpharkingAnnouncements';
 
 type MascotPosition = { x: number; y: number };
 const readPreference = (key: string) => {
@@ -105,6 +106,7 @@ export default function FloatingChatbot() {
 
     // 현재 페이지 주소 확인
     const location = useLocation();
+    const navigate = useNavigate();
 
     // 기존 전체 화면 챗봇 페이지인지 확인
     const isChatbotPage = location.pathname === '/user/chatbot';
@@ -116,6 +118,12 @@ export default function FloatingChatbot() {
         position,
         page: location.pathname
     });
+    const { announcement, dismiss } = useAlpharkingAnnouncements(
+        !quiet && !hidden && !isOpen && !isChatbotPage && !modalOpen && idleAction !== 'sleep'
+    );
+    const mascotBounds = roamingRef.current?.getBoundingClientRect();
+    const bubbleLeft = mascotBounds
+        ? Math.max(8 - mascotBounds.left, Math.min(-46, window.innerWidth - 228 - mascotBounds.left)) : -46;
 
     return (
         <div
@@ -208,15 +216,31 @@ export default function FloatingChatbot() {
                     </>
                 )}
             </button>
+            {announcement && (
+                <div className="alpharking-announcement" role="status" style={{
+                    left: bubbleLeft,
+                    ...(mascotBounds && mascotBounds.top < 180
+                        ? { top: 'calc(100% + 12px)' } : { bottom: 'calc(100% + 10px)' })
+                }}>
+                    <button type="button" className="alpharking-announcement-close" aria-label="안내 닫기" onClick={dismiss}>×</button>
+                    <p>{announcement.text}</p>
+                    <button type="button" className="alpharking-announcement-action" onClick={() => {
+                        dismiss();
+                        if (announcement.reservation) navigate('/user/reservation');
+                        else setIsOpen(true);
+                    }}>{announcement.reservation ? '예약 확인' : '질문하기'}</button>
+                </div>
+            )}
             {!isOpen && (
                 <div
                     className="alpharking-motion-toggle"
                 >
                     <span>알파킹</span>
                     <button type="button" aria-label="조용한 모드" aria-pressed={quiet}
-                        title={quiet ? '조용한 모드 끄고 이동하기' : '조용한 모드 켜고 멈추기'} onClick={() => {
+                        title={quiet ? '조용한 모드 끄고 이동하기' : '조용한 모드 켜고 오른쪽 아래에 고정'} onClick={() => {
                             lastInteraction.current = Date.now();
                             setIdleAction('none');
+                            if (!quiet) setPosition(null);
                             setQuiet((previous) => !previous);
                         }}>☾</button>
                     <button type="button" aria-label="알파킹 숨기기" title="알파킹 숨기기" onClick={() => { setIsOpen(false); setHidden(true); }}>×</button>

@@ -371,6 +371,10 @@
   outline: 3px solid #9abafa;
   outline-offset: 3px;
 }
+.parking-user-mobile-overview,
+.parking-user-floor-count .parking-user-mobile-remaining {
+  display: none;
+}
 @media (max-width: 1000px) {
   .parking-user-status {
     padding: 16px;
@@ -391,41 +395,207 @@
     margin-bottom: 0;
   }
 }
-@media (max-width: 600px) {
-  .parking-user-header h2 {
-    font-size: 21px;
-  }
-  .parking-user-mark {
-    display: none;
-  }
-  .parking-user-stats {
-    gap: 8px;
-  }
-  .parking-user-stat {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
+/* 휴대폰·좁은 창에서는 현황 요약과 도면 사이의 반복 정보를 압축한다. */
+@media (max-width: 1000px) {
+  .parking-user-status {
     padding: 12px;
   }
-  .parking-user-stat > strong {
-    font-size: 24px;
+  .parking-user-header {
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: nowrap;
   }
-  .parking-user-stat-label {
+  .parking-user-heading {
+    min-width: 0;
+  }
+  .parking-user-header h2 {
+    font-size: 20px;
+  }
+  .parking-user-mark,
+  .parking-user-eyebrow,
+  .parking-user-description,
+  .parking-user-overview > .parking-user-section-heading,
+  .parking-user-stats,
+  .parking-user-floor-section > .parking-user-section-heading,
+  .parking-user-selection-help,
+  .parking-user-floor-heading > span,
+  .parking-user-floor-count > span:not(.parking-user-mobile-remaining),
+  .parking-user-floor-summary,
+  .parking-user-map-heading p,
+  .parking-user-map-summary {
+    display: none;
+  }
+  .parking-user-connection {
+    padding: 6px 8px;
+    gap: 5px;
+    font-size: 10px;
+  }
+  .parking-user-overview {
+    margin-bottom: 10px;
+  }
+  .parking-user-mobile-overview {
+    display: block;
+    padding: 11px 13px;
+    border: 1px solid var(--user-parking-border);
+    border-radius: 12px;
+    background: #f8fcfa;
+  }
+  .parking-user-mobile-available {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 12px;
+    color: #426758;
+  }
+  .parking-user-mobile-available > strong {
+    color: #16856a;
+    font-size: 25px;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+  .parking-user-mobile-available small {
+    color: #718479;
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .parking-user-mobile-live {
+    margin-left: auto;
+    font-size: 10px;
+    color: #6c8579;
+  }
+  .parking-user-mobile-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 17px;
+    margin-top: 7px;
+    color: #687b90;
     font-size: 11px;
   }
+  .parking-user-mobile-counts b {
+    margin-left: 3px;
+    color: #334155;
+    font-variant-numeric: tabular-nums;
+  }
+  .parking-user-workspace {
+    gap: 10px;
+  }
   .parking-user-floors {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .parking-user-floor {
+    padding: 10px;
+    border-radius: 10px;
+  }
+  .parking-user-floor-heading strong {
+    font-size: 12px;
+  }
+  .parking-user-floor.is-selected {
+    background: #f5f8ff;
+  }
+  .parking-user-floor.is-selected .parking-user-floor-heading strong {
+    color: #245cd2;
+  }
+  .parking-user-floor-count {
+    gap: 4px;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+  .parking-user-floor-count strong {
+    font-size: 22px;
+    line-height: 1.2;
+  }
+  .parking-user-floor-count .parking-user-mobile-remaining {
+    display: inline;
+    font-size: 10px;
+  }
+  .parking-user-floor-progress {
+    height: 3px;
+    margin: 7px 0 0;
   }
   .parking-user-map-card {
-    padding: 13px;
+    padding: 10px;
+    border-radius: 12px;
   }
-  .parking-user-map-summary {
-    padding: 8px 10px;
+  .parking-user-map-heading {
+    margin-bottom: 7px;
+  }
+  .parking-user-map-heading h3 {
+    font-size: 13px;
+  }
+  .parking-user-floor-tag {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+  .parking-user-map-body .parking-map-view--compact-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 8px;
+  }
+  .parking-user-map-body .parking-map-view--compact-controls > * {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .parking-user-map-body .parking-map-view--compact-controls > .parking-map-toolbar {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 0 6px;
+  }
+  .parking-user-map-body .parking-map-view--compact-controls > .parking-map-meta {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+    margin: 0 0 6px;
+    font-size: 10px;
+  }
+  .parking-user-map-body .parking-map-view--compact-controls .parking-map-floors,
+  .parking-user-map-body
+    .parking-map-view--compact-controls
+    .parking-map-meta
+    > span:first-child {
+    display: none;
+  }
+  .parking-user-map-body .parking-map-special-counts {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .parking-user-map-body .parking-map-path {
+    min-height: 36px;
+    padding: 6px 9px;
+    font-size: 11px;
+  }
+  .parking-user-map-body .parking-map-viewport {
+    border-radius: 9px;
+  }
+  .parking-user-map-body .parking-map-legend {
+    gap: 6px 10px;
+    padding: 8px 0;
+    line-height: 1.5;
+  }
+  .parking-user-map-body .parking-map-legend-status,
+  .parking-user-map-body .parking-map-legend-types {
+    gap: 6px 10px;
+  }
+  .parking-user-map-body .parking-map-hint {
+    margin-top: 5px;
+  }
+  .parking-user-reservation-note {
+    margin-top: 7px;
   }
 }
 @media (max-width: 380px) {
-  .parking-user-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .parking-user-status {
+    padding: 10px 8px;
+  }
+  .parking-user-header h2 {
+    font-size: 18px;
+  }
+  .parking-user-floor {
+    padding: 9px 7px;
+  }
+  .parking-user-floor-count .parking-user-mobile-remaining {
+    font-size: 9px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
