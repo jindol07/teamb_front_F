@@ -51,6 +51,8 @@ export function ParkingMapView({
   onFloorChange,
   onSlotClick,
   selectedSlotId,
+  reservationCounts,
+  compactControls = false,
 }: ParkingMapProps) {
   const [showPath, setShowPath] = useState(true);
   const [canvasWidth, setCanvasWidth] = useState<number>(PARKING_STAGE_SIZE.width);
@@ -76,7 +78,9 @@ export function ParkingMapView({
   const selected = floorSlots.find((slot) => slot.id === selectedSlotId);
 
   return (
-    <div className="parking-map-view">
+    <div
+      className={`parking-map-view${compactControls ? ' parking-map-view--compact-controls' : ''}`}
+    >
       <div className="parking-map-toolbar">
         <div className="parking-map-floors" role="group" aria-label="도면 층 선택">
           {PARKING_FLOORS.map((floor) => (
@@ -275,13 +279,40 @@ export function ParkingMapView({
                   <Text
                     x={5}
                     y={6}
-                    width={Math.max(10, slot.width - 10)}
+                    width={Math.max(
+                      10,
+                      slot.width -
+                        (mode === 'admin' &&
+                        reservationCounts?.[slot.parkingSpaceId ?? -1]
+                          ? 22
+                          : 10),
+                    )}
                     text={slot.slotNumber}
                     fontSize={10}
                     fontStyle="bold"
                     fill={state.color}
                     listening={false}
                   />
+                  {mode === 'admin' &&
+                    !!reservationCounts?.[slot.parkingSpaceId ?? -1] && (
+                      <Group x={slot.width - 15} y={4} listening={false}>
+                        <Rect
+                          width={12}
+                          height={12}
+                          cornerRadius={2}
+                          fill="#ffffff"
+                          stroke="#5a54a1"
+                          strokeWidth={1}
+                        />
+                        <Path
+                          data="M0 4H12M3 0V3M9 0V3"
+                          stroke="#5a54a1"
+                          strokeWidth={1}
+                        />
+                        <Circle x={4} y={7} radius={1} fill="#5a54a1" />
+                        <Circle x={8} y={7} radius={1} fill="#5a54a1" />
+                      </Group>
+                    )}
                   <Text
                     x={5}
                     y={21}
@@ -315,6 +346,11 @@ export function ParkingMapView({
         </p>
       )}
       <div className="parking-map-legend" aria-label="구획 표시 범례">
+        {mode === 'admin' && reservationCounts && (
+          <span className="parking-map-reservation-key">
+            ▦ 달력 표시: 진행 중·향후 확정 예약 있음 (현재 상태와 별도)
+          </span>
+        )}
         <div className="parking-map-legend-status">
           {Object.entries(STATUS).map(([code, item]) => (
             <span key={code}>

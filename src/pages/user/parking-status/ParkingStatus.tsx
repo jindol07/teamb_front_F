@@ -285,6 +285,27 @@ export default function ParkingStatus() {
         className="parking-user-overview"
         aria-labelledby="user-parking-overview-title"
       >
+        <div className="parking-user-mobile-overview" aria-label="전체 주차장 현황">
+          <div className="parking-user-mobile-available">
+            <span>사용가능</span>
+            <strong>
+              {allSummary.available}
+              <small> / 전체 {allSummary.total}면</small>
+            </strong>
+            <span className="parking-user-mobile-live">실시간</span>
+          </div>
+          <div className="parking-user-mobile-counts">
+            <span>
+              주차중 <b>{allSummary.occupied}</b>
+            </span>
+            <span>
+              예약됨 <b>{allSummary.reserved}</b>
+            </span>
+            <span>
+              사용불가 <b>{allSummary.disabled}</b>
+            </span>
+          </div>
+        </div>
         <div className="parking-user-section-heading">
           <h3 id="user-parking-overview-title">전체 주차장 현황</h3>
           <span>지하 1–3층 통합</span>
@@ -337,6 +358,7 @@ export default function ParkingStatus() {
                   <div className="parking-user-floor-count">
                     <strong>{floorData.available}</strong>
                     <span>/ {floorData.total}면 사용가능</span>
+                    <span className="parking-user-mobile-remaining">자리 남음</span>
                   </div>
                   <div
                     className="parking-user-floor-progress"
@@ -401,6 +423,7 @@ export default function ParkingStatus() {
               onFloorChange={handleFloorChange}
               onSlotClick={handleSlotClick}
               selectedSlotId={selectedSlot?.id ?? null}
+              compactControls
             />
           </div>
           {currentFloorSlots.length > 0 && (
