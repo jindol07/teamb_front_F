@@ -58,7 +58,14 @@ export default function AdminSidebar() {
             차량관리
           </span>
         </li>
-
+        <li className="nav-item">
+           <span
+            className={menuItemClass(location.pathname === '/admin/mileage')}
+            onClick={() => navigate('/admin/mileage')}
+          >
+            마일리지
+          </span>
+        </li>
         <li className="nav-item">
           <span
             className={menuItemClass(location.pathname === '/admin/history')}

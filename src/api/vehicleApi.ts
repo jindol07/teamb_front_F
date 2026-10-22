@@ -1,9 +1,5 @@
-import axios from 'axios';
-
-// 관리자 서버 (MyBatis) - 앞에 export를 반드시 붙이기
-export const adminApi = axios.create({
-    baseURL: import.meta.env.VITE_BOOT_API_BASE_URL_A,
-});
+import { adminApi } from './axios';
+export { adminApi };
 
 // 백엔드 Vehicle DTO 타입
 export interface VehicleApiDTO {
