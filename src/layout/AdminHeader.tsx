@@ -22,7 +22,7 @@ export default function AdminHeader() {
         const result = await getAdmin();
   
         if (result) {
-          setCurrentAdmin(result.data.admin_name);
+          setCurrentAdmin(result.data.username);
         }
       };
   

@@ -183,3 +183,54 @@ export const getOffice = async (/*dispatch: AppDispatch*/) => {
         return null;
     }
 };
+
+export type signupData = {
+    username: string,
+	password: string,
+	password_confirm: string,
+	email: string,
+	email_code: string,
+	phone: string,
+	company_id: number,
+    floor_no: number,
+	office_number: string,
+	verification_code: string,
+	vehicle_list: Vehicle[],
+
+    company_company_name: string,
+    company_business_number: string,
+    company_company_addr: string,
+}
+export interface Vehicle {
+    vehicle_number: string,
+    owner_name: string,
+    vehicle_type_code: string,
+}
+
+export const officeSignup = async (signupData: signupData) => {
+    try {
+        const response = await axios.post(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/signup',
+            signupData
+        );
+        return response;
+
+    } catch (error) {
+        console.log(error);
+        return null;
+    }
+};
+
+export const checkUsername = async (username: string) => {
+    try {
+        const response = await axios.get(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/check-username?username=' + username,
+        );
+
+        return response.data;
+
+    } catch (error) {
+        console.log(error);
+        return null;
+    }
+};
