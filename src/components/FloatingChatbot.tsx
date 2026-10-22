@@ -7,6 +7,7 @@ import AlpacaChatbot from '../pages/user/chatbot/AlpacaChatbot';
 import './FloatingChatbot.css';
 import { useAlpharkingRoaming } from './useAlpharkingRoaming';
 import { useAlpharkingAnnouncements } from './useAlpharkingAnnouncements';
+import { useCompactChatbot } from './useCompactChatbot';
 
 type MascotPosition = { x: number; y: number };
 const readPreference = (key: string) => {
@@ -22,6 +23,28 @@ const keepOnScreen = (position: MascotPosition): MascotPosition => ({
  * 기존 AlpacaChatbot 기능을 재사용합니다.
  */
 export default function FloatingChatbot() {
+    const compact = useCompactChatbot();
+    const floatingRootRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (!compact) return;
+        const viewport = window.visualViewport;
+        const update = () => {
+            const root = floatingRootRef.current;
+            if (!root) return;
+            root.style.setProperty('--chat-viewport-height', `${viewport?.height ?? innerHeight}px`);
+            root.style.setProperty('--chat-viewport-bottom', `${Math.max(0, innerHeight - (viewport?.height ?? innerHeight) - (viewport?.offsetTop ?? 0))}px`);
+            root.dataset.shortViewport = String((viewport?.height ?? innerHeight) < 400);
+        };
+        update();
+        viewport?.addEventListener('resize', update);
+        viewport?.addEventListener('scroll', update);
+        window.addEventListener('resize', update);
+        return () => {
+            viewport?.removeEventListener('resize', update);
+            viewport?.removeEventListener('scroll', update);
+            window.removeEventListener('resize', update);
+        };
+    }, [compact]);
     // 챗봇 열림 / 닫힘 상태
     const [isOpen, setIsOpen] = useState(false);
     const [quiet, setQuiet] = useState(() => readPreference('alpharking_quiet') === 'on');
@@ -70,7 +93,11 @@ export default function FloatingChatbot() {
     const roamingRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (isOpen) return;
+        // 모바일도 기존 버튼·도면 클릭 통과를 유지합니다. 드래그만 별도로 끕니다.
+        if (isOpen) {
+            if (launcherRef.current) launcherRef.current.style.pointerEvents = '';
+            return;
+        }
         let pointer: { x: number; y: number } | null = null;
         const updateHitTarget = () => {
             const launcher = launcherRef.current;
@@ -102,7 +129,7 @@ export default function FloatingChatbot() {
             window.clearInterval(timer);
             if (launcherRef.current) launcherRef.current.style.pointerEvents = '';
         };
-    }, [isOpen]);
+    }, [isOpen, compact]);
 
     // 현재 페이지 주소 확인
     const location = useLocation();
@@ -127,13 +154,13 @@ export default function FloatingChatbot() {
 
     return (
         <div
+            ref={floatingRootRef}
+            className="alpharking-floating-root"
             data-alpharking-root
             style={{
                 // 전체 화면 챗봇 페이지에서는 숨김
                 display: isChatbotPage || modalOpen ? 'none' : 'block',
                 position: 'fixed',
-                right: '24px',
-                bottom: '24px',
                 zIndex: 1050,
                 pointerEvents: 'none',
             }}
@@ -144,10 +171,6 @@ export default function FloatingChatbot() {
                 style={{
                     display: isOpen ? 'block' : 'none',
                     pointerEvents: 'auto',
-                    width: '380px',
-                    maxWidth: 'calc(100vw - 32px)',
-                    height: '540px',
-                    maxHeight: 'calc(100dvh - 200px)',
                     overflow: 'hidden',
                     backgroundColor: '#fff',
                     borderRadius: '16px',
@@ -179,9 +202,9 @@ export default function FloatingChatbot() {
                     setIsOpen(prev => !prev);
                 }}
                 onPointerDown={(event) => {
-                    if (isOpen || event.button !== 0) return;
-                    const bounds = event.currentTarget.getBoundingClientRect();
                     suppressClick.current = false;
+                    if (compact || event.pointerType === 'touch' || isOpen || event.button !== 0) return;
+                    const bounds = event.currentTarget.getBoundingClientRect();
                     drag.current = { x: event.clientX, y: event.clientY, origin: { x: bounds.left, y: bounds.top }, moved: false };
                     event.currentTarget.setPointerCapture(event.pointerId);
                 }}
@@ -206,7 +229,7 @@ export default function FloatingChatbot() {
                 aria-expanded={isOpen}
                 aria-controls="floating-alpaca-chat"
                 className="alpharking-open-button"
-                title={isOpen ? '채팅 닫기' : '클릭하면 채팅, 끌어서 위치 이동'}
+                title={isOpen ? '채팅 닫기' : compact ? '알파킹에게 질문하기' : '클릭하면 채팅, 끌어서 위치 이동'}
             >
                 {isOpen ? <LuX size={26} /> : (
                     <>
