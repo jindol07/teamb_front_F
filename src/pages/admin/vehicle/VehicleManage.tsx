@@ -1,10 +1,11 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import { adminApi } from '../../../api/axios';
 import styles from './Vehicle.module.css';
 import ApartmentMap from './apartment/ApartmentMap';
 import VehicleDetail from './VehicleDetail';
 import AdditionalVehicleManagement from './AdditionalVehicleManagement';
 import AdditionalVehicleDetail from './AdditionalDetail';
+import { getAdmin } from '../../../auth/actions/authActions';
 import {
   AdditionalVehicleRequest,
   Fine,
@@ -23,6 +24,7 @@ interface VehicleForm {
   vehiclemodel: string;
   building: string;
   officenumber: string;
+  officeid: number | null;
   ownername: string;
   registeredAt: string;
 }
@@ -56,10 +58,11 @@ const getToday = (): string => {
 
 const createInitialVehicleForm = (): VehicleForm => ({
   vehiclenumber: '',
-  vehicletypecode: '승용차',
+  vehicletypecode: '개인차량',
   vehiclemodel: '',
   building: '',
   officenumber: '',
+  officeid: null,
   ownername: '',
   registeredAt: getToday(),
 });
@@ -73,26 +76,30 @@ const createInitialFineForm = (): FineForm => ({
   memo: '',
 });
 
-const predictVehicle = (vehiclenumber: string): VehiclePrediction | null => {
-  const number = vehiclenumber.replace(/\s/g, '').trim();
-  if (!number) return null;
-  const numberMatches = number.match(/\d/g);
-  if (!numberMatches?.length) return { vehicletypecode: '승용차' };
-  const lastNumber = Number(numberMatches[numberMatches.length - 1]);
+const isVehicleType = (value: string): value is VehicleType =>
+  value === '개인차량' || value === '법인차량';
 
-  switch (lastNumber) {
-    case 0:
-    case 5:
-      return { vehicletypecode: 'SUV' };
-    case 1:
-    case 6:
-      return { vehicletypecode: '경차' };
-    case 2:
-    case 7:
-      return { vehicletypecode: '승합차' };
-    default:
-      return { vehicletypecode: '승용차' };
-  }
+type NotificationSettings = {
+  enabled: boolean;
+  animation: 'shake' | 'bounce' | 'pulse' | 'none';
+  iconSize: number;
+  timing: 'new' | 'unread';
+};
+
+const NOTIFICATION_SETTINGS_KEY = 'vehicle-notification-settings';
+
+const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  enabled: true,
+  animation: 'shake',
+  iconSize: 26,
+  timing: 'new',
+};
+
+const getReviewerAdminId = async (): Promise<number | null> => {
+  const response = await getAdmin();
+  const admin = response?.data;
+  const adminId = Number(admin?.adminid ?? admin?.adminId ?? admin?.admin_id);
+  return Number.isInteger(adminId) && adminId > 0 ? adminId : null;
 };
 
 export default function VehicleManage() {
@@ -105,6 +112,19 @@ export default function VehicleManage() {
   const addFine = useVehicleStore((state) => state.addFine);
   const updateFine = useVehicleStore((state) => state.updateFine);
   const deleteFine = useVehicleStore((state) => state.deleteFine);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [readNotificationIds, setReadNotificationIds] = useState<number[]>([]);
+  const [isNotificationSettingsLoaded, setIsNotificationSettingsLoaded] = useState(false);
+
+  const handleNotificationClick = (request: AdditionalVehicleRequest) => {
+    setReadNotificationIds((prev) =>
+      prev.includes(request.id) ? prev : [...prev, request.id],
+    );
+
+    setIsNotificationOpen(false);
+    setSelectedAdditionalRequest(request);
+    setActiveMenu('plus');
+  };
   const [selectedAdditionalRequest, setSelectedAdditionalRequest] =
     useState<AdditionalVehicleRequest | null>(null);
   const fetchAdditionalVehicleRequests = useVehicleStore(
@@ -113,6 +133,35 @@ export default function VehicleManage() {
   const additionalVehicleRequests = useVehicleStore(
     (state) => state.additionalVehicleRequests,
   );
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>(
+    DEFAULT_NOTIFICATION_SETTINGS,
+  );
+
+  const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false);
+
+  const updateNotificationSetting = <K extends keyof NotificationSettings>(
+    key: K,
+    value: NotificationSettings[K],
+  ) => {
+    setNotificationSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const resetNotificationSettings = () => {
+    setNotificationSettings(DEFAULT_NOTIFICATION_SETTINGS);
+  };
+
+  const [isBellAnimating, setIsBellAnimating] = useState(false);
+  const [hasLoadedRequests, setHasLoadedRequests] = useState(false);
+
+  const previousPendingIdsRef = useRef<number[] | null>(null);
+
+  const pendingNotifications = additionalVehicleRequests.filter(
+    (request) => request.requeststatus !== '승인' && request.requeststatus !== '반려',
+  );
+
+  const unreadNotificationCount = pendingNotifications.filter(
+    (request) => !readNotificationIds.includes(request.id),
+  ).length;
   const approveAdditionalVehicleRequest = useVehicleStore(
     (state) => state.approveAdditionalVehicleRequest,
   );
@@ -124,49 +173,159 @@ export default function VehicleManage() {
   const [fineLoadError, setFineLoadError] = useState('');
 
   const handleApproveRequest = async (request: AdditionalVehicleRequest) => {
-    // 지금은 Admin 계정을 1로 임시 지정
-    const success = await approveAdditionalVehicleRequest(request.id, 1);
+    const reviewerAdminId = await getReviewerAdminId();
+    if (reviewerAdminId === null) {
+      alert('로그인한 관리자 ID를 확인할 수 없습니다. 다시 로그인해주세요.');
+      return false;
+    }
+
+    const success = await approveAdditionalVehicleRequest(request.id, reviewerAdminId);
 
     if (!success) {
       alert('차량 신청 승인에 실패했습니다.');
-      return;
+      return false;
     }
 
     await fetchVehicles();
-    await fetchAdditionalVehicleRequests();
+    try {
+      await fetchAdditionalVehicleRequests();
+    } catch (error) {
+      console.error('승인 후 신청 목록 새로고침 실패:', error);
+    }
 
     alert('추가 차량 신청을 승인했습니다.');
+    return true;
   };
 
   const handleRejectRequest = async (
     request: AdditionalVehicleRequest,
     reason: string,
   ) => {
-    // 지금은 Admin 계정을 1로 임시 지정
-    const success = await rejectAdditionalVehicleRequest(request.id, 1, reason); 
+    const reviewerAdminId = await getReviewerAdminId();
+    if (reviewerAdminId === null) {
+      alert('로그인한 관리자 ID를 확인할 수 없습니다. 다시 로그인해주세요.');
+      return false;
+    }
+
+    const success = await rejectAdditionalVehicleRequest(request.id, reviewerAdminId, reason);
 
     if (!success) {
       alert('차량 신청 반려에 실패했습니다. 반려 사유를 확인해주세요.');
-      return;
+      return false;
     }
 
-    await fetchAdditionalVehicleRequests();
+    try {
+      await fetchAdditionalVehicleRequests();
+    } catch (error) {
+      console.error('반려 후 신청 목록 새로고침 실패:', error);
+    }
 
     alert('차량 신청을 반려했습니다.');
+    return true;
   };
   useEffect(() => {
     fetchVehicles().catch((error) => {
       console.error('차량 목록 조회 실패:', error);
     });
-    fetchAdditionalVehicleRequests().catch((error) => {
-      console.error('추가 차량 신청 목록 조회 실패:', error);
-    });
-    fetchFines().then(() => setFineLoadError('')).catch((error) => {
-      console.error('주정차 위반 목록 조회 실패:', error);
-      setFineLoadError('주정차 위반 목록을 불러오지 못했습니다. API 주소와 서버 상태를 확인해주세요.');
-    });
+    fetchAdditionalVehicleRequests()
+      .then(() => setHasLoadedRequests(true))
+      .catch((error) => {
+        console.error('추가 차량 신청 목록 조회 실패:', error);
+        setHasLoadedRequests(true);
+      });
+    fetchFines()
+      .then(() => setFineLoadError(''))
+      .catch((error) => {
+        console.error('주정차 위반 목록 조회 실패:', error);
+        setFineLoadError(
+          '주정차 위반 목록을 불러오지 못했습니다. API 주소와 서버 상태를 확인해주세요.',
+        );
+      });
   }, [fetchVehicles, fetchAdditionalVehicleRequests, fetchFines]);
+  // 저장된 알림 설정 불러오기
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
 
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+
+        setNotificationSettings({
+          enabled:
+            typeof parsed.enabled === 'boolean'
+              ? parsed.enabled
+              : DEFAULT_NOTIFICATION_SETTINGS.enabled,
+          animation: ['shake', 'bounce', 'pulse', 'none'].includes(parsed.animation)
+            ? parsed.animation
+            : DEFAULT_NOTIFICATION_SETTINGS.animation,
+          iconSize:
+            typeof parsed.iconSize === 'number' &&
+            parsed.iconSize >= 18 &&
+            parsed.iconSize <= 36
+              ? parsed.iconSize
+              : DEFAULT_NOTIFICATION_SETTINGS.iconSize,
+          timing: ['new', 'unread'].includes(parsed.timing)
+            ? parsed.timing
+            : DEFAULT_NOTIFICATION_SETTINGS.timing,
+        });
+      }
+    } catch (error) {
+      console.error('알림 설정 불러오기 실패:', error);
+    } finally {
+      setIsNotificationSettingsLoaded(true);
+    }
+  }, []);
+
+  // 설정 변경 시 자동 저장
+  useEffect(() => {
+    if (!isNotificationSettingsLoaded) return;
+
+    try {
+      localStorage.setItem(
+        NOTIFICATION_SETTINGS_KEY,
+        JSON.stringify(notificationSettings),
+      );
+    } catch (error) {
+      console.error('알림 설정 저장 실패:', error);
+    }
+  }, [notificationSettings, isNotificationSettingsLoaded]);
+
+  // 새 신청 ID가 추가됐을 때 애니메이션 실행
+  useEffect(() => {
+    if (
+      !hasLoadedRequests ||
+      !notificationSettings.enabled ||
+      notificationSettings.animation === 'none' ||
+      notificationSettings.timing !== 'new'
+    )
+      return;
+
+    const currentIds = pendingNotifications.map((request) => request.id);
+    const previousIds = previousPendingIdsRef.current;
+
+    if (previousIds !== null && currentIds.some((id) => !previousIds.includes(id))) {
+      setIsBellAnimating(true);
+    }
+
+    previousPendingIdsRef.current = currentIds;
+  }, [
+    additionalVehicleRequests,
+    hasLoadedRequests,
+    notificationSettings.enabled,
+    notificationSettings.animation,
+    notificationSettings.timing,
+  ]);
+
+  // 애니메이션 종료
+  useEffect(() => {
+    if (!isBellAnimating) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsBellAnimating(false);
+    }, 800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isBellAnimating]);
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>('list');
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
@@ -258,6 +417,11 @@ export default function VehicleManage() {
     const building = vehicleForm.building.trim();
     const officenumber = vehicleForm.officenumber.trim();
 
+    if (vehicleForm.officeid == null || vehicleForm.officeid <= 0) {
+      alert('실제 호실 정보를 확인할 수 없습니다. 호실을 다시 선택해주세요.');
+      return;
+    }
+
     if (!vehiclenumber) {
       alert('차량번호를 입력해주세요.');
       return;
@@ -304,9 +468,6 @@ export default function VehicleManage() {
           : 'REGISTERED',
         registeredat: vehicleForm.registeredAt || getToday(),
         rejectedreason: existingVehicle ? existingVehicle.rejectedreason : '',
-        createdat: existingVehicle ? existingVehicle.createdat : getToday(),
-        updatedat: getToday(),
-        deletedat: '',
         ...({ building, officenumber } as any),
       });
 
@@ -325,7 +486,7 @@ export default function VehicleManage() {
 
     const newVehicle: Vehicle = {
       vehicleid: 0,
-      officeid: 0,
+      officeid: vehicleForm.officeid,
       vehiclenumber,
       vehiclemodel: vehicleForm.vehiclemodel,
       ownername,
@@ -334,9 +495,6 @@ export default function VehicleManage() {
       registrationstatuscode: 'REGISTERED',
       registeredat: vehicleForm.registeredAt || getToday(),
       rejectedreason: '',
-      createdat: getToday(),
-      updatedat: getToday(),
-      deletedat: '',
       ...({ building, officenumber } as any),
     };
 
@@ -359,12 +517,15 @@ export default function VehicleManage() {
       vehiclemodel: vehicle.vehiclemodel,
       building: (vehicle as any).building || '',
       officenumber: (vehicle as any).unit || '',
+      officeid: null,
       ownername: vehicle.ownername,
       registeredAt: vehicle.registeredat || getToday(),
     });
-    const result = predictVehicle(vehicle.vehiclenumber);
+    const result = isVehicleType(vehicle.vehicletypecode)
+      ? { vehicletypecode: vehicle.vehicletypecode }
+      : null;
     setPrediction(result);
-    setPredictionChecked(Boolean(result));
+    setPredictionChecked(true);
     setActiveMenu('register');
   };
 
@@ -386,11 +547,16 @@ export default function VehicleManage() {
       return;
     }
     setIsPredicting(true);
-    const result = predictVehicle(vehiclenumber);
+    const normalizedNumber = vehiclenumber.replace(/\s/g, '').toLowerCase();
+    const matchedVehicle = vehicles.find(
+      (vehicle) =>
+        vehicle.vehiclenumber.replace(/\s/g, '').toLowerCase() === normalizedNumber,
+    );
+    const result =
+      matchedVehicle && isVehicleType(matchedVehicle.vehicletypecode)
+        ? { vehicletypecode: matchedVehicle.vehicletypecode }
+        : null;
     setPrediction(result);
-    if (result) {
-      setVehicleForm((prev) => ({ ...prev, vehicletypecode: result.vehicletypecode }));
-    }
     setPredictionChecked(true);
     setIsPredicting(false);
   };
@@ -439,9 +605,7 @@ export default function VehicleManage() {
     }
 
     const fileName = selectedFile.name.toLowerCase();
-    const isValid =
-      fileName.endsWith('.xlsx') ||
-      fileName.endsWith('.xls')
+    const isValid = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
     if (!isValid) {
       alert('xlsx, xls 파일만 업로드할 수 있습니다.');
@@ -460,9 +624,12 @@ export default function VehicleManage() {
       console.error('차량 파일 업로드 오류:', error);
       const message =
         error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          ? (error as { response?: { data?: { message?: string } } }).response?.data
+              ?.message
           : undefined;
-      alert(message || '파일 업로드에 실패했습니다. 파일 형식과 서버 연결을 확인해주세요.');
+      alert(
+        message || '파일 업로드에 실패했습니다. 파일 형식과 서버 연결을 확인해주세요.',
+      );
     }
   };
 
@@ -494,11 +661,11 @@ export default function VehicleManage() {
       memo: fineForm.memo.trim(),
     };
 
-    const saved = editingFineId !== null
-      ? await updateFine(fine)
-      : await addFine(fine);
+    const saved = editingFineId !== null ? await updateFine(fine) : await addFine(fine);
     if (!saved) {
-      alert(`주정차 위반 ${editingFineId !== null ? '수정' : '등록'}에 실패했습니다. 입력값과 관리자 권한을 확인해주세요.`);
+      alert(
+        `주정차 위반 ${editingFineId !== null ? '수정' : '등록'}에 실패했습니다. 입력값과 관리자 권한을 확인해주세요.`,
+      );
       return;
     }
     resetFineForm();
@@ -527,16 +694,219 @@ export default function VehicleManage() {
   const handleDeleteFine = async (fine: Fine) => {
     const deleted = await deleteFine(fine.id);
     if (!deleted) {
-      alert('주정차 위반 정보 삭제에 실패했습니다. 서버 연결과 관리자 권한을 확인해주세요.');
+      alert(
+        '주정차 위반 정보 삭제에 실패했습니다. 서버 연결과 관리자 권한을 확인해주세요.',
+      );
       return;
     }
     if (editingFineId === fine.id) resetFineForm();
     setDeletingFine(null);
   };
 
+  const bellAnimationClass = (() => {
+    if (!notificationSettings.enabled || notificationSettings.animation === 'none')
+      return '';
+
+    // 대기 중인 신청이 하나라도 있으면 확인/처리 완료될 때까지 계속 흔듭니다.
+    if (pendingNotifications.length === 0) return '';
+
+    if (notificationSettings.animation === 'shake')
+      return styles.notificationBellPersistentShake;
+    if (notificationSettings.animation === 'bounce')
+      return styles.notificationBellPersistentBounce;
+    if (notificationSettings.animation === 'pulse')
+      return styles.notificationBellPersistentPulse;
+    return '';
+  })();
+
   return (
     <div className={styles.vehiclePage}>
-      <h2 className={styles.pageTitle}>차량관리</h2>
+      <div className={styles.pageHeading}>
+        <h2 className={styles.pageTitle}>차량관리</h2>
+
+        <div className={styles.notificationWrapper}>
+          <button
+            type="button"
+            className={styles.notificationButton}
+            aria-label={`차량 신청 알림 ${unreadNotificationCount}개`}
+            aria-expanded={isNotificationOpen}
+            onClick={() => setIsNotificationOpen((prev) => !prev)}
+          >
+            <svg
+              className={`${styles.notificationBell} ${bellAnimationClass}`}
+              style={{
+                width: `${notificationSettings.iconSize}px`,
+                height: `${notificationSettings.iconSize + 4}px`,
+              }}
+              xmlns="http://www.w3.org/2000/svg"
+              width={notificationSettings.iconSize}
+              height={notificationSettings.iconSize + 4}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+              <path d="M10 21h4" />
+            </svg>
+
+            {unreadNotificationCount > 0 && (
+              <span className={styles.notificationBadge}>
+                {unreadNotificationCount > 99 ? '99+' : unreadNotificationCount}
+              </span>
+            )}
+          </button>
+
+          {isNotificationOpen && (
+            <div className={styles.notificationPanel}>
+              <div className={styles.notificationHeader}>
+                <strong>차량 신청 알림</strong>
+                <span>{unreadNotificationCount}개의 새 알림</span>
+              </div>
+
+              <div className={styles.notificationSettingsArea}>
+                <button
+                  type="button"
+                  className={styles.notificationSettingsToggle}
+                  aria-expanded={isNotificationSettingsOpen}
+                  onClick={() => setIsNotificationSettingsOpen((prev) => !prev)}
+                >
+                  <span>⚙️ 알림 커스텀 설정</span>
+                  <span>{isNotificationSettingsOpen ? '접기 −' : '설정 열기 +'}</span>
+                </button>
+
+                {isNotificationSettingsOpen && (
+                  <div className={styles.notificationSettings}>
+                    <label className={styles.notificationSettingRow}>
+                      <span>
+                        <strong>알림 애니메이션</strong>
+                        <small>종 아이콘 움직임 사용 여부</small>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={notificationSettings.enabled}
+                        onChange={(event) =>
+                          updateNotificationSetting('enabled', event.target.checked)
+                        }
+                      />
+                    </label>
+
+                    <label className={styles.notificationSettingField}>
+                      <span>움직임 스타일</span>
+                      <select
+                        value={notificationSettings.animation}
+                        onChange={(event) =>
+                          updateNotificationSetting(
+                            'animation',
+                            event.target.value as NotificationSettings['animation'],
+                          )
+                        }
+                        disabled={!notificationSettings.enabled}
+                      >
+                        <option value="shake">좌우로 흔들기</option>
+                        <option value="bounce">통통 튀기</option>
+                        <option value="pulse">커졌다 작아지기</option>
+                        <option value="none">움직임 없음</option>
+                      </select>
+                    </label>
+
+                    <label className={styles.notificationSettingField}>
+                      <span>
+                        <span>종 아이콘 크기</span>
+                        <strong>{notificationSettings.iconSize}px</strong>
+                      </span>
+                      <input
+                        type="range"
+                        min={18}
+                        max={36}
+                        step={1}
+                        value={notificationSettings.iconSize}
+                        onChange={(event) =>
+                          updateNotificationSetting(
+                            'iconSize',
+                            Number(event.target.value),
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label className={styles.notificationSettingField}>
+                      <span>애니메이션 실행 기준</span>
+                      <select
+                        value={notificationSettings.timing}
+                        onChange={(event) =>
+                          updateNotificationSetting(
+                            'timing',
+                            event.target.value as NotificationSettings['timing'],
+                          )
+                        }
+                        disabled={
+                          !notificationSettings.enabled ||
+                          notificationSettings.animation === 'none'
+                        }
+                      >
+                        <option value="new">새 신청이 들어왔을 때</option>
+                        <option value="unread">읽지 않은 신청이 있을 때</option>
+                      </select>
+                    </label>
+
+                    <button
+                      type="button"
+                      className={styles.notificationSettingsReset}
+                      onClick={resetNotificationSettings}
+                    >
+                      기본 설정으로 초기화
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {pendingNotifications.length === 0 ? (
+                <div className={styles.notificationEmpty}>
+                  새로운 차량 신청이 없습니다.
+                </div>
+              ) : (
+                <div className={styles.notificationList}>
+                  {pendingNotifications.map((request) => (
+                    <button
+                      key={request.id}
+                      type="button"
+                      className={`${styles.notificationItem} ${
+                        !readNotificationIds.includes(request.id)
+                          ? styles.notificationUnread
+                          : ''
+                      }`}
+                      onClick={() => handleNotificationClick(request)}
+                    >
+                      <span className={styles.notificationDot} />
+                      <span className={styles.notificationText}>
+                        <strong>차량 등록 신청</strong>
+                        <span>
+                          {request.ownername} · {request.vehiclenumber}
+                        </span>
+                        <small>{request.requestedat || '신청 시간 정보 없음'}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <button
+                type="button"
+                className={styles.notificationFooter}
+                onClick={() => {
+                  setIsNotificationOpen(false);
+                  setActiveMenu('plus');
+                }}
+              >
+                신청 관리로 이동
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
       <p className={styles.pageDescription}>
         등록된 차량 및 주정차 위반 정보를 관리합니다.
       </p>
@@ -611,8 +981,7 @@ export default function VehicleManage() {
                           v.isApprovedRequest ||
                           ('registrationstatuscode' in v &&
                             v.registrationstatuscode === 'REGISTERED'),
-                      )
-                        .length
+                      ).length
                     }
                     <small>대</small>
                   </strong>
@@ -743,7 +1112,9 @@ export default function VehicleManage() {
           )}
 
           {activeMenu === 'register' && (
-            <div className={`${styles.vehicleContent} ${styles.vehicleRegistrationScreen}`}>
+            <div
+              className={`${styles.vehicleContent} ${styles.vehicleRegistrationScreen}`}
+            >
               <div className={styles.contentHeader}>
                 <div>
                   <h3>{editingVehicleId !== null ? '차량 정보 수정' : '차량 등록'}</h3>
@@ -766,11 +1137,12 @@ export default function VehicleManage() {
                   <ApartmentMap
                     selectedBuilding={vehicleForm.building}
                     selectedUnit={vehicleForm.officenumber}
-                    onUnitSelect={(building, officenumber) => {
+                    onUnitSelect={(building, officenumber, officeid) => {
                       setVehicleForm((prev) => ({
                         ...prev,
                         building,
                         officenumber,
+                        officeid,
                       }));
                     }}
                   />
@@ -813,9 +1185,18 @@ export default function VehicleManage() {
                         {isPredicting ? '조회 중...' : '조회'}
                       </button>
                     </div>
-                    {predictionChecked && prediction && (
-                      <div className={styles.predictionResult}>
-                        차량 형태: <strong>{prediction.vehicletypecode}</strong>
+                    {predictionChecked && (
+                      <div
+                        className={`${styles.predictionResult} ${!prediction ? styles.predictionUnavailable : ''}`}
+                      >
+                        {prediction ? (
+                          <>
+                            등록된 차량 형태:{' '}
+                            <strong>{prediction.vehicletypecode}</strong>
+                          </>
+                        ) : (
+                          '등록된 차량에서 형태를 찾지 못했습니다. 아래에서 직접 선택해주세요.'
+                        )}
                       </div>
                     )}
                   </div>
@@ -828,10 +1209,8 @@ export default function VehicleManage() {
                       value={vehicleForm.vehicletypecode}
                       onChange={handleFormChange}
                     >
-                      <option value="승용차">승용차</option>
-                      <option value="SUV">SUV</option>
-                      <option value="승합차">승합차</option>
-                      <option value="경차">경차</option>
+                      <option value="개인차량">개인차량</option>
+                      <option value="법인차량">법인차량</option>
                     </select>
                   </div>
 
@@ -839,7 +1218,7 @@ export default function VehicleManage() {
                     <label htmlFor="ownerName">차주</label>
                     <input
                       id="ownerName"
-                      name="ownerName"
+                      name="ownername"
                       value={vehicleForm.ownername}
                       onChange={handleFormChange}
                       placeholder="차주명을 입력하세요"
@@ -889,7 +1268,10 @@ export default function VehicleManage() {
               </div>
 
               {approvedRequestRows.length > 0 && (
-                <section className={styles.approvedVehicleSection} aria-labelledby="approvedVehicleTitle">
+                <section
+                  className={styles.approvedVehicleSection}
+                  aria-labelledby="approvedVehicleTitle"
+                >
                   <div className={styles.contentHeader}>
                     <div>
                       <h3 id="approvedVehicleTitle">승인된 추가 차량</h3>
@@ -917,7 +1299,9 @@ export default function VehicleManage() {
                             <td>{vehicle.vehicletypecode}</td>
                             <td>{vehicle.vehiclemodel || '-'}</td>
                             <td>{vehicle.ownername || '-'}</td>
-                            <td>{vehicle.officenumber ? `${vehicle.officenumber}호` : '-'}</td>
+                            <td>
+                              {vehicle.officenumber ? `${vehicle.officenumber}호` : '-'}
+                            </td>
                             <td>{vehicle.registeredat || '-'}</td>
                             <td>추가 등록 · 신청 승인</td>
                           </tr>
@@ -1035,7 +1419,9 @@ export default function VehicleManage() {
                   <h3>주정차 관리</h3>
                   <p>차량의 주정차 위반 정보를 관리합니다.</p>
                 </div>
-                <span className={styles.headerCount}>위반 <strong>{fines.length}</strong>건</span>
+                <span className={styles.headerCount}>
+                  위반 <strong>{fines.length}</strong>건
+                </span>
               </div>
 
               <div className={styles.vehicleSummary}>
@@ -1077,234 +1463,353 @@ export default function VehicleManage() {
               </div>
 
               <div className={styles.fineWorkspace}>
-              <div className={editingFineId !== null ? styles.modalOverlay : undefined} onMouseDown={(event) => { if (editingFineId !== null && event.target === event.currentTarget) resetFineForm(); }}>
-              <section className={editingFineId !== null ? `${styles.rejectModal} ${styles.fineEditModal}` : undefined} role={editingFineId !== null ? 'dialog' : undefined} aria-modal={editingFineId !== null ? true : undefined} aria-labelledby={editingFineId !== null ? 'fineEditTitle' : undefined}>
-              {editingFineId !== null && <div className={styles.modalHeader}><div><h3 id="fineEditTitle">주정차 위반 수정</h3><p>위반 정보와 처리 상태를 수정해주세요.</p></div><button type="button" className={styles.modalCloseButton} aria-label="닫기" onClick={resetFineForm}>×</button></div>}
-              <form className={`${styles.vehicleForm} ${styles.fineForm}`} onSubmit={handleFineSubmit}>
-                <div className={styles.fineFormIntro}>
-                  <span className={styles.fineFormEyebrow}>PARKING VIOLATION</span>
-                  <h3>{editingFineId !== null ? '위반 정보 수정' : '새 위반 내역 등록'}</h3>
-                  <p>차량과 위반 내용을 입력해 관리 기록을 남깁니다.</p>
-                </div>
-                <div className={styles.fineFormGrid}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="fineVehicleId">차량</label>
-                  <select
-                    id="fineVehicleId"
-                    name="vehicleId"
-                    value={fineForm.vehicleid}
-                    onChange={handleFineFormChange}
-                  >
-                    <option value="">차량을 선택해주세요</option>
-                    {vehicles.map((vehicle) => (
-                      <option key={vehicle.vehicleid} value={vehicle.vehicleid}>
-                        {vehicle.vehiclenumber} ({vehicle.ownername || '차주 미등록'})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="violationDate">위반일자</label>
-                  <input
-                    id="violationDate"
-                    name="violationDate"
-                    type="date"
-                    value={fineForm.violationdate}
-                    onChange={handleFineFormChange}
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="reason">위반 사유</label>
-                  <select
-                    id="reason"
-                    name="reason"
-                    value={fineForm.reason}
-                    onChange={handleFineFormChange}
-                  >
-                    <option value="지정구역 위반">지정구역 위반</option>
-                    <option value="장기 주차">장기 주차</option>
-                    <option value="통행 방해">통행 방해</option>
-                    <option value="기타">기타</option>
-                  </select>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="fineAmount">벌칙금</label>
-                  <div className={styles.fineAmountField}>
-                    <input
-                      id="fineAmount"
-                      name="amount"
-                      type="number"
-                      min="1"
-                      step="1000"
-                      value={fineForm.amount}
-                      onChange={handleFineFormChange}
-                      placeholder="벌칙금을 입력하세요"
-                      required
-                    />
-                    <span>원</span>
-                  </div>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="fineStatus">현재 차량 상태</label>
-                  <select
-                    id="fineStatus"
-                    name="status"
-                    value={fineForm.status}
-                    onChange={handleFineFormChange}
-                  >
-                    <option value="조치 중">조치 중</option>
-                    <option value="조치 완료">조치 완료</option>
-                    <option value="미조치">미조치</option>
-                    <option value="처리 불가">처리 불가</option>
-                  </select>
-                </div>
-                </div>
-
-                <div className={`${styles.formGroup} ${styles.fineMemoGroup}`}>
-                  <label htmlFor="fineMemo">메모</label>
-                  <textarea
-                    id="fineMemo"
-                    name="memo"
-                    value={fineForm.memo}
-                    onChange={handleFineFormChange}
-                    placeholder="메모를 입력하세요."
-                    rows={4}
-                  />
-                </div>
-
-                <div className={`${styles.formActions} ${styles.fineFormActions}`}>
-                  {editingFineId !== null && (
-                    <button
-                      type="button"
-                      className={styles.secondaryButton}
-                      onClick={resetFineForm}
-                    >
-                      수정 취소
-                    </button>
-                  )}
-                  <button type="submit" className={styles.primaryButton}>
-                    {editingFineId !== null ? '주정차 위반 수정' : '주정차 위반 등록'}
-                  </button>
-                </div>
-              </form>
-              </section></div>
-
-              <section className={styles.fineListPanel} aria-labelledby="fineListTitle">
-                  <div className={styles.fineListHeader}><div><h3 id="fineListTitle">위반 목록</h3><p>항목을 확인하고 필요한 작업을 선택하세요.</p></div><span>{fines.length}건</span></div>
-              {fineLoadError && <div className="alert alert-danger py-2" role="alert">{fineLoadError}</div>}
-              {fines.length > 0 && (
-                <div className={styles.vehicleToolbar}>
-                  <div className={styles.searchBox}>
-                    <span aria-hidden="true">⌕</span>
-                    <input
-                      type="text"
-                      value={fineSearch}
-                      onChange={(e) => setFineSearch(e.target.value)}
-                      placeholder="차량번호, 차주명, 위반사유 검색"
-                    />
-                  </div>
-
-                  <select
-                    value={fineStatusFilter}
-                    onChange={(e) =>
-                      setFineStatusFilter(e.target.value as '전체' | FineStatus)
+                <div
+                  className={editingFineId !== null ? styles.modalOverlay : undefined}
+                  onMouseDown={(event) => {
+                    if (editingFineId !== null && event.target === event.currentTarget)
+                      resetFineForm();
+                  }}
+                >
+                  <section
+                    className={
+                      editingFineId !== null
+                        ? `${styles.rejectModal} ${styles.fineEditModal}`
+                        : undefined
                     }
+                    role={editingFineId !== null ? 'dialog' : undefined}
+                    aria-modal={editingFineId !== null ? true : undefined}
+                    aria-labelledby={editingFineId !== null ? 'fineEditTitle' : undefined}
                   >
-                    <option value="전체">전체</option>
-                    <option value="조치 중">조치 중</option>
-                    <option value="조치 완료">조치 완료</option>
-                    <option value="미조치">미조치</option>
-                    <option value="처리 불가">처리 불가</option>
-                  </select>
-                </div>
-              )}
-
-              {fines.length === 0 ? (
-                <div className={styles.emptyVehicle}>
-                  <div className={styles.emptyIcon}>📋</div>
-                  <strong>등록된 주정차 위반 정보가 없습니다.</strong>
-                  <p>차량을 선택하고 주정차 위반 사항을 등록할 수 있습니다.</p>
-                </div>
-              ) : filteredFines.length === 0 ? (
-                <div className={styles.emptySearch}>
-                  <strong>검색 결과가 없습니다.</strong>
-                  <p>검색어나 필터를 변경해주세요.</p>
-                  <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={() => {
-                      setFineSearch('');
-                      setFineStatusFilter('전체');
-                    }}
-                  >
-                    필터 초기화
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.fineRecordList}>
-                  {filteredFines.map((fine) => {
-                    const vehicle = vehicles.find(
-                      (item) => item.vehicleid === fine.vehicleid,
-                    );
-                    const statusStyle = fine.status === '조치 완료'
-                      ? styles.fineStatusDone
-                      : fine.status === '조치 중'
-                        ? styles.fineStatusProgress
-                        : fine.status === '처리 불가'
-                          ? styles.fineStatusBlocked
-                          : styles.fineStatusPending;
-
-                    return (
-                      <article className={styles.fineRecord} key={fine.id}>
-                        <div className={styles.fineRecordMain}>
-                          <div className={styles.fineRecordHeading}>
-                            <button
-                              type="button"
-                              className={styles.fineVehicleLink}
-                              onClick={() => {
-                                setSelectedVehicleId(fine.vehicleid);
-                                setActiveMenu('detail');
-                              }}
-                            >
-                              {vehicle?.vehiclenumber ?? '차량 정보 없음'}
-                            </button>
-                            <span className={`${styles.fineStatusBadge} ${statusStyle}`}>
-                              {fine.status}
-                            </span>
-                          </div>
-                          <div className={styles.fineRecordMeta}>
-                            <span>{fine.violationdate}</span>
-                            <span>{fine.reason}</span>
-                          </div>
-                          {fine.memo && <p className={styles.fineRecordMemo}>{fine.memo}</p>}
+                    {editingFineId !== null && (
+                      <div className={styles.modalHeader}>
+                        <div>
+                          <h3 id="fineEditTitle">주정차 위반 수정</h3>
+                          <p>위반 정보와 처리 상태를 수정해주세요.</p>
                         </div>
-                        <div className={styles.fineRecordSide}>
-                          <strong className={styles.fineRecordAmount}>
-                            {fine.amount.toLocaleString()}<small>원</small>
-                          </strong>
-                          <div className={styles.fineRecordActions}>
-                            <button type="button" onClick={() => handleEditFine(fine)}>수정</button>
-                            <button type="button" onClick={() => setDeletingFine(fine)}>삭제</button>
+                        <button
+                          type="button"
+                          className={styles.modalCloseButton}
+                          aria-label="닫기"
+                          onClick={resetFineForm}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    <form
+                      className={`${styles.vehicleForm} ${styles.fineForm}`}
+                      onSubmit={handleFineSubmit}
+                    >
+                      <div className={styles.fineFormIntro}>
+                        <span className={styles.fineFormEyebrow}>PARKING VIOLATION</span>
+                        <h3>
+                          {editingFineId !== null
+                            ? '위반 정보 수정'
+                            : '새 위반 내역 등록'}
+                        </h3>
+                        <p>차량과 위반 내용을 입력해 관리 기록을 남깁니다.</p>
+                      </div>
+                      <div className={styles.fineFormGrid}>
+                        <div className={styles.formGroup}>
+                          <label htmlFor="fineVehicleId">차량</label>
+                          <select
+                            id="fineVehicleId"
+                            name="vehicleid"
+                            value={fineForm.vehicleid}
+                            onChange={handleFineFormChange}
+                          >
+                            <option value="">차량을 선택해주세요</option>
+                            {vehicles.map((vehicle) => (
+                              <option key={vehicle.vehicleid} value={vehicle.vehicleid}>
+                                {vehicle.vehiclenumber} (
+                                {vehicle.ownername || '차주 미등록'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className={styles.formGroup}>
+                          <label htmlFor="violationDate">위반일자</label>
+                          <input
+                            id="violationDate"
+                            name="violationDate"
+                            type="date"
+                            value={fineForm.violationdate}
+                            onChange={handleFineFormChange}
+                          />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                          <label htmlFor="reason">위반 사유</label>
+                          <select
+                            id="reason"
+                            name="reason"
+                            value={fineForm.reason}
+                            onChange={handleFineFormChange}
+                          >
+                            <option value="지정구역 위반">지정구역 위반</option>
+                            <option value="장기 주차">장기 주차</option>
+                            <option value="통행 방해">통행 방해</option>
+                            <option value="기타">기타</option>
+                          </select>
+                        </div>
+
+                        <div className={styles.formGroup}>
+                          <label htmlFor="fineAmount">벌칙금</label>
+                          <div className={styles.fineAmountField}>
+                            <input
+                              id="fineAmount"
+                              name="amount"
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={fineForm.amount}
+                              onChange={handleFineFormChange}
+                              placeholder="벌칙금을 입력하세요"
+                              required
+                            />
+                            <span>원</span>
                           </div>
                         </div>
-                      </article>
-                    );
-                  })}
+
+                        <div className={styles.formGroup}>
+                          <label htmlFor="fineStatus">현재 차량 상태</label>
+                          <select
+                            id="fineStatus"
+                            name="status"
+                            value={fineForm.status}
+                            onChange={handleFineFormChange}
+                          >
+                            <option value="조치 중">조치 중</option>
+                            <option value="조치 완료">조치 완료</option>
+                            <option value="미조치">미조치</option>
+                            <option value="처리 불가">처리 불가</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className={`${styles.formGroup} ${styles.fineMemoGroup}`}>
+                        <label htmlFor="fineMemo">메모</label>
+                        <textarea
+                          id="fineMemo"
+                          name="memo"
+                          value={fineForm.memo}
+                          onChange={handleFineFormChange}
+                          placeholder="메모를 입력하세요."
+                          rows={4}
+                        />
+                      </div>
+
+                      <div className={`${styles.formActions} ${styles.fineFormActions}`}>
+                        {editingFineId !== null && (
+                          <button
+                            type="button"
+                            className={styles.secondaryButton}
+                            onClick={resetFineForm}
+                          >
+                            수정 취소
+                          </button>
+                        )}
+                        <button type="submit" className={styles.primaryButton}>
+                          {editingFineId !== null
+                            ? '주정차 위반 수정'
+                            : '주정차 위반 등록'}
+                        </button>
+                      </div>
+                    </form>
+                  </section>
                 </div>
-              )}
+
+                <section className={styles.fineListPanel} aria-labelledby="fineListTitle">
+                  <div className={styles.fineListHeader}>
+                    <div>
+                      <h3 id="fineListTitle">위반 목록</h3>
+                      <p>항목을 확인하고 필요한 작업을 선택하세요.</p>
+                    </div>
+                    <span>{fines.length}건</span>
+                  </div>
+                  {fineLoadError && (
+                    <div className="alert alert-danger py-2" role="alert">
+                      {fineLoadError}
+                    </div>
+                  )}
+                  {fines.length > 0 && (
+                    <div className={styles.vehicleToolbar}>
+                      <div className={styles.searchBox}>
+                        <span aria-hidden="true">⌕</span>
+                        <input
+                          type="text"
+                          value={fineSearch}
+                          onChange={(e) => setFineSearch(e.target.value)}
+                          placeholder="차량번호, 차주명, 위반사유 검색"
+                        />
+                      </div>
+
+                      <select
+                        value={fineStatusFilter}
+                        onChange={(e) =>
+                          setFineStatusFilter(e.target.value as '전체' | FineStatus)
+                        }
+                      >
+                        <option value="전체">전체</option>
+                        <option value="조치 중">조치 중</option>
+                        <option value="조치 완료">조치 완료</option>
+                        <option value="미조치">미조치</option>
+                        <option value="처리 불가">처리 불가</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {fines.length === 0 ? (
+                    <div className={styles.emptyVehicle}>
+                      <div className={styles.emptyIcon}>📋</div>
+                      <strong>등록된 주정차 위반 정보가 없습니다.</strong>
+                      <p>차량을 선택하고 주정차 위반 사항을 등록할 수 있습니다.</p>
+                    </div>
+                  ) : filteredFines.length === 0 ? (
+                    <div className={styles.emptySearch}>
+                      <strong>검색 결과가 없습니다.</strong>
+                      <p>검색어나 필터를 변경해주세요.</p>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => {
+                          setFineSearch('');
+                          setFineStatusFilter('전체');
+                        }}
+                      >
+                        필터 초기화
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={styles.fineRecordList}>
+                      {filteredFines.map((fine) => {
+                        const vehicle = vehicles.find(
+                          (item) => item.vehicleid === fine.vehicleid,
+                        );
+                        const statusStyle =
+                          fine.status === '조치 완료'
+                            ? styles.fineStatusDone
+                            : fine.status === '조치 중'
+                              ? styles.fineStatusProgress
+                              : fine.status === '처리 불가'
+                                ? styles.fineStatusBlocked
+                                : styles.fineStatusPending;
+
+                        return (
+                          <article className={styles.fineRecord} key={fine.id}>
+                            <div className={styles.fineRecordMain}>
+                              <div className={styles.fineRecordHeading}>
+                                <button
+                                  type="button"
+                                  className={styles.fineVehicleLink}
+                                  onClick={() => {
+                                    setSelectedVehicleId(fine.vehicleid);
+                                    setActiveMenu('detail');
+                                  }}
+                                >
+                                  {vehicle?.vehiclenumber ?? '차량 정보 없음'}
+                                </button>
+                                <span
+                                  className={`${styles.fineStatusBadge} ${statusStyle}`}
+                                >
+                                  {fine.status}
+                                </span>
+                              </div>
+                              <div className={styles.fineRecordMeta}>
+                                <span>{fine.violationdate}</span>
+                                <span>{fine.reason}</span>
+                              </div>
+                              {fine.memo && (
+                                <p className={styles.fineRecordMemo}>{fine.memo}</p>
+                              )}
+                            </div>
+                            <div className={styles.fineRecordSide}>
+                              <strong className={styles.fineRecordAmount}>
+                                {fine.amount.toLocaleString()}
+                                <small>원</small>
+                              </strong>
+                              <div className={styles.fineRecordActions}>
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditFine(fine)}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setDeletingFine(fine)}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
                 </section>
               </div>
 
-              {deletingFine && <div className={styles.modalOverlay} onMouseDown={(event) => { if (event.target === event.currentTarget) setDeletingFine(null); }}>
-                <section className={styles.rejectModal} role="alertdialog" aria-modal="true" aria-labelledby="deleteFineTitle">
-                  <div className={styles.modalHeader}><div><h3 id="deleteFineTitle">위반 정보 삭제</h3><p>이 주정차 위반 정보를 삭제하시겠습니까? 삭제한 정보는 복구할 수 없습니다.</p></div><button type="button" className={styles.modalCloseButton} aria-label="닫기" onClick={() => setDeletingFine(null)}>×</button></div>
-                  <div className={styles.modalRequestInfo}><span>차량번호 · 위반일자</span><strong>{vehicles.find((vehicle) => vehicle.vehicleid === deletingFine.vehicleid)?.vehiclenumber ?? '-'} · {deletingFine.violationdate}</strong></div>
-                  <div className={styles.modalActions}><button type="button" className={styles.secondaryButton} onClick={() => setDeletingFine(null)}>취소</button><button type="button" className={styles.dangerButton} onClick={() => handleDeleteFine(deletingFine)}>삭제</button></div>
-                </section></div>}
+              {deletingFine && (
+                <div
+                  className={styles.modalOverlay}
+                  onMouseDown={(event) => {
+                    if (event.target === event.currentTarget) setDeletingFine(null);
+                  }}
+                >
+                  <section
+                    className={styles.rejectModal}
+                    role="alertdialog"
+                    aria-modal="true"
+                    aria-labelledby="deleteFineTitle"
+                  >
+                    <div className={styles.modalHeader}>
+                      <div>
+                        <h3 id="deleteFineTitle">위반 정보 삭제</h3>
+                        <p>
+                          이 주정차 위반 정보를 삭제하시겠습니까? 삭제한 정보는 복구할 수
+                          없습니다.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.modalCloseButton}
+                        aria-label="닫기"
+                        onClick={() => setDeletingFine(null)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className={styles.modalRequestInfo}>
+                      <span>차량번호 · 위반일자</span>
+                      <strong>
+                        {vehicles.find(
+                          (vehicle) => vehicle.vehicleid === deletingFine.vehicleid,
+                        )?.vehiclenumber ?? '-'}{' '}
+                        · {deletingFine.violationdate}
+                      </strong>
+                    </div>
+                    <div className={styles.modalActions}>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => setDeletingFine(null)}
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.dangerButton}
+                        onClick={() => handleDeleteFine(deletingFine)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              )}
             </div>
           )}
         </>

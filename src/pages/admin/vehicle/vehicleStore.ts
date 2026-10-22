@@ -1,13 +1,14 @@
 import { create } from 'zustand';
 // 경로가 프로젝트 구조에 맞게 정확한지 확인해주세요 (예시: 상위 폴더로 가는 경로)
-import { adminApi, vehicleChangeRequestApi } from '../../../api/vehicleApi';
+import { adminApi, vehicleApi, vehicleChangeRequestApi } from '../../../api/vehicleApi';
+import type { VehicleApiDTO } from '../../../api/vehicleApi';
 import { vehiclePenaltyApi } from '../../../api/vehiclePenaltyApi';
 import type { VehiclePenaltyDto } from '../../../api/vehiclePenaltyApi';
 // ========================================
 // 1. 타입 정의
 // ========================================
 
-export type VehicleType = '승용차' | 'SUV' | '승합차' | '경차';
+export type VehicleType = '개인차량' | '법인차량';
 export type FineStatus = '조치 중' | '조치 완료' | '미조치' | '처리 불가';
 export type FineReason = '지정구역 위반' | '장기 주차' | '통행 방해' | '기타';
 export type AdditionalVehicleStatus = '접수' | '승인' | '반려' | '취소';
@@ -40,6 +41,7 @@ export interface Fine {
   status: FineStatus;
   memo: string;
 }
+type VehicleApiPayload = Omit<VehicleApiDTO, 'vehicleid'>;
 
 export interface AdditionalVehicleRequest {
   id: number;
@@ -60,29 +62,6 @@ export type AdditionalVehicleInput = Omit<
   AdditionalVehicleRequest,
   'id' | 'requestedAt' | 'requestStatus'
 > & { officeid: number };
-
-// ========================================
-// 2. 백엔드 API DTO 타입
-// ========================================
-
-interface VehicleApiDTO {
-  vehicleid?: number;
-  officeid?: number;
-  officenumber: string | null;
-  vehiclenumber?: string;
-  vehiclemodel?: string;
-  ownername?: string;
-  vehicletypecode?: string;
-  registrationtypecode?: string;
-  registrationstatuscode?: string;
-  registeredat?: string | null;
-  rejectedreason?: string | null;
-  createdat?: string | null;
-  updatedat?: string | null;
-  deletedat?: string | null;
-}
-
-type VehicleApiPayload = Omit<VehicleApiDTO, 'vehicleid'>;
 
 // ========================================
 // 3. 공통 함수 및 매퍼
@@ -262,17 +241,8 @@ export const useVehicleStore = create<VehicleStore>((set, get) => ({
 
   fetchVehicles: async () => {
     try {
-      // console.log('API 기본 주소:', adminApi.defaults.baseURL);
-
-      const response = await adminApi.get('/api/vehicle');
-      // console.log('실제 요청 주소:', response.config.url);
-      // console.log('응답 최종 주소:', response.request?.responseURL);
-      // console.log('응답 데이터:', response.data);
-
-      const vehicleList = Array.isArray(response.data)
-        ? response.data
-        : (response.data?.content ?? response.data?.data ?? []);
-      const mappedVehicles = vehicleList.map((item: VehicleApiDTO) => mapVehicle(item));
+      const vehicleList = await vehicleApi.getVehicles();
+      const mappedVehicles = vehicleList.map((item) => mapVehicle(item));
       set({ vehicles: mappedVehicles });
     } catch (error) {
       console.error('차량 목록 조회 실패:', error);
@@ -506,8 +476,8 @@ export const useVehicleStore = create<VehicleStore>((set, get) => ({
           item.id === requestid
             ? {
                 ...item,
-                requestStatus: '반려',
-                requestMemo: trimmedReason,
+                requeststatus: '반려',
+                requestmemo: trimmedReason,
               }
             : item,
         ),
