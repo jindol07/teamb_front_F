@@ -75,7 +75,8 @@ export function useAlpharkingRoaming(
             current = clamp(current);
             const nearby = pointer && pointer.x >= current.x - 35 && pointer.x <= current.x + 163
                 && pointer.y >= current.y - 35 && pointer.y <= current.y + 175;
-            if (quiet || sleeping || stationary.matches || nearby || element.matches(':focus-within')) {
+            if (quiet || sleeping || stationary.matches || nearby || element.matches(':focus-within')
+                || element.querySelector('.alpharking-announcement')) {
                 element.dataset.motion = 'idle';
             } else {
                 if (!goal && now >= waitUntil) goal = pickGoal();
