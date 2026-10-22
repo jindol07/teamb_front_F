@@ -8,6 +8,9 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   fetchAdminParkingSpaces,
   saveParkingSpace,
+  fetchParkingReservations,
+  fetchUpcomingParkingReservations,
+  parkingToday,
 } from '../../../../shared/parking/parkingSpaceApi';
 import type {
   ParkingSpaceDto,
@@ -32,6 +35,98 @@ export default function ParkingStatusAdmin() {
   /** 관리자 전용 조회 결과는 공용 Zustand에 넣지 않습니다(사용자 화면 노출 방지). */
   const [adminRows, setAdminRows] = useState<ParkingSpaceDto[] | null>(null);
   const [adminReloadVersion, setAdminReloadVersion] = useState(0);
+  const [reservationCounts, setReservationCounts] = useState<Record<number, number>>({});
+  const [reservationError, setReservationError] = useState<string | null>(null);
+  const [reservationLoading, setReservationLoading] = useState(true);
+  const [todayReservations, setTodayReservations] = useState<{
+    date: string;
+    count: number | null;
+    bySpace: Record<number, number>;
+    error: string | null;
+  }>(() => ({ date: parkingToday(), count: null, bySpace: {}, error: null }));
+
+  // 상단 카드는 도면에서 선택한 날짜와 무관하게 한국 시간의 오늘 예약을 집계한다.
+  useEffect(() => {
+    const controller = new AbortController();
+    let inFlight = false;
+    const load = async () => {
+      if (inFlight || controller.signal.aborted) return;
+      inFlight = true;
+      const date = parkingToday();
+      setTodayReservations((previous) =>
+        previous.date === date
+          ? previous
+          : { date, count: null, bySpace: {}, error: null },
+      );
+      try {
+        const rows = await fetchParkingReservations(date, controller.signal);
+        if (!controller.signal.aborted && parkingToday() === date) {
+          const bySpace: Record<number, number> = {};
+          rows.forEach((row) => {
+            bySpace[row.parkingSpaceId] = (bySpace[row.parkingSpaceId] ?? 0) + 1;
+          });
+          setTodayReservations({ date, count: rows.length, bySpace, error: null });
+        }
+      } catch (cause) {
+        if (!controller.signal.aborted && parkingToday() === date) {
+          setTodayReservations({
+            date,
+            count: null,
+            bySpace: {},
+            error: cause instanceof Error ? cause.message : '예약 조회 실패',
+          });
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30000);
+    const onFocus = () => void load();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let inFlight = false;
+    setReservationCounts({});
+    setReservationLoading(true);
+    setReservationError(null);
+    const load = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const rows = await fetchUpcomingParkingReservations(controller.signal);
+        if (!controller.signal.aborted) {
+          const counts: Record<number, number> = {};
+          rows.forEach((row) => {
+            counts[row.parkingSpaceId] = (counts[row.parkingSpaceId] ?? 0) + 1;
+          });
+          setReservationCounts(counts);
+          setReservationError(null);
+        }
+      } catch (cause) {
+        if (!controller.signal.aborted) {
+          setReservationCounts({});
+          setReservationError(cause instanceof Error ? cause.message : '예약 조회 실패');
+        }
+      } finally {
+        inFlight = false;
+        if (!controller.signal.aborted) setReservationLoading(false);
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 30000);
+    return () => {
+      controller.abort();
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -142,13 +237,20 @@ export default function ParkingStatusAdmin() {
   const floorSummaries = [1, 2, 3].map((floor) => ({
     floor,
     ...summarize(slots.filter((slot) => slot.floor === floor)),
+    todayReservationCount: slots
+      .filter((slot) => slot.floor === floor)
+      .reduce(
+        (count, slot) =>
+          count + (todayReservations.bySpace[slot.parkingSpaceId ?? -1] ?? 0),
+        0,
+      ),
   }));
 
   // 지하 1~3층 전체 주차구획 통계. 아래 카드 JSX에서 card.unit을 참조하므로 단위도 함께 선언합니다.
   const cards = [
     { label: '전체 구획', value: allSummary.total, unit: '면', tone: 'total' },
     { label: '사용중', value: allSummary.occupied, unit: '면', tone: 'occupied' },
-    { label: '예약됨', value: allSummary.reserved, unit: '면', tone: 'reserved' },
+    { label: '오늘 예약', value: todayReservations.count, unit: '건', tone: 'reserved' },
     { label: '사용가능', value: allSummary.available, unit: '면', tone: 'available' },
     { label: '사용불가', value: allSummary.disabled, unit: '면', tone: 'disabled' },
   ];
@@ -212,9 +314,30 @@ export default function ParkingStatusAdmin() {
                 <i aria-hidden="true" />
                 {card.label}
               </div>
-              <div className="parking-stat-value">
-                {card.value}
-                <span>{card.unit}</span>
+              <div
+                className="parking-stat-value"
+                title={
+                  card.tone === 'reserved'
+                    ? (todayReservations.error ??
+                      `${todayReservations.date} · 취소 제외 확정 예약 건수 (한국 시간)`)
+                    : undefined
+                }
+              >
+                {card.tone === 'reserved' &&
+                (todayReservations.date !== parkingToday() ||
+                  todayReservations.error ||
+                  card.value == null) ? (
+                  <span className="parking-stat-message" role="status">
+                    {todayReservations.date === parkingToday() && todayReservations.error
+                      ? '조회 실패'
+                      : '조회 중…'}
+                  </span>
+                ) : (
+                  <>
+                    {card.value}
+                    <span>{card.unit}</span>
+                  </>
+                )}
               </div>
             </div>
           ))}
@@ -274,7 +397,21 @@ export default function ParkingStatusAdmin() {
                       사용중 <b>{floor.occupied}</b>
                     </span>
                     <span>
-                      예약 <b>{floor.reserved}</b>
+                      오늘 예약{' '}
+                      <b
+                        title={
+                          todayReservations.error ??
+                          `${todayReservations.date} · 취소 제외 확정 예약 건수 (한국 시간)`
+                        }
+                      >
+                        {todayReservations.date !== parkingToday()
+                          ? '조회 중…'
+                          : todayReservations.error
+                            ? '조회 실패'
+                            : todayReservations.count == null || slots.length === 0
+                              ? '조회 중…'
+                              : `${floor.todayReservationCount}건`}
+                      </b>
                     </span>
                     <span>
                       사용불가 <b>{floor.disabled}</b>
@@ -299,6 +436,16 @@ export default function ParkingStatusAdmin() {
             <span className="parking-floor-tag">지하 {selectedFloor}층</span>
           </div>
           <div className="parking-map-card-body">
+            {reservationLoading && (
+              <p className="parking-map-hint" role="status">
+                예약 표시를 불러오는 중입니다.
+              </p>
+            )}
+            {reservationError && (
+              <p className="parking-map-hint" role="alert">
+                달력 표시 조회 실패: {reservationError}
+              </p>
+            )}
             <ParkingMapView
               mode="admin"
               slots={adminMapSlots}
@@ -313,6 +460,9 @@ export default function ParkingStatusAdmin() {
                 if (!saving) setSelectedSlot(slot);
               }}
               selectedSlotId={selectedSlot?.id}
+              reservationCounts={
+                reservationError || reservationLoading ? undefined : reservationCounts
+              }
             />
           </div>
         </section>

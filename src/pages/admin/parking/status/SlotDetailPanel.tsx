@@ -1,5 +1,6 @@
 /** 기존 입출차 기록을 이용한 관리자 일회성 보정. AI 반영을 고정하지 않는다. */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ParkingReservationList } from './ParkingReservationList';
 import type { ExtendedParkingSlot } from '../../../../shared/parking/parking';
 import {
   fetchParkingCorrection,
@@ -47,6 +48,7 @@ export function SlotDetailPanel({
   saving = false,
   onClose,
 }: SlotDetailPanelProps) {
+  const [tab, setTab] = useState<'manage' | 'reservations'>('manage');
   const id = slot.parkingSpaceId;
   const [detail, setDetail] = useState<ParkingCorrectionDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -238,321 +240,345 @@ export function SlotDetailPanel({
           onClick={onClose}
         />
       </div>
-      <p className="parking-panel-description">
-        구획 상태와 연결된 차량 기록을 확인하고, 필요한 내용을 보정하세요.
-      </p>
-      {error && (
-        <div className="alert alert-danger small" role="alert">
-          {error}
-        </div>
-      )}
-      <button
-        type="button"
-        className="parking-panel-refresh"
-        disabled={loading || saving}
-        onClick={() => {
-          if (
-            !dirty ||
-            window.confirm('입력 중인 내용을 버리고 최신 기록을 조회하시겠습니까?')
-          )
-            void reload();
-        }}
-      >
-        {loading ? '조회 중...' : '최신 기록 다시 조회'}
-      </button>
-      {detail && (
-        <>
-          <div className="parking-panel-current">
-            <strong>
-              현재 상태 ·{' '}
-              {statusLabels[detail.space.spaceStatusCode] ?? detail.space.spaceStatusCode}
-            </strong>
-            <div>마지막 변경 {detail.space.updatedAt?.replace('T', ' ') ?? '-'}</div>
-            {active.length === 0 ? (
-              <div>연결된 미출차 기록 없음</div>
-            ) : (
-              active.map((item) => (
-                <div key={item.parkingUsageId} className="mt-1">
-                  차량 {item.vehicleNumber} · 기록 #{item.parkingUsageId}
-                  <br />
-                  입차 {item.entryAt?.replace('T', ' ')}
-                </div>
-              ))
-            )}
-            {active.length > 1 && (
-              <div className="text-danger">
-                여러 미출차 기록이 연결돼 있습니다. 이용 기록을 먼저 확인해 주세요.
-              </div>
-            )}
+      <div className="parking-panel-tabs" role="group" aria-label="구획 정보 보기">
+        <button
+          type="button"
+          aria-pressed={tab === 'manage'}
+          disabled={saving}
+          onClick={() => setTab('manage')}
+        >
+          구획 관리{dirty ? ' •' : ''}
+        </button>
+        <button
+          type="button"
+          aria-pressed={tab === 'reservations'}
+          disabled={saving}
+          onClick={() => setTab('reservations')}
+        >
+          예약 내역
+        </button>
+      </div>
+      {tab === 'reservations' && <ParkingReservationList spaceId={id} />}
+      <div hidden={tab !== 'manage'}>
+        <p className="parking-panel-description">
+          구획 상태와 연결된 차량 기록을 확인하고, 필요한 내용을 보정하세요.
+        </p>
+        {error && (
+          <div className="alert alert-danger small" role="alert">
+            {error}
           </div>
-          <fieldset disabled={saving || loading}>
-            <legend>변경할 구획 상태</legend>
-            <div className="parking-panel-statuses">
-              {['AVAILABLE', 'OCCUPIED', 'RESERVED', 'DISABLED'].map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  data-status={code}
-                  className={`parking-panel-status${status === code ? ' is-selected' : ''}`}
-                  aria-pressed={status === code}
-                  onClick={() => chooseStatus(code)}
-                >
-                  {statusLabels[code]}
-                </button>
-              ))}
+        )}
+        <button
+          type="button"
+          className="parking-panel-refresh"
+          disabled={loading || saving}
+          onClick={() => {
+            if (
+              !dirty ||
+              window.confirm('입력 중인 내용을 버리고 최신 기록을 조회하시겠습니까?')
+            )
+              void reload();
+          }}
+        >
+          {loading ? '조회 중...' : '최신 기록 다시 조회'}
+        </button>
+        {detail && (
+          <>
+            <div className="parking-panel-current">
+              <strong>
+                현재 상태 ·{' '}
+                {statusLabels[detail.space.spaceStatusCode] ??
+                  detail.space.spaceStatusCode}
+              </strong>
+              <div>마지막 변경 {detail.space.updatedAt?.replace('T', ' ') ?? '-'}</div>
+              {active.length === 0 ? (
+                <div>연결된 미출차 기록 없음</div>
+              ) : (
+                active.map((item) => (
+                  <div key={item.parkingUsageId} className="mt-1">
+                    차량 {item.vehicleNumber} · 기록 #{item.parkingUsageId}
+                    <br />
+                    입차 {item.entryAt?.replace('T', ' ')}
+                  </div>
+                ))
+              )}
+              {active.length > 1 && (
+                <div className="text-danger">
+                  여러 미출차 기록이 연결돼 있습니다. 이용 기록을 먼저 확인해 주세요.
+                </div>
+              )}
             </div>
-            {status === 'AVAILABLE' && active.length > 0 && (
-              <div className="mb-3">
-                <label className="form-label" htmlFor="parking-usage-action">
-                  현재 차량 기록 처리
-                </label>
-                <select
-                  id="parking-usage-action"
-                  className="form-select form-select-sm"
-                  value={action}
-                  onChange={(event) => {
-                    setAction(event.target.value as ParkingUsageAction | '');
-                    setDirty(true);
-                  }}
-                >
-                  <option value="">처리 방법을 선택해 주세요</option>
-                  <option value="DETACH">구획 연결만 해제 (입차 기록 유지)</option>
-                  <option value="EXIT">누락 출차 처리 (주차장 밖으로 나간 차량)</option>
-                </select>
-                {action === 'EXIT' && (
-                  <>
-                    <label className="form-label mt-2" htmlFor="parking-exit-at">
-                      실제 출차 시각
-                    </label>
+            <fieldset disabled={saving || loading}>
+              <legend>변경할 구획 상태</legend>
+              <div className="parking-panel-statuses">
+                {['AVAILABLE', 'OCCUPIED', 'RESERVED', 'DISABLED'].map((code) => (
+                  <button
+                    key={code}
+                    type="button"
+                    data-status={code}
+                    className={`parking-panel-status${status === code ? ' is-selected' : ''}`}
+                    aria-pressed={status === code}
+                    onClick={() => chooseStatus(code)}
+                  >
+                    {statusLabels[code]}
+                  </button>
+                ))}
+              </div>
+              {status === 'AVAILABLE' && active.length > 0 && (
+                <div className="mb-3">
+                  <label className="form-label" htmlFor="parking-usage-action">
+                    현재 차량 기록 처리
+                  </label>
+                  <select
+                    id="parking-usage-action"
+                    className="form-select form-select-sm"
+                    value={action}
+                    onChange={(event) => {
+                      setAction(event.target.value as ParkingUsageAction | '');
+                      setDirty(true);
+                    }}
+                  >
+                    <option value="">처리 방법을 선택해 주세요</option>
+                    <option value="DETACH">구획 연결만 해제 (입차 기록 유지)</option>
+                    <option value="EXIT">누락 출차 처리 (주차장 밖으로 나간 차량)</option>
+                  </select>
+                  {action === 'EXIT' && (
+                    <>
+                      <label className="form-label mt-2" htmlFor="parking-exit-at">
+                        실제 출차 시각
+                      </label>
+                      <input
+                        id="parking-exit-at"
+                        type="datetime-local"
+                        step="1"
+                        className="form-control form-control-sm"
+                        value={exitAt}
+                        max={nowInput()}
+                        onChange={(event) => {
+                          setExitAt(event.target.value);
+                          setDirty(true);
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+              {status === 'OCCUPIED' && (
+                <div className="parking-panel-search">
+                  <label className="form-label small" htmlFor="parking-vehicle-search">
+                    기존 미출차 차량번호 검색
+                  </label>
+                  <div className="d-flex gap-2">
                     <input
-                      id="parking-exit-at"
-                      type="datetime-local"
-                      step="1"
+                      id="parking-vehicle-search"
                       className="form-control form-control-sm"
-                      value={exitAt}
-                      max={nowInput()}
+                      maxLength={20}
+                      placeholder="예: 123가4567 또는 4567"
+                      value={query}
                       onChange={(event) => {
-                        setExitAt(event.target.value);
-                        setDirty(true);
+                        searchRequest.current?.abort();
+                        setSearching(false);
+                        setSearched(false);
+                        setCandidates([]);
+                        setQuery(event.target.value);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void search();
+                        }
                       }}
                     />
-                  </>
-                )}
-              </div>
-            )}
-            {status === 'OCCUPIED' && (
-              <div className="parking-panel-search">
-                <label className="form-label small" htmlFor="parking-vehicle-search">
-                  기존 미출차 차량번호 검색
-                </label>
-                <div className="d-flex gap-2">
-                  <input
-                    id="parking-vehicle-search"
-                    className="form-control form-control-sm"
-                    maxLength={20}
-                    placeholder="예: 123가4567 또는 4567"
-                    value={query}
-                    onChange={(event) => {
-                      searchRequest.current?.abort();
-                      setSearching(false);
-                      setSearched(false);
-                      setCandidates([]);
-                      setQuery(event.target.value);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        void search();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-primary text-nowrap"
-                    disabled={searching}
-                    onClick={() => void search()}
-                  >
-                    {searching ? '검색 중' : '검색'}
-                  </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary text-nowrap"
+                      disabled={searching}
+                      onClick={() => void search()}
+                    >
+                      {searching ? '검색 중' : '검색'}
+                    </button>
+                  </div>
+                  <div className="small mt-2">
+                    선택 차량:{' '}
+                    <strong>
+                      {selectedUsage
+                        ? `${selectedUsage.vehicleNumber} (기록 #${selectedUsage.parkingUsageId})`
+                        : '선택하지 않음'}
+                    </strong>
+                  </div>
+                  {searched && candidates.length === 0 && (
+                    <p className="small text-muted mt-2 mb-0">
+                      일치하는 미출차 기록이 없습니다. 입차 등록이 필요한지 먼저 확인해
+                      주세요.
+                    </p>
+                  )}
+                  <div className="parking-panel-candidates">
+                    {candidates.map((item) => {
+                      const elsewhere =
+                        item.parkingSpaceId != null && item.parkingSpaceId !== id;
+                      return (
+                        <label
+                          key={item.parkingUsageId}
+                          className="parking-panel-candidate"
+                        >
+                          <input
+                            type="radio"
+                            name="parking-usage-record"
+                            className="me-2"
+                            disabled={elsewhere}
+                            checked={
+                              selectedUsage?.parkingUsageId === item.parkingUsageId
+                            }
+                            onChange={() => {
+                              setSelectedUsage(item);
+                              setDirty(true);
+                            }}
+                          />
+                          {item.vehicleNumber} · #{item.parkingUsageId}
+                          <br />
+                          입차 {item.entryAt?.replace('T', ' ')} ·{' '}
+                          {item.spaceCode ?? '구획 미연결'}
+                          {elsewhere && (
+                            <div className="text-warning">
+                              기존 구획에서 연결을 해제한 뒤 선택해 주세요.
+                            </div>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="small mt-2">
-                  선택 차량:{' '}
-                  <strong>
-                    {selectedUsage
-                      ? `${selectedUsage.vehicleNumber} (기록 #${selectedUsage.parkingUsageId})`
-                      : '선택하지 않음'}
-                  </strong>
-                </div>
-                {searched && candidates.length === 0 && (
-                  <p className="small text-muted mt-2 mb-0">
-                    일치하는 미출차 기록이 없습니다. 입차 등록이 필요한지 먼저 확인해
-                    주세요.
-                  </p>
-                )}
-                <div className="parking-panel-candidates">
-                  {candidates.map((item) => {
-                    const elsewhere =
-                      item.parkingSpaceId != null && item.parkingSpaceId !== id;
-                    return (
-                      <label
-                        key={item.parkingUsageId}
-                        className="parking-panel-candidate"
-                      >
-                        <input
-                          type="radio"
-                          name="parking-usage-record"
-                          className="me-2"
-                          disabled={elsewhere}
-                          checked={selectedUsage?.parkingUsageId === item.parkingUsageId}
-                          onChange={() => {
-                            setSelectedUsage(item);
-                            setDirty(true);
-                          }}
-                        />
-                        {item.vehicleNumber} · #{item.parkingUsageId}
-                        <br />
-                        입차 {item.entryAt?.replace('T', ' ')} ·{' '}
-                        {item.spaceCode ?? '구획 미연결'}
-                        {elsewhere && (
-                          <div className="text-warning">
-                            기존 구획에서 연결을 해제한 뒤 선택해 주세요.
-                          </div>
-                        )}
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {status === 'RESERVED' && (
-              <div className="alert alert-warning small">
-                구획 상태만 예약됨으로 표시합니다. 실제 예약 생성·취소는 처리하지
-                않습니다. 사용자 예약 내역도 별도로 확인해 주세요.
-              </div>
-            )}
-            {['RESERVED', 'DISABLED'].includes(status) && active.length > 0 && (
-              <p className="small text-warning">
-                연결된 차량의 입차 기록은 유지됩니다. 출차가 필요한 경우 사용가능에서 누락
-                출차 처리를 먼저 해 주세요.
-              </p>
-            )}
-            <label className="form-label small" htmlFor="parking-space-type">
-              구획 종류
-            </label>
-            <select
-              id="parking-space-type"
-              className="form-select form-select-sm mb-3"
-              value={type}
-              onChange={(event) => {
-                setType(event.target.value);
-                setDirty(true);
-              }}
-            >
-              {!['NORMAL', 'ELECTRIC', 'DISABLED_PERSON'].includes(type) && (
-                <option value={type}>종류를 선택해 주세요</option>
               )}
-              {['NORMAL', 'ELECTRIC', 'DISABLED_PERSON'].map((code) => (
-                <option key={code} value={code}>
-                  {typeLabels[code]}
-                </option>
-              ))}
-            </select>
-            {type === 'ELECTRIC' && (
-              <p className="parking-panel-type-note">
-                ⚡ 저장하면 도면에 전기차 전용 아이콘이 표시됩니다.
-              </p>
-            )}
-            {type === 'DISABLED_PERSON' && (
-              <p className="parking-panel-type-note">
-                ♿ 저장하면 도면에 장애인 전용 아이콘이 표시됩니다.
-              </p>
-            )}
-            {detail.space.spaceTypeCode === 'DISABLED' && (
-              <p className="small text-muted">
-                기존 사용불가 종류는 저장 시 선택한 구획 종류로 정리됩니다.
-              </p>
-            )}
-            <label className="form-label small" htmlFor="parking-space-memo">
-              관리자 메모
-            </label>
-            <textarea
-              id="parking-space-memo"
-              className="form-control form-control-sm mb-3"
-              rows={2}
-              maxLength={500}
-              value={memo}
-              onChange={(event) => {
-                setMemo(event.target.value);
-                setDirty(true);
-              }}
-            />
-            <label className="form-label small" htmlFor="parking-change-reason">
-              변경 사유 (필수)
-            </label>
-            <textarea
-              id="parking-change-reason"
-              className="form-control form-control-sm mb-2"
-              rows={2}
-              maxLength={250}
-              value={reason}
-              placeholder="예: 출차 감지 누락을 확인하여 이용 기록과 구획 상태 보정"
-              onChange={(event) => {
-                setReason(event.target.value);
-                setDirty(true);
-              }}
-            />
-            <p className="parking-panel-policy">
-              저장 이후 새 AI 감지는 계속 반영됩니다. 예약됨·사용불가는 기존 AI 보호
-              규칙이 유지됩니다.
-            </p>
-            {dirty && (
-              <p className="parking-panel-dirty" role="status">
-                저장하지 않은 변경사항이 있습니다.
-              </p>
-            )}
-            <button
-              type="button"
-              className="parking-panel-save"
-              disabled={active.length > 1}
-              onClick={() => void save()}
-            >
-              {saving ? '저장 중...' : '보정 내용 저장'}
-            </button>
-          </fieldset>
-          <div className="parking-panel-history">
-            <div className="parking-panel-history-heading">
-              <h6>최근 변경 이력</h6>
-              <span>최대 30건</span>
-            </div>
-            {detail.history.length === 0 && (
-              <p className="small text-muted">저장된 변경 이력이 없습니다.</p>
-            )}
-            <div className="parking-panel-history-list">
-              {detail.history.map((item) => (
-                <div
-                  key={item.parkingSpaceHistoryId}
-                  className="parking-panel-history-item"
-                >
-                  <strong>
-                    {statusLabels[item.spaceStatusCode] ?? item.spaceStatusCode}
-                  </strong>{' '}
-                  · {typeLabels[item.spaceTypeCode] ?? item.spaceTypeCode}
-                  <div className="parking-panel-history-time">
-                    {item.validFrom?.replace('T', ' ')} ·{' '}
-                    {item.changeSourceCode === 'ADMIN'
-                      ? `관리자 #${item.changedByAdminId ?? '-'}`
-                      : item.changeSourceCode}
-                  </div>
-                  <div className="parking-panel-history-reason">
-                    {item.changeReason || '사유 없음'}
-                  </div>
-                  {item.memo && <div className="text-muted">메모: {item.memo}</div>}
+              {status === 'RESERVED' && (
+                <div className="alert alert-warning small">
+                  구획 상태만 예약됨으로 표시합니다. 실제 예약 생성·취소는 처리하지
+                  않습니다. 사용자 예약 내역도 별도로 확인해 주세요.
                 </div>
-              ))}
+              )}
+              {['RESERVED', 'DISABLED'].includes(status) && active.length > 0 && (
+                <p className="small text-warning">
+                  연결된 차량의 입차 기록은 유지됩니다. 출차가 필요한 경우 사용가능에서
+                  누락 출차 처리를 먼저 해 주세요.
+                </p>
+              )}
+              <label className="form-label small" htmlFor="parking-space-type">
+                구획 종류
+              </label>
+              <select
+                id="parking-space-type"
+                className="form-select form-select-sm mb-3"
+                value={type}
+                onChange={(event) => {
+                  setType(event.target.value);
+                  setDirty(true);
+                }}
+              >
+                {!['NORMAL', 'ELECTRIC', 'DISABLED_PERSON'].includes(type) && (
+                  <option value={type}>종류를 선택해 주세요</option>
+                )}
+                {['NORMAL', 'ELECTRIC', 'DISABLED_PERSON'].map((code) => (
+                  <option key={code} value={code}>
+                    {typeLabels[code]}
+                  </option>
+                ))}
+              </select>
+              {type === 'ELECTRIC' && (
+                <p className="parking-panel-type-note">
+                  ⚡ 저장하면 도면에 전기차 전용 아이콘이 표시됩니다.
+                </p>
+              )}
+              {type === 'DISABLED_PERSON' && (
+                <p className="parking-panel-type-note">
+                  ♿ 저장하면 도면에 장애인 전용 아이콘이 표시됩니다.
+                </p>
+              )}
+              {detail.space.spaceTypeCode === 'DISABLED' && (
+                <p className="small text-muted">
+                  기존 사용불가 종류는 저장 시 선택한 구획 종류로 정리됩니다.
+                </p>
+              )}
+              <label className="form-label small" htmlFor="parking-space-memo">
+                관리자 메모
+              </label>
+              <textarea
+                id="parking-space-memo"
+                className="form-control form-control-sm mb-3"
+                rows={2}
+                maxLength={500}
+                value={memo}
+                onChange={(event) => {
+                  setMemo(event.target.value);
+                  setDirty(true);
+                }}
+              />
+              <label className="form-label small" htmlFor="parking-change-reason">
+                변경 사유 (필수)
+              </label>
+              <textarea
+                id="parking-change-reason"
+                className="form-control form-control-sm mb-2"
+                rows={2}
+                maxLength={250}
+                value={reason}
+                placeholder="예: 출차 감지 누락을 확인하여 이용 기록과 구획 상태 보정"
+                onChange={(event) => {
+                  setReason(event.target.value);
+                  setDirty(true);
+                }}
+              />
+              <p className="parking-panel-policy">
+                저장 이후 새 AI 감지는 계속 반영됩니다. 예약됨·사용불가는 기존 AI 보호
+                규칙이 유지됩니다.
+              </p>
+              {dirty && (
+                <p className="parking-panel-dirty" role="status">
+                  저장하지 않은 변경사항이 있습니다.
+                </p>
+              )}
+              <button
+                type="button"
+                className="parking-panel-save"
+                disabled={active.length > 1}
+                onClick={() => void save()}
+              >
+                {saving ? '저장 중...' : '보정 내용 저장'}
+              </button>
+            </fieldset>
+            <div className="parking-panel-history">
+              <div className="parking-panel-history-heading">
+                <h6>최근 변경 이력</h6>
+                <span>최대 30건</span>
+              </div>
+              {detail.history.length === 0 && (
+                <p className="small text-muted">저장된 변경 이력이 없습니다.</p>
+              )}
+              <div className="parking-panel-history-list">
+                {detail.history.map((item) => (
+                  <div
+                    key={item.parkingSpaceHistoryId}
+                    className="parking-panel-history-item"
+                  >
+                    <strong>
+                      {statusLabels[item.spaceStatusCode] ?? item.spaceStatusCode}
+                    </strong>{' '}
+                    · {typeLabels[item.spaceTypeCode] ?? item.spaceTypeCode}
+                    <div className="parking-panel-history-time">
+                      {item.validFrom?.replace('T', ' ')} ·{' '}
+                      {item.changeSourceCode === 'ADMIN'
+                        ? `관리자 #${item.changedByAdminId ?? '-'}`
+                        : item.changeSourceCode}
+                    </div>
+                    <div className="parking-panel-history-reason">
+                      {item.changeReason || '사유 없음'}
+                    </div>
+                    {item.memo && <div className="text-muted">메모: {item.memo}</div>}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </section>
   );
 }

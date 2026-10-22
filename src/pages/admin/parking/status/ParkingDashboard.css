@@ -283,10 +283,111 @@
 .parking-map-card {
   padding: 16px;
 }
+.parking-admin .parking-stat-value .parking-stat-message {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
 .parking-map-card-body {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
   padding-top: 0;
+}
+.parking-admin .parking-reservation-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+  max-width: 600px;
+  margin: 8px 0 16px;
+  padding: 10px;
+  border: 1px solid #e1e7f0;
+  border-radius: 10px;
+  background: #f8faff;
+  font-size: 11px;
+  color: #61718a;
+}
+.parking-admin .parking-reservation-filter input {
+  min-width: 0;
+  max-width: 150px;
+  padding: 5px;
+  border: 1px solid #dce4ef;
+  border-radius: 6px;
+  color: #334155;
+  background: #fff;
+  font: inherit;
+}
+.parking-admin .parking-reservation-filter p {
+  width: 100%;
+  margin: 0;
+  color: #a63850;
+}
+.parking-admin .parking-panel-tabs,
+.parking-admin .parking-reservation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.parking-admin .parking-panel-tabs button,
+.parking-admin .parking-reservation-actions button,
+.parking-admin .parking-reservation-filter button {
+  border: 1px solid #dce4ef;
+  border-radius: 7px;
+  background: #fff;
+  color: #526177;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.parking-admin .parking-panel-tabs button {
+  flex: 1;
+  font-size: 12px;
+}
+.parking-admin .parking-panel-tabs button[aria-pressed='true'],
+.parking-admin .parking-reservation-actions button[aria-pressed='true'] {
+  border-color: #9cb9f5;
+  background: #eef4ff;
+  color: #245cd2;
+}
+.parking-admin .parking-reservations {
+  font-size: 12px;
+  color: #526177;
+  line-height: 1.7;
+}
+.parking-admin .parking-reservations > p {
+  margin: 0 0 12px;
+}
+.parking-admin .parking-reservation-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.parking-admin .parking-reservation-list li {
+  border: 1px solid #e1e7f0;
+  border-left: 3px solid #9b92c9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+.parking-admin .parking-reservation-list strong {
+  color: #334155;
+}
+.parking-admin .parking-reservation-list span {
+  color: #738299;
+  font-size: 11px;
+}
+.parking-admin .parking-panel-tabs button:focus-visible,
+.parking-admin .parking-reservation-actions button:focus-visible,
+.parking-admin .parking-reservation-filter button:focus-visible,
+.parking-admin .parking-reservation-filter input:focus-visible {
+  outline: 2px solid #93b4fa;
+  outline-offset: 2px;
 }
 .parking-section-heading .parking-floor-tag {
   margin: 0;

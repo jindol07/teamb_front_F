@@ -136,6 +136,10 @@
   width: 14px;
   height: 14px;
 }
+.parking-map-reservation-key {
+  color: #5a54a1;
+  line-height: 1.6;
+}
 .parking-map-hint,
 .parking-map-empty {
   font-size: 12px;
