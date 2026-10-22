@@ -444,3 +444,42 @@
     height: auto;
   }
 }
+
+/* AI 추천 결과의 줄바꿈, 위치 강조, 예약 버튼 크기 */
+.ai-recommend-item p {
+  white-space: pre-line;
+}
+
+.ai-recommend-location {
+  display: inline;
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0 0.16em;
+  background: linear-gradient(transparent 56%, #fff176 56%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.ai-recommend-item > .d-flex {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+
+.ai-recommend-book-button {
+  min-width: 102px;
+  padding-inline: 0.6875rem;
+  white-space: nowrap;
+}
+
+.ai-recommend-item > .d-flex .btn-outline-secondary {
+  padding-inline: 0.6875rem;
+}
+.ai-recommend-title-icon {
+  margin-right: 0.2rem;
+  color: #64748b;
+  vertical-align: -0.08em;
+}
+.reservation-action-button {
+  width: 146px;
+  white-space: nowrap;
+}

@@ -12,6 +12,7 @@ interface MyBookingModalProps {
   slot: ExtendedParkingSlot | null;
   initialStartDate: Date | null;
   initialEndDate: Date | null;
+  allowSlotChange?: boolean;
   onClose: () => void;
 }
 
@@ -29,7 +30,7 @@ interface ReservationRequest {
   end_date_str: string;
 }
 
-export default function MyBookingModal({ slot, initialStartDate, initialEndDate, onClose }: MyBookingModalProps) {
+export default function MyBookingModal({ slot, initialStartDate, initialEndDate, allowSlotChange = true, onClose }: MyBookingModalProps) {
   const navigate = useNavigate();
   const slots = useParkingStore((state) => state.slots);
 
@@ -267,7 +268,9 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
                 <div className="section-title-box">
                   <h5>주차장 현황 정보</h5>
                   <p className="section-desc">
-                    이용 가능한 빈 자리를 클릭하여 선택하세요.
+                    {allowSlotChange
+                      ? '이용 가능한 빈 자리를 클릭하여 선택하세요.'
+                      : 'AI 추천 자리입니다. 현황은 확인만 할 수 있습니다.'}
                   </p>
                 </div>
 
@@ -278,6 +281,7 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
                     currentFloor={currentFloor}
                     onFloorChange={(floor) => setCurrentFloor(floor)}
                     onSlotClick={(clickedSlot) => {
+                      if (!allowSlotChange) return;
                       const statusStr = String(clickedSlot.status).toUpperCase();
                       if (
                         statusStr === 'RESERVED' ||
@@ -323,6 +327,7 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
 
                     <div className="calendar-wrapper">
                       <Calendar
+                        disabled={!allowSlotChange}
                         onChange={(value) => {
                           if (value instanceof Date) {
                             handleDateClick(value);

@@ -63,7 +63,7 @@ export default function AlpacaChatbot({
                         </button>
                     </div>
                     <p className="page-description mt-3">
-                        AI 주차 도우미 알파카에게
+                        AI 주차 도우미 알파킹에게
                         궁금한 내용을 문의해보세요.
                     </p>
                 </>
@@ -78,10 +78,13 @@ export default function AlpacaChatbot({
                 <ChatMessages messages={messages} floating={floating} visible={visible} />
                 {sending && (
                     <div
-                        className="small text-secondary px-3 py-2"
+                        className="alpharking-waiting small text-secondary px-3 py-2"
                         role="status"
                     >
-                        알파카가 답변을 생성하고 있습니다...
+                        알파킹이 답변을 준비하고 있어요
+                        <span className="alpharking-waiting-dots" aria-hidden="true">
+                            <span>●</span><span>●</span><span>●</span>
+                        </span>
                     </div>
                 )}
                 {error && (

@@ -36,7 +36,7 @@ export default function ChatInput({
                 <input
                     type="text"
                     className="form-control"
-                    placeholder="질문을 입력하거나 음성으로 말씀하세요."
+                    placeholder="무엇이 궁금하세요?"
                     value={input}
                     onChange={(e) =>
                         onInputChange(e.target.value)
