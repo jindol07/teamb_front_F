@@ -61,9 +61,12 @@
     color: inherit;
     cursor: pointer;
 }
+
 .alpharking-motion-toggle button:hover,
-.alpharking-motion-toggle button[aria-pressed="true"] { background: #084298; }
-.alpharking-motion-toggle label { display: inline-flex; cursor: pointer; }
+.alpharking-motion-toggle button[aria-pressed="true"] {
+    background: #084298;
+}
+
 .alpharking-restore {
     pointer-events: auto;
     padding: 7px 12px;
@@ -88,7 +91,11 @@
     font-size: 13px;
     line-height: 1.5;
 }
-.alpharking-announcement p { margin: 0 0 8px; }
+
+.alpharking-announcement p {
+    margin: 0 0 8px;
+}
+
 .alpharking-announcement-close {
     position: absolute;
     top: 3px;
@@ -98,6 +105,7 @@
     color: #64748b;
     font-size: 18px;
 }
+
 .alpharking-announcement-action {
     border: 0;
     padding: 0;
@@ -106,16 +114,27 @@
     font-size: 12px;
     font-weight: 600;
 }
+
 .alpharking-launcher.is-sleep,
-.alpharking-launcher.is-sleep .alpharking-character::before { animation-play-state: paused; }
+.alpharking-launcher.is-sleep .alpharking-character::before {
+    animation-play-state: paused;
+}
+
 .alpharking-launcher.is-sleep:not(.is-open) .alpharking-character::before {
     background-image: url('/images/alpharking-sleep.png') !important;
     background-position: center !important;
     background-size: contain !important;
     clip-path: none !important;
 }
-.alpharking-launcher.is-sleep .alpharking-character { transform: rotate(5deg) translateY(3px); }
-.alpharking-launcher.is-tilt .alpharking-character { animation: alpharking-idle-tilt 2.5s ease-in-out; }
+
+.alpharking-launcher.is-sleep .alpharking-character {
+    transform: rotate(5deg) translateY(3px);
+}
+
+.alpharking-launcher.is-tilt .alpharking-character {
+    animation: alpharking-idle-tilt 2.5s ease-in-out;
+}
+
 .alpharking-sleep-mark {
     position: absolute;
     right: 10px;
@@ -125,11 +144,26 @@
     font-weight: bold;
     pointer-events: none;
 }
-.alpharking-launcher.is-quiet .alpharking-character { animation: none !important; }
-.alpharking-launcher.is-quiet .alpharking-greeting { display: none; }
+
+.alpharking-launcher.is-quiet .alpharking-character {
+    animation: none !important;
+}
+
+.alpharking-launcher.is-quiet .alpharking-greeting {
+    display: none;
+}
+
 @keyframes alpharking-idle-tilt {
-    0%, 100% { transform: rotate(0); }
-    40%, 65% { transform: rotate(-6deg); }
+
+    0%,
+    100% {
+        transform: rotate(0);
+    }
+
+    40%,
+    65% {
+        transform: rotate(-6deg);
+    }
 }
 
 .alpharking-launcher:not(.is-open) {
@@ -186,14 +220,6 @@
     background: #0b5ed7;
 }
 
-.alpharking-motion-toggle input {
-    width: 13px;
-    height: 13px;
-    margin: 0;
-    accent-color: #0d6efd;
-    cursor: pointer;
-}
-
 .alpharking-launcher.is-open {
     width: 60px;
     height: 60px;
@@ -208,6 +234,7 @@
     transform-origin: center bottom;
     position: relative;
 }
+
 .alpharking-character::before {
     content: '';
     position: absolute;
@@ -217,16 +244,19 @@
     /* 하나의 레이어에서 이미지 자체를 교체해 겹침과 동시 숨김을 방지합니다. */
     animation: none;
 }
+
 .alpharking-launcher[data-motion="left"] .alpharking-character::before {
     background-image: url('/images/alpharking-car.png');
     background-position: left center;
     clip-path: inset(0);
 }
+
 .alpharking-launcher[data-motion="right"] .alpharking-character::before {
     background-image: url('/images/alpharking-car.png');
     background-position: right center;
     clip-path: inset(0);
 }
+
 .alpharking-launcher:hover .alpharking-character::before,
 .alpharking-launcher:focus-visible .alpharking-character::before {
     animation-play-state: paused;
@@ -234,10 +264,12 @@
     background-position: 85% center !important;
     clip-path: inset(0 12%) !important;
 }
+
 .alpharking-launcher:hover .alpharking-character,
 .alpharking-launcher:focus-visible .alpharking-character {
     animation: alpharking-wave .8s ease-in-out infinite alternate;
 }
+
 .alpharking-greeting {
     position: absolute;
     bottom: calc(100% + 6px);
@@ -252,21 +284,20 @@
     opacity: 0;
     pointer-events: none;
 }
+
 .alpharking-launcher:hover .alpharking-greeting,
-.alpharking-launcher:focus-visible .alpharking-greeting { opacity: 1; }
-@keyframes alpharking-wave {
-    from { transform: rotate(-3deg); }
-    to { transform: rotate(3deg) translateY(-2px); }
+.alpharking-launcher:focus-visible .alpharking-greeting {
+    opacity: 1;
 }
 
-.alpharking-launcher-name {
-    position: absolute;
-    bottom: -6px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: #0d6efd;
-    font-size: 11px;
-    white-space: nowrap;
+@keyframes alpharking-wave {
+    from {
+        transform: rotate(-3deg);
+    }
+
+    to {
+        transform: rotate(3deg) translateY(-2px);
+    }
 }
 
 .alpharking-launcher:focus-visible {
@@ -275,23 +306,40 @@
     outline-offset: 3px;
 }
 
-@keyframes alpharking-sway {
-    0%, 100% { transform: translateY(0) rotate(0); }
-    50% { transform: translateY(-4px) rotate(-3deg); }
-}
-
 /* 좁은 화면과 터치 환경에서는 움직이는 버튼을 쫓아 누를 필요가 없도록 고정합니다. */
-@media (max-width: 768px), (hover: none) {
-    .alpharking-launcher:not(.is-open) { animation: none; }
-    .alpharking-launcher .alpharking-character { animation: none; }
-    .alpharking-launcher .alpharking-character::before { animation: none; opacity: 1; }
+@media (max-width: 768px),
+(hover: none) {
+    .alpharking-launcher:not(.is-open) {
+        animation: none;
+    }
+
+    .alpharking-launcher .alpharking-character {
+        animation: none;
+    }
+
+    .alpharking-launcher .alpharking-character::before {
+        animation: none;
+        opacity: 1;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .alpharking-launcher:not(.is-open) { animation: none; }
-    .alpharking-launcher .alpharking-character { animation: none; }
-    .alpharking-launcher .alpharking-character::before { animation: none; opacity: 1; }
-    .alpharking-launcher.is-tilt .alpharking-character { animation: none; }
+    .alpharking-launcher:not(.is-open) {
+        animation: none;
+    }
+
+    .alpharking-launcher .alpharking-character {
+        animation: none;
+    }
+
+    .alpharking-launcher .alpharking-character::before {
+        animation: none;
+        opacity: 1;
+    }
+
+    .alpharking-launcher.is-tilt .alpharking-character {
+        animation: none;
+    }
 }
 
 #floating-alpaca-chat>div {
@@ -348,7 +396,8 @@
 }
 
 /* 모바일 */
-@media (max-width: 768px), (hover: none) {
+@media (max-width: 768px),
+(hover: none) {
     .alpharking-floating-root {
         right: max(12px, env(safe-area-inset-right));
         bottom: calc(12px + env(safe-area-inset-bottom) + var(--chat-viewport-bottom, 0px));
@@ -364,7 +413,10 @@
         height: 44px;
     }
 
-    .alpharking-open-button { touch-action: manipulation; }
+    .alpharking-open-button {
+        touch-action: manipulation;
+    }
+
     .alpharking-launcher:not(.is-open) .alpharking-open-button {
         /* 캐릭터 주위의 투명 여백은 터치 영역에서 제외합니다. */
         clip-path: inset(4% 17% 6% 17%);
@@ -381,7 +433,11 @@
         font-size: 10px;
     }
 
-    .alpharking-motion-toggle button { width: 22px; height: 22px; font-size: 13px; }
+    .alpharking-motion-toggle button {
+        width: 22px;
+        height: 22px;
+        font-size: 13px;
+    }
 
     #floating-alpaca-chat {
         width: min(380px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));
@@ -399,15 +455,44 @@
         padding: 12px 12px 48px;
     }
 
-    #floating-alpaca-chat .alpaca-chat-input-wrapper { padding: 8px; }
-    #floating-alpaca-chat .alpaca-chat-input-area { gap: 6px; }
-    #floating-alpaca-chat .alpaca-chat-input-area input { min-width: 0; font-size: 16px; }
-    #floating-alpaca-chat .alpaca-chat-input-area button { flex-shrink: 0; min-height: 44px; }
-    #floating-alpaca-chat .quick-question-area { padding: 6px 8px; gap: 4px; }
-    #floating-alpaca-chat .quick-question-button { padding: 6px 9px; }
+    #floating-alpaca-chat .alpaca-chat-input-wrapper {
+        padding: 8px;
+    }
+
+    #floating-alpaca-chat .alpaca-chat-input-area {
+        gap: 6px;
+    }
+
+    #floating-alpaca-chat .alpaca-chat-input-area input {
+        min-width: 0;
+        font-size: 16px;
+    }
+
+    #floating-alpaca-chat .alpaca-chat-input-area button {
+        flex-shrink: 0;
+        min-height: 44px;
+    }
+
+    #floating-alpaca-chat .quick-question-area {
+        padding: 6px 8px;
+        gap: 4px;
+    }
+
+    #floating-alpaca-chat .quick-question-button {
+        padding: 6px 9px;
+    }
 
     /* 키보드·가로 화면으로 공간이 부족하면 입력·대화 영역을 우선합니다. */
-    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .quick-question-area { display: none; }
-    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .alpaca-chat-header { padding: 6px 10px; }
-    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .alpaca-profile-icon { width: 30px; height: 30px; }
+    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .quick-question-area {
+        display: none;
+    }
+
+    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .alpaca-chat-header {
+        padding: 6px 10px;
+    }
+
+    .alpharking-floating-root[data-short-viewport="true"] #floating-alpaca-chat .alpaca-profile-icon {
+        width: 30px;
+        height: 30px;
+    }
 }
