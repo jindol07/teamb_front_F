@@ -29,8 +29,9 @@ export function useAlpharkingRoaming(
         element.dataset.motion = 'idle';
         for (const property of ['position', 'left', 'top']) element.style.removeProperty(property);
         if (open || hidden || modalOpen) return;
-        const initial = quiet && position ? clamp(position)
-            : clamp(lastPosition.current ?? { x: innerWidth - 152, y: innerHeight - 156 });
+        const home = { x: innerWidth - 152, y: innerHeight - 156 };
+        // 조용한 모드는 기본 위치로 복귀하고, 이후 직접 드래그한 위치만 별도로 사용합니다.
+        const initial = quiet ? clamp(position ?? home) : clamp(lastPosition.current ?? home);
         let current = initial;
         const draw = () => {
             lastPosition.current = current;

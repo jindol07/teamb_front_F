@@ -214,9 +214,10 @@ export default function FloatingChatbot() {
                 >
                     <span>알파킹</span>
                     <button type="button" aria-label="조용한 모드" aria-pressed={quiet}
-                        title={quiet ? '조용한 모드 끄고 이동하기' : '조용한 모드 켜고 멈추기'} onClick={() => {
+                        title={quiet ? '조용한 모드 끄고 이동하기' : '조용한 모드 켜고 오른쪽 아래에 고정'} onClick={() => {
                             lastInteraction.current = Date.now();
                             setIdleAction('none');
+                            if (!quiet) setPosition(null);
                             setQuiet((previous) => !previous);
                         }}>☾</button>
                     <button type="button" aria-label="알파킹 숨기기" title="알파킹 숨기기" onClick={() => { setIsOpen(false); setHidden(true); }}>×</button>
