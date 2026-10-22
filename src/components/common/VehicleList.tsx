@@ -1,36 +1,26 @@
 import { useState } from "react";
+import { vehicleState } from "../../pages/user/login/UserSignUp";
 
-// import './VehicleList.css';
-
-interface Vehicles {
-    vehicleNumber: string,
-    ornerName: string,
-}
-
-const vehiclesData = [
-    {
-        vehicleNumber: '43가 3645',
-        ownerName: '김만치',
-    },
-]
-
-export default function VehicleList() {
-    const [vehicles, setVehicles] = useState(vehiclesData);
+export default function VehicleList({
+    vehicles, setVehicles
+}: vehicleState) {
     const [isModifyVehiclesInfo, setIsModifyVehiclesInfo] = useState<number | null>(null);
     const [isNewVehicle, setIsNewVehicle] = useState(false);
     const [modifyVehicle, setModifyVehicle] = useState({
-        vehicleNumber: "",
-        ownerName: "",
+        vehicle_number: "",
+        owner_name: "",
+        vehicle_type_code: "",
     })
     const [newVehicle, setNewVehicle] = useState({
-        vehicleNumber: "",
-        ownerName: "",
+        vehicle_number: "",
+        owner_name: "",
+        vehicle_type_code: "PERSONAL",
     })
 
     function deleteCurrentVehicle(num : number): void {
         setVehicles(vehicles.filter((e, i) => {
             if (num === i) {
-                return false;
+                return false;   
             }
             return true;
         }));
@@ -52,13 +42,13 @@ export default function VehicleList() {
                 {vehicles.length ?
                     vehicles.map((e, i) => (
                         <div
-                            className="d-flex align-items-start gap-3 p-3 border rounded"
+                            className="d-flex flex-column gap-3 p-3 border rounded"
                             key={i}
                         >
                             {/* 차량 정보 */}
                             <div className="flex-grow-1">
                                 {isModifyVehiclesInfo == i ?
-                                    <div className="d-flex flex-column flex-md-row gap-3">
+                                    <div className="d-flex flex-column gap-3">
                                         <div className="flex-fill">
                                             <label className="form-label">
                                                 차량 번호
@@ -67,8 +57,8 @@ export default function VehicleList() {
                                                 type="text"
                                                 className="form-control"
                                                 placeholder="예: 12가 3456"
-                                                value={modifyVehicle.vehicleNumber}
-                                                name="vehicleNumber"
+                                                value={modifyVehicle.vehicle_number}
+                                                name="vehicle_number"
                                                 onChange={f => {
                                                     setFormData(f);
                                                 }}
@@ -83,12 +73,30 @@ export default function VehicleList() {
                                                 type="text"
                                                 className="form-control"
                                                 placeholder="홍길동"
-                                                value={modifyVehicle.ownerName}
-                                                name="ownerName"
+                                                value={modifyVehicle.owner_name}
+                                                name="owner_name"
                                                 onChange={f => {
                                                     setFormData(f);
                                                 }}
                                             />
+                                        </div>
+
+                                        <div style={{ flex: "1 1", minWidth: 180 }}>
+                                            <label htmlFor="vehicle_type" className="form-label">
+                                                차량 구분
+                                            </label>
+                                            <select
+                                                id="vehicle_type_code"
+                                                name="vehicle_type_code"
+                                                className="form-select"
+                                                value={modifyVehicle.vehicle_type_code}
+                                                onChange={f => {
+                                                    setFormData(f);
+                                                }}
+                                            >
+                                                <option value="PERSONAL">개인차량</option>
+                                                <option value="OFFICE">법인차량</option>
+                                            </select>
                                         </div>
                                     </div>
                                     :
@@ -98,7 +106,7 @@ export default function VehicleList() {
                                                 차량 번호
                                             </span>
                                             <span className="fw-medium">
-                                                {e.vehicleNumber}
+                                                {e.vehicle_number}
                                             </span>
                                         </div>
                                         <div>
@@ -106,7 +114,15 @@ export default function VehicleList() {
                                                 소유주
                                             </span>
                                             <span className="fw-medium">
-                                                {e.ownerName}
+                                                {e.owner_name}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="text-secondary me-2">
+                                                차량 구분
+                                            </span>
+                                            <span className="fw-medium">
+                                                {e.vehicle_type_code === "PERSONAL" ? "개인차량" : "법인차량"}
                                             </span>
                                         </div>
                                     </div>
@@ -114,7 +130,7 @@ export default function VehicleList() {
                             </div>
 
                             {/* 차량별 버튼 */}
-                            <div className="d-flex flex-column flex-sm-row gap-2">
+                            <div className="d-flex flex-row justify-content-end gap-2">
                                 <button
                                     type="button"
                                     className={
@@ -129,8 +145,9 @@ export default function VehicleList() {
                                             setVehicles(vehicles.map((f, j) => {
                                                 if (i === j) {
                                                     return {
-                                                        vehicleNumber: modifyVehicle.vehicleNumber,
-                                                        ownerName: modifyVehicle.ownerName
+                                                        vehicle_number: modifyVehicle.vehicle_number,
+                                                        owner_name: modifyVehicle.owner_name,
+                                                        vehicle_type_code: modifyVehicle.vehicle_type_code
                                                     }
                                                 }
                                                 return f;
@@ -138,8 +155,9 @@ export default function VehicleList() {
                                         } else {
                                             setIsModifyVehiclesInfo(i);
                                             setModifyVehicle({
-                                                vehicleNumber: e.vehicleNumber,
-                                                ownerName: e.ownerName,
+                                                vehicle_number: e.vehicle_number,
+                                                owner_name: e.owner_name,
+                                                vehicle_type_code: e.vehicle_type_code,
                                             })
                                         }
                                     }}
@@ -168,40 +186,62 @@ export default function VehicleList() {
             {/* 신규 차량 입력 영역 */}
             {isNewVehicle && (
                 <div className="p-3 border rounded">
-                    <div className="d-flex flex-column flex-md-row align-items-md-end gap-3">
+                    <div className="d-flex flex-column gap-3">
                         <div className="flex-fill">
-                            <label htmlFor="newVehicleNumber" className="form-label">
+                            <label htmlFor="newvehicle_number" className="form-label">
                                 차량 번호
                             </label>
                             <input
-                                id="newVehicleNumber"
+                                id="newvehicle_number"
                                 type="text"
                                 className="form-control"
                                 placeholder="예: 12가 3456"
                                 onChange={e => setNewVehicle({
-                                    vehicleNumber: e.target.value,
-                                    ownerName: newVehicle.ownerName,
+                                    vehicle_number: e.target.value,
+                                    owner_name: newVehicle.owner_name,
+                                    vehicle_type_code: newVehicle.vehicle_type_code,
                                 })}
                             />
                         </div>
 
                         <div className="flex-fill">
-                            <label htmlFor="newVehicleOwnerName" className="form-label">
+                            <label htmlFor="newVehicleowner_name" className="form-label">
                                 소유주
                             </label>
                             <input
-                                id="newVehicleOwnerName"
+                                id="newVehicleowner_name"
                                 type="text"
                                 className="form-control"
                                 placeholder="홍길동"
                                 onChange={e => setNewVehicle({
-                                    vehicleNumber: newVehicle.vehicleNumber,
-                                    ownerName: e.target.value,
+                                    vehicle_number: newVehicle.vehicle_number,
+                                    owner_name: e.target.value,
+                                    vehicle_type_code: newVehicle.vehicle_type_code,
                                 })}
                             />
                         </div>
 
-                        <div className="d-flex gap-2">
+                        <div className="flex-fill">
+                            <label htmlFor="vehicle_type" className="form-label">
+                                차량 구분
+                            </label>
+                            <select
+                                id="vehicle_type_code"
+                                name="vehicle_type_code"
+                                className="form-select"
+                                value={newVehicle.vehicle_type_code}
+                                onChange={e => setNewVehicle({
+                                    vehicle_number: newVehicle.vehicle_number,
+                                    owner_name: newVehicle.owner_name,
+                                    vehicle_type_code: e.target.value,
+                                })}
+                            >
+                                <option value="PERSONAL">개인차량</option>
+                                <option value="OFFICE">법인차량</option>
+                            </select>
+                        </div>
+
+                        <div className="d-flex flex-row justify-content-end gap-2">
                             <button
                                 type="button"
                                 className="btn btn-primary"
@@ -232,7 +272,14 @@ export default function VehicleList() {
                 <button
                     type="button"
                     className="btn btn-outline-primary"
-                    onClick={() => setIsNewVehicle(true)}
+                    onClick={() => {
+                        setIsNewVehicle(true);
+                        setNewVehicle({
+                            vehicle_number: "",
+                            owner_name: "",
+                            vehicle_type_code: "PERSONAL",
+                        });
+                    }}
                 >
                     + 차량 추가
                 </button>
