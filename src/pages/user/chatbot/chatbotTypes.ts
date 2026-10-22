@@ -14,4 +14,5 @@ export interface ChatMessage {
 export interface QuickQuestion {
     id: number;
     text: string;
+    question: string;
 }

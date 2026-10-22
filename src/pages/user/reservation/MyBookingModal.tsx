@@ -10,6 +10,9 @@ import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 
 interface MyBookingModalProps {
   slot: ExtendedParkingSlot | null;
+  initialStartDate: Date | null;
+  initialEndDate: Date | null;
+  allowSlotChange?: boolean;
   onClose: () => void;
 }
 
@@ -27,15 +30,15 @@ interface ReservationRequest {
   end_date_str: string;
 }
 
-export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
+export default function MyBookingModal({ slot, initialStartDate, initialEndDate, allowSlotChange = true, onClose }: MyBookingModalProps) {
   const navigate = useNavigate();
   const slots = useParkingStore((state) => state.slots);
 
   const [currentFloor, setCurrentFloor] = useState<number>(slot?.floor ?? 1);
   const [selectedSlot, setSelectedSlot] = useState<ExtendedParkingSlot | null>(slot);
 
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(initialStartDate);
+  const [endDate, setEndDate] = useState<Date | null>(initialEndDate);
   const [message, setMessage] = useState('');
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
   const [selectedVisitorVehicle, setSelectedVisitorVehicle] =
@@ -48,6 +51,11 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
       setSelectedSlot(slot);
     }
   }, [slot]);
+
+  useEffect(() => {
+    setStartDate(initialStartDate);
+    setEndDate(initialEndDate);
+  }, [initialStartDate, initialEndDate]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -156,14 +164,16 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
       return;
     }
 
-    // BookingModal과 동일한 parking_space_id 계산 로직 적용
-    let parkingSpaceId = 16;
-    const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
-    if (slotIndex !== -1) {
-      parkingSpaceId = 16 + slotIndex;
-    } else {
-      const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
-      parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
+    // DB에서 받은 parking_space_id를 우선 사용하고, 값이 없을 때만 기존 계산 로직 사용
+    let parkingSpaceId = selectedSlot.parkingSpaceId ?? 0;
+    if (!parkingSpaceId) {
+      const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
+      if (slotIndex !== -1) {
+        parkingSpaceId = 16 + slotIndex;
+      } else {
+        const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
+        parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
+      }
     }
 
     if (!Number.isSafeInteger(parkingSpaceId) || parkingSpaceId <= 0) {
@@ -258,7 +268,9 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                 <div className="section-title-box">
                   <h5>주차장 현황 정보</h5>
                   <p className="section-desc">
-                    이용 가능한 빈 자리를 클릭하여 선택하세요.
+                    {allowSlotChange
+                      ? '이용 가능한 빈 자리를 클릭하여 선택하세요.'
+                      : 'AI 추천 자리입니다. 현황은 확인만 할 수 있습니다.'}
                   </p>
                 </div>
 
@@ -269,6 +281,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
                     currentFloor={currentFloor}
                     onFloorChange={(floor) => setCurrentFloor(floor)}
                     onSlotClick={(clickedSlot) => {
+                      if (!allowSlotChange) return;
                       const statusStr = String(clickedSlot.status).toUpperCase();
                       if (
                         statusStr === 'RESERVED' ||
@@ -314,6 +327,7 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
 
                     <div className="calendar-wrapper">
                       <Calendar
+                        disabled={!allowSlotChange}
                         onChange={(value) => {
                           if (value instanceof Date) {
                             handleDateClick(value);
@@ -375,10 +389,10 @@ export default function MyBookingModal({ slot, onClose }: MyBookingModalProps) {
         <VehicleSearchModal
           isOpen={isVehicleModalOpen}
           onClose={() => setIsVehicleModalOpen(false)}
-          onSelectVehicle={(vehicleNumber) => {
+          onSelectVehicle={(vehicle) => {
             setSelectedVisitorVehicle({
-              id: 0,
-              number: vehicleNumber,
+              id: vehicle.id,
+              number: vehicle.number,
             });
             setMessage('');
           }}

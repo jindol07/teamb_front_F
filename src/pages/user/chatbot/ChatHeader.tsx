@@ -8,7 +8,7 @@ export default function ChatHeader() {
                 <div className="alpaca-profile-icon">
                     <img
                         src="/images/alpha1.png"
-                        alt="알파카"
+                        alt="알파킹"
                     />
                 </div>
                 <div>

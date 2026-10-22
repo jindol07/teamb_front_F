@@ -153,14 +153,14 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
       setMessage('시작일, 종료일, 방문 차량 정보를 모두 입력 및 선택해주세요.');
       return;
     }
-
-    let parkingSpaceId = 16;
-    const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
-    if (slotIndex !== -1) {
-      parkingSpaceId = 16 + slotIndex;
-    } else {
-      const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
-      parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
+    let parkingSpaceId = selectedSlot.parkingSpaceId ?? 0;
+    if (!parkingSpaceId) {
+      const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
+      if (slotIndex !== -1) parkingSpaceId = 16 + slotIndex;
+      else {
+        const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
+        parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
+      }
     }
 
     if (!Number.isSafeInteger(parkingSpaceId) || parkingSpaceId <= 0) {
@@ -353,10 +353,10 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
         <VehicleSearchModal
           isOpen={isVehicleModalOpen}
           onClose={() => setIsVehicleModalOpen(false)}
-          onSelectVehicle={(vehicleNumber) => {
+          onSelectVehicle={(vehicle) => {
             setSelectedVisitorVehicle({
-              id: 0,
-              number: vehicleNumber,
+              id: vehicle.id,
+              number: vehicle.number,
             });
             setMessage('');
           }}

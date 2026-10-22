@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
+import { FaCarSide } from 'react-icons/fa';
 import MyBookingModal from './MyBookingModal';
 import RecommendationModal from './RecommendationModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
+import { useParkingSpaceSync } from '../../../shared/parking/useParkingSpaceSync';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import './Reservation.css';
 
@@ -18,6 +20,7 @@ interface ReservationResponse {
 }
 
 export default function Reservation() {
+  const { refresh: refreshParkingSpaces } = useParkingSpaceSync('user');
   const [reservation, setReservation] = useState<ReservationResponse | null>(null);
   const rawSlots = useParkingStore((state) => state.slots);
 
@@ -27,6 +30,8 @@ export default function Reservation() {
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingSlot, setBookingSlot] = useState<ExtendedParkingSlot | null>(null);
+  const [bookingDates, setBookingDates] = useState<{ startDate: Date; endDate: Date } | null>(null);
+  const [isAiRecommendedBooking, setIsAiRecommendedBooking] = useState(false);
   const [isRecommendationModalOpen, setIsRecommendationModalOpen] = useState(false);
 
   // 백엔드에서 최신 예약 정보 불러오기 (HTML 응답 에러 방어 로직 포함)
@@ -177,35 +182,11 @@ export default function Reservation() {
     }
   };
 
-  const slots = rawSlots.map((slot) => {
-    if (!reservation) return slot;
-
-    const resSpaceId = reservation.parking_space_id;
-    let computedId = 16;
-    const slotIndex = rawSlots.findIndex((s) => s.id === slot.id);
-    if (slotIndex !== -1) {
-      computedId = 16 + slotIndex;
-    } else {
-      const numericMatch = slot.slotNumber?.replace(/[^0-9]/g, '');
-      computedId = numericMatch ? 15 + Number(numericMatch) : 16;
-    }
-
-    const isMatch = Number(resSpaceId) === Number(computedId);
-    const isCanceled = reservation.status_code === 'CANCELED';
-
-    if (isMatch && !isCanceled) {
-      return { ...slot, status: 'RESERVED' as const };
-    }
-    return slot;
-  });
-
+  const slots = rawSlots;
   const currentSlot =
     slots.find((s) => {
       if (!reservation) return false;
-      const resSpaceId = reservation.parking_space_id;
-      const slotIndex = rawSlots.findIndex((raw) => raw.id === s.id);
-      let computedId = slotIndex !== -1 ? 16 + slotIndex : 16;
-      return Number(resSpaceId) === Number(computedId);
+      return Number(reservation.parking_space_id) === Number(s.parkingSpaceId);
     }) ?? null;
 
   const currentFloor = currentSlot?.floor ?? 1;
@@ -234,8 +215,10 @@ export default function Reservation() {
           <div className="parking-status-board">
             {!reservation ? (
               <div className="text-center py-5">
-                <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🚗</div>
-                <h4 className="fw-bold mb-2">주차 정보를 찾을 수 없습니다 :(</h4>
+                <div style={{ fontSize: '3rem', marginBottom: '15px', color: 'cadetblue' }}>
+                  <FaCarSide aria-hidden="true" />
+                </div>
+                <h4 className="fw-bold mb-2">주차 정보를 찾을 수 없습니다</h4>
                 <p className="text-muted mb-4">
                   현재 진행 중인 주차 예약이 없습니다.
                   <br />
@@ -245,9 +228,10 @@ export default function Reservation() {
                 <div className="d-flex justify-content-center gap-2 flex-wrap">
                   <button
                     type="button"
-                    className="btn btn-primary px-4 py-2"
+                    className="btn btn-primary px-4 py-2 reservation-action-button"
                     onClick={() => {
                       setBookingSlot(null);
+                      setIsAiRecommendedBooking(false);
                       setIsBookingModalOpen(true);
                     }}
                   >
@@ -255,7 +239,7 @@ export default function Reservation() {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-outline-success px-4 py-2"
+                    className="btn btn-outline-success px-4 py-2 reservation-action-button"
                     onClick={() => setIsRecommendationModalOpen(true)}
                   >
                     AI 추천받기
@@ -297,11 +281,6 @@ export default function Reservation() {
                 </div>
 
                 <div className="reservation-info">
-                  <div className="info-item">
-                    <span>주차 자리 ID</span>
-                    <strong>{reservation.parking_space_id}번 구획</strong>
-                  </div>
-
                   <div className="info-item">
                     <span>예약 기간</span>
                     <strong>
@@ -370,9 +349,17 @@ export default function Reservation() {
       {isBookingModalOpen && (
         <MyBookingModal
           slot={bookingSlot}
+          allowSlotChange={!isAiRecommendedBooking}
+          initialStartDate={bookingDates?.startDate ?? null}
+          initialEndDate={bookingDates?.endDate ?? null}
           onClose={() => {
             setIsBookingModalOpen(false);
             setBookingSlot(null);
+            setIsAiRecommendedBooking(false);
+            setBookingDates(null);
+            void refreshParkingSpaces().catch((error) => {
+              console.error('주차 현황 새로고침 실패:', error);
+            });
             loadReservationFromApi();
           }}
         />
@@ -382,8 +369,10 @@ export default function Reservation() {
         isOpen={isRecommendationModalOpen}
         onClose={() => setIsRecommendationModalOpen(false)}
         slots={slots}
-        onSelectAndBook={(selectedSlot) => {
+        onSelectAndBook={(selectedSlot, selectedStartDate, selectedEndDate) => {
           setBookingSlot(selectedSlot);
+          setIsAiRecommendedBooking(true);
+          setBookingDates({ startDate: selectedStartDate, endDate: selectedEndDate });
           setIsBookingModalOpen(true);
         }}
       />

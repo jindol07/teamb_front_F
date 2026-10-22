@@ -9,6 +9,7 @@ import {
 } from 'react';
 import type {
     Dispatch,
+    MutableRefObject,
     ReactNode,
     SetStateAction
 } from 'react';
@@ -40,6 +41,9 @@ interface ConversationHistory {
 }
 // 공유할 상태와 함수의 타입
 interface ChatbotContextValue {
+    pageScrollPosition: MutableRefObject<{ top: number; followLatest: boolean } | null>;
+    floatingScrollPosition: MutableRefObject<{ top: number; followLatest: boolean } | null>;
+    restoring: boolean;
     messages: ChatMessage[];
     input: string;
     setInput: Dispatch<SetStateAction<string>>;
@@ -71,7 +75,7 @@ const initialMessages: ChatMessage[] = [
         id: 1,
         role: 'assistant',
         content:
-            '안녕하세요! AI 주차 도우미 알파카입니다. 무엇을 도와드릴까요?'
+            '안녕하세요! 주차 도우미 알파킹이에요. 빈자리, 내 예약, 주차 이용 이력이 궁금하면 물어보세요.'
     }
 ];
 // =========================
@@ -120,6 +124,9 @@ export function ChatbotProvider({
 }
 
 function ChatbotSession({ children }: { children: ReactNode }) {
+    // 계정별 세션 메모리에만 보관하여 페이지 이동 후 읽던 위치를 복원합니다.
+    const pageScrollPosition = useRef<{ top: number; followLatest: boolean } | null>(null);
+    const floatingScrollPosition = useRef<{ top: number; followLatest: boolean } | null>(null);
     // 전체 화면과 플로팅이 공유하는 메시지
     const [messages, setMessages] =
         useState<ChatMessage[]>(loadSavedMessages);
@@ -290,6 +297,9 @@ function ChatbotSession({ children }: { children: ReactNode }) {
     return (
         <ChatbotContext.Provider
             value={{
+                pageScrollPosition,
+                floatingScrollPosition,
+                restoring,
                 messages,
                 input,
                 setInput,

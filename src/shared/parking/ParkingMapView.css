@@ -1,0 +1,200 @@
+/* 공통 도면에만 적용한다. 논리 좌표는 640×480으로 유지한다. */
+.parking-map-view {
+  width: 100%;
+  min-width: 0;
+  max-width: 800px;
+  color: #25364b;
+}
+.parking-map-view *,
+.parking-map-view *::before,
+.parking-map-view *::after {
+  box-sizing: border-box;
+}
+.parking-map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.parking-map-floors {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f4f7fb;
+  gap: 3px;
+}
+.parking-map-floors button,
+.parking-map-path {
+  border: 0;
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 8px 15px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    box-shadow 0.15s;
+}
+.parking-map-floors button {
+  background: transparent;
+  color: #61718a;
+}
+.parking-map-floors button.is-active {
+  background: #fff;
+  color: #245cd2;
+  box-shadow: 0 1px 5px #23395014;
+}
+.parking-map-floors button:hover {
+  color: #245cd2;
+}
+.parking-map-path {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  color: #475569;
+  background: #fff;
+  border: 1px solid #dce4ef;
+}
+.parking-map-path:hover {
+  background: #f1f5fb;
+}
+.parking-map-path span {
+  font-size: 18px;
+  line-height: 1;
+}
+.parking-map-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #738299;
+}
+.parking-map-meta strong {
+  color: #334155;
+  margin-left: 5px;
+}
+.parking-map-special-counts {
+  display: flex;
+  gap: 12px;
+}
+.parking-map-viewport {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #e1e7f0;
+  border-radius: 14px;
+  background: #f7f9fc;
+}
+.parking-map-viewport canvas {
+  display: block;
+}
+.parking-map-legend {
+  display: grid;
+  gap: 10px;
+  padding: 15px 2px 12px;
+  border-bottom: 1px solid #edf1f6;
+  font-size: 11px;
+  color: #61718a;
+}
+.parking-map-legend-status,
+.parking-map-legend-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 17px;
+}
+.parking-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.parking-map-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.parking-map-legend i.parking-map-selected-key {
+  background: #fff;
+  border: 2px solid #2563eb;
+  width: 11px;
+  height: 11px;
+}
+.parking-map-legend i.parking-map-type-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+.parking-map-type-key svg {
+  width: 14px;
+  height: 14px;
+}
+.parking-map-reservation-key {
+  color: #5a54a1;
+  line-height: 1.6;
+}
+.parking-map-hint,
+.parking-map-empty {
+  font-size: 12px;
+  color: #738299;
+  margin: 12px 0 0;
+  line-height: 1.7;
+}
+.parking-map-list {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #61718a;
+}
+.parking-map-list summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 4px 0;
+}
+.parking-map-list > div {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+}
+.parking-map-list button {
+  border: 1px solid #dce4ef;
+  border-radius: 7px;
+  background: #fff;
+  color: #475569;
+  padding: 7px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.parking-map-list button[aria-pressed='true'] {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.parking-map-view button:focus-visible,
+.parking-map-list summary:focus-visible {
+  outline: 3px solid #93b4fa;
+  outline-offset: 3px;
+}
+@media (max-width: 420px) {
+  .parking-map-floors button {
+    padding: 8px 11px;
+  }
+  .parking-map-path {
+    padding: 8px 10px;
+  }
+  .parking-map-toolbar {
+    gap: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .parking-map-view button {
+    transition: none;
+  }
+}

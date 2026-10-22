@@ -63,6 +63,35 @@
 }
 
 /* 메시지 한 줄 */
+.chat-message-container {
+    position: relative;
+}
+
+.chat-scroll-bottom {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #ced4da;
+    border-radius: 50%;
+    background-color: #fff;
+    color: #495057;
+    font-size: 20px;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+}
+
+.chat-scroll-bottom:hover {
+    background-color: #f1f5f9;
+}
+
+.chat-message-container .alpaca-chat-messages {
+    padding-bottom: 48px;
+}
+
 .chat-message {
     display: flex;
     align-items: flex-start;
@@ -103,6 +132,29 @@
 }
 
 /* 기본 말풍선 */
+.alpharking-waiting-dots {
+    display: inline-flex;
+    gap: 3px;
+    margin-left: 6px;
+    font-size: 7px;
+}
+
+.alpharking-waiting-dots span {
+    animation: alpharking-dot 1.2s ease-in-out infinite;
+}
+
+.alpharking-waiting-dots span:nth-child(2) { animation-delay: 0.2s; }
+.alpharking-waiting-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes alpharking-dot {
+    0%, 100% { opacity: 0.35; }
+    50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .alpharking-waiting-dots span { animation: none; }
+}
+
 .message-bubble {
     max-width: 70%;
     padding: 10px 14px;
@@ -110,6 +162,8 @@
     font-size: 14px;
     line-height: 1.6;
     word-break: break-word;
+    /* AI 답변의 줄바꿈을 유지하고 긴 내용은 말풍선 너비에 맞춰 줄바꿈합니다. */
+    white-space: pre-wrap;
 }
 
 /* 알파카 말풍선 */
@@ -147,6 +201,29 @@
 }
 
 /* 빠른 질문 버튼 */
+.quick-question-toggle {
+    width: 100%;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: #495057;
+    font-size: 13px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.quick-question-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.quick-question-list[hidden] {
+    display: none;
+}
+
 .quick-question-button {
     padding: 7px 12px;
     background-color: #ffffff;
