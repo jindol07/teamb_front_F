@@ -5,7 +5,7 @@ import RecommendationModal from './RecommendationModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import { useParkingSpaceSync } from '../../../shared/parking/useParkingSpaceSync';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 import './Reservation.css';
 
 interface ReservationResponse {
@@ -232,6 +232,7 @@ export default function Reservation() {
                     onClick={() => {
                       setBookingSlot(null);
                       setIsAiRecommendedBooking(false);
+                      setBookingDates(null);
                       setIsBookingModalOpen(true);
                     }}
                   >
@@ -350,6 +351,7 @@ export default function Reservation() {
         <MyBookingModal
           slot={bookingSlot}
           allowSlotChange={!isAiRecommendedBooking}
+          allowDateChange={!isAiRecommendedBooking}
           initialStartDate={bookingDates?.startDate ?? null}
           initialEndDate={bookingDates?.endDate ?? null}
           onClose={() => {
