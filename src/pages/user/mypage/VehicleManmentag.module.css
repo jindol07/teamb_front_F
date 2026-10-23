@@ -1,0 +1,1048 @@
+.vm-page {
+    --vm-primary: #315efb;
+    --vm-primary-dark: #244bd7;
+    --vm-navy: #17243b;
+    --vm-text: #25324b;
+    --vm-muted: #8791a4;
+    --vm-border: #e8edf4;
+
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+    background: #f5f7fb;
+    color: var(--vm-text);
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.vm-page * {
+    box-sizing: border-box;
+}
+
+/* 메인 영역 */
+.vm-main {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+}
+
+.vm-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    min-height: 48px;
+    padding: 0 42px;
+    background: #fff;
+    border-bottom: 1px solid var(--vm-border);
+}
+
+.vm-breadcrumb {
+    color: #8b95a7;
+    font-size: 12px;
+}
+
+.vm-breadcrumb span {
+    margin: 0 10px;
+    color: #c2c9d4;
+}
+
+.vm-breadcrumb strong {
+    color: var(--vm-text);
+}
+
+.vm-top-user {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    color: var(--vm-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+.vm-top-avatar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 33px;
+    height: 33px;
+    border-radius: 50%;
+    background: #e9efff;
+    color: var(--vm-primary);
+    font-weight: 700;
+}
+
+/* 콘텐츠 */
+.vm-content {
+    width: 100%;
+    max-width: 1240px;
+    padding: 8px 42px 24px;
+    margin: 0 auto;
+}
+
+.vm-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 27px;
+}
+
+.vm-eyebrow {
+    color: var(--vm-primary);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.8px;
+}
+
+.vm-heading h1 {
+    margin: 8px 0 9px;
+    color: var(--vm-navy);
+    font-size: 27px;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+.vm-heading p {
+    margin: 0;
+    color: var(--vm-muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+/* 등록 차량 요약 영역 */
+.vm-summary {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin-bottom: 24px;
+    overflow: visible;
+    background: transparent;
+    box-shadow: none;
+    color: var(--vm-text);
+    z-index: 2;
+}
+
+.vm-summary-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 19px;
+    width: 100%;
+    min-height: 143px;
+    padding: 27px 30px;
+    overflow: hidden;
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(110deg, #315efb 0%, #5279ff 100%);
+    color: #fff;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    box-shadow: 0 9px 25px #315efb20;
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.vm-summary-trigger:hover {
+    box-shadow: 0 12px 30px #315efb30;
+}
+
+.vm-summary-trigger:focus-visible {
+    outline: 3px solid #17243b;
+    outline-offset: 4px;
+}
+
+.vm-summary-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border: 1px solid #ffffff38;
+    border-radius: 16px;
+    background: #ffffff20;
+    font-size: 31px;
+}
+
+.vm-summary-text {
+    position: relative;
+    z-index: 1;
+}
+
+.vm-summary-text > span {
+    color: #e5ebff;
+    font-size: 12px;
+}
+
+.vm-summary-text > strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 31px;
+    line-height: 1.2;
+}
+
+.vm-summary-text > strong small {
+    font-size: 15px;
+}
+
+.vm-summary-text p {
+    margin: 7px 0 0;
+    color: #e5ebff;
+    font-size: 11px;
+}
+
+.vm-summary-arrow {
+    position: relative;
+    z-index: 1;
+    margin-left: auto;
+    color: #fff;
+    font-size: 12px;
+}
+
+.vm-summary-decoration {
+    position: absolute;
+    right: 24px;
+    bottom: -13px;
+    color: #ffffff13;
+    font-size: clamp(30px, 5vw, 64px);
+    font-weight: 900;
+    letter-spacing: 3px;
+    pointer-events: none;
+}
+
+.vm-summary-open {
+    z-index: 10;
+}
+
+/* 등록 차량 드롭다운 */
+.vm-vehicle-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 430px;
+    padding: 22px;
+    overflow-y: auto;
+    border: 1px solid #e5eaf3;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 15px 40px #17243b1c;
+    cursor: default;
+}
+
+.vm-vehicle-dropdown .vm-list-heading {
+    margin-bottom: 15px;
+}
+
+.vm-vehicle-dropdown .vm-vehicle-list {
+    display: grid;
+    gap: 10px;
+}
+
+.vm-vehicle-dropdown .vm-vehicle-card {
+    padding: 15px;
+}
+
+.vm-vehicle-dropdown .vm-empty {
+    padding: 25px 15px;
+}
+
+/* 공통 카드 */
+.vm-panel {
+    padding: 25px 27px;
+    border: 1px solid var(--vm-border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 3px 12px #17243b04;
+}
+
+.vm-panel-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 23px;
+}
+
+.vm-section-icon {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: #edf2ff;
+    color: var(--vm-primary);
+    font-size: 24px;
+}
+
+.vm-panel-heading h2,
+.vm-list-heading h2 {
+    margin: 0 0 5px;
+    color: var(--vm-navy);
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.vm-panel-heading p,
+.vm-list-heading p {
+    margin: 0;
+    color: var(--vm-muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+/* 차량 등록 폼 */
+.vm-register-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 15px;
+}
+
+.vm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+}
+
+.vm-field > span,
+.vm-edit-fields label > span {
+    color: #47536a;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.vm-field input,
+.vm-edit-fields input {
+    width: 100%;
+    min-width: 0;
+    height: 43px;
+    padding: 0 13px;
+    outline: none;
+    border: 1px solid #e1e6ef;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--vm-text);
+    font: inherit;
+    font-size: 12px;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.vm-field input::placeholder {
+    color: #b0b8c6;
+}
+
+.vm-field input:focus,
+.vm-edit-fields input:focus {
+    border-color: var(--vm-primary);
+    box-shadow: 0 0 0 3px #315efb12;
+}
+
+/* 버튼 공통 */
+.vm-primary-btn,
+.vm-secondary-btn,
+.vm-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 39px;
+    padding: 0 15px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.vm-primary-btn {
+    min-height: 43px;
+    padding: 0 19px;
+    background: var(--vm-primary);
+    color: #fff;
+}
+
+.vm-primary-btn:hover {
+    background: var(--vm-primary-dark);
+}
+
+.vm-secondary-btn {
+    border-color: #dfe5ef;
+    background: #fff;
+    color: #536078;
+}
+
+.vm-secondary-btn:hover {
+    border-color: #aab8d4;
+    background: #f8faff;
+}
+
+.vm-delete-btn {
+    border-color: #f5dfe2;
+    background: #fff;
+    color: #e05260;
+}
+
+.vm-delete-btn:hover {
+    border-color: #e05260;
+    background: #fff6f6;
+}
+
+.vm-small-btn {
+    min-height: 37px;
+    padding: 0 13px;
+}
+
+/* 차량 목록 내부 */
+.vm-list-heading {
+    margin-bottom: 17px;
+}
+
+.vm-list-heading h2 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 16px;
+}
+
+.vm-list-heading h2 span {
+    display: inline-grid;
+    place-items: center;
+    min-width: 23px;
+    height: 23px;
+    padding: 0 6px;
+    border-radius: 7px;
+    background: #eaf0ff;
+    color: var(--vm-primary);
+    font-size: 11px;
+}
+
+.vm-list-heading p {
+    margin-top: 7px;
+}
+
+.vm-vehicle-list {
+    display: grid;
+    gap: 13px;
+}
+
+.vm-vehicle-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 22px;
+    border: 1px solid var(--vm-border);
+    border-radius: 13px;
+    background: #fff;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.vm-vehicle-card:hover {
+    border-color: #d8e1ff;
+    box-shadow: 0 5px 18px #17243b07;
+}
+
+.vm-car-visual {
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    flex-shrink: 0;
+    border-radius: 13px;
+    background: #f0f4ff;
+    font-size: 35px;
+}
+
+.vm-car-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vm-car-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: #edf2ff;
+    color: var(--vm-primary);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.vm-car-info h3 {
+    margin: 9px 0;
+    color: var(--vm-navy);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.vm-car-info p {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    font-size: 12px;
+}
+
+.vm-car-info p span {
+    color: var(--vm-muted);
+}
+
+.vm-car-info p strong {
+    color: #45516a;
+    font-weight: 700;
+}
+
+.vm-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+/* 차량 수정 입력 */
+.vm-edit-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
+    flex: 1;
+    gap: 12px;
+    min-width: 0;
+}
+
+.vm-edit-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+}
+
+/* 차량 미등록 상태 */
+.vm-empty {
+    padding: 44px 20px;
+    border: 1px dashed #dbe2ee;
+    border-radius: 13px;
+    background: #fff;
+    text-align: center;
+}
+
+.vm-empty > div {
+    font-size: 38px;
+}
+
+.vm-empty h3 {
+    margin: 13px 0 7px;
+    color: var(--vm-navy);
+    font-size: 15px;
+}
+
+.vm-empty p {
+    margin: 0;
+    color: var(--vm-muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+/* 하단 */
+.vm-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 28px;
+    margin-top: 38px;
+    border-top: 1px solid #e7ebf2;
+    color: #a0a8b7;
+    font-size: 10px;
+}
+
+.vm-footer span:first-child {
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+/* 차량 요약 영역 아래에 불필요한 빈 공간 제거 */
+.vm-summary {
+    height: auto;
+    min-height: 0;
+    margin-bottom: 24px;
+}
+
+/* 드롭다운은 열릴 때만 표시하고 레이아웃 공간은 차지하지 않음 */
+.vm-vehicle-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    right: 0;
+}
+
+/* 등록 영역 위쪽에 남는 불필요한 여백 제거 */
+.vm-register {
+    margin-top: 0;
+}
+/* 차량 관리 콘텐츠 아래의 불필요한 높이 제거 */
+.vm-page {
+    min-height: 0;
+    height: auto;
+}
+
+.vm-main {
+    height: auto;
+    min-height: 0;
+}
+
+.vm-content {
+    height: auto;
+    min-height: 0;
+    padding-bottom: 12px;
+}
+
+.vm-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+}
+
+/* 차량 관리 이용 안내 버튼 */
+.vm-guide-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    flex-shrink: 0;
+    padding: 11px 15px;
+    border: 1px solid #d8e2f3;
+    border-radius: 11px;
+    background: #fff;
+    color: #536789;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.vm-guide-button:hover {
+    border-color: #b8caff;
+    background: #f5f8ff;
+}
+
+.vm-guide-button span {
+    font-size: 17px;
+    line-height: 1;
+}
+
+@media (max-width: 560px) {
+    .vm-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .vm-guide-button {
+        align-self: flex-start;
+    }
+}
+
+/* 이용 안내 모달 배경 */
+.vm-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(20, 30, 50, 0.48);
+    backdrop-filter: blur(3px);
+    animation: vm-backdrop-in 0.18s ease-out;
+}
+
+/* 윈도우 스타일 모달 */
+.vm-modal {
+    width: 100%;
+    max-width: 500px;
+    max-height: min(80vh, 650px);
+    overflow: hidden;
+    border: 1px solid #dce3ef;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow:
+        0 24px 70px rgba(20, 30, 50, 0.25),
+        0 3px 8px rgba(20, 30, 50, 0.08);
+    animation: vm-modal-in 0.2s ease-out;
+}
+
+/* 모달 제목 영역 */
+.vm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 20px 22px;
+    border-bottom: 1px solid #e8edf4;
+    background: #fff;
+}
+
+.vm-modal-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.vm-modal-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: #edf2ff;
+    color: #315efb;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.vm-modal-title-wrap h2 {
+    margin: 0;
+    color: #17243b;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.vm-modal-title-wrap p {
+    margin: 6px 0 0;
+    color: #8791a4;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* 닫기 버튼 */
+.vm-modal-close {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #7e899d;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.vm-modal-close:hover {
+    border-color: #e4e9f1;
+    background: #f3f5f9;
+    color: #26344c;
+}
+
+/* 안내 내용 */
+.vm-modal-body {
+    display: grid;
+    gap: 0;
+    max-height: calc(80vh - 155px);
+    padding: 8px 22px;
+    overflow-y: auto;
+}
+
+.vm-guide-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 17px 0;
+    border-bottom: 1px solid #edf0f5;
+}
+
+.vm-guide-item:last-child {
+    border-bottom: none;
+}
+
+.vm-guide-number {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: #f0f4ff;
+    color: #315efb;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.vm-guide-item h3 {
+    margin: 1px 0 7px;
+    color: #25324b;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.vm-guide-item p {
+    margin: 0;
+    color: #7d889c;
+    font-size: 12px;
+    line-height: 1.8;
+    word-break: keep-all;
+}
+
+/* 하단 버튼 */
+.vm-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 15px 22px;
+    border-top: 1px solid #e8edf4;
+    background: #fafbfe;
+}
+
+.vm-modal-confirm {
+    min-width: 90px;
+    min-height: 38px;
+    padding: 0 20px;
+    border: 1px solid #315efb;
+    border-radius: 7px;
+    background: #315efb;
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.vm-modal-confirm:hover {
+    border-color: #244bd7;
+    background: #244bd7;
+}
+
+/* 등장 애니메이션 */
+@keyframes vm-backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes vm-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* 모바일 */
+@media (max-width: 560px) {
+    .vm-modal-backdrop {
+        padding: 14px;
+    }
+
+    .vm-modal-header {
+        padding: 17px;
+    }
+
+    .vm-modal-body {
+        padding-right: 17px;
+        padding-left: 17px;
+    }
+
+    .vm-modal-footer {
+        padding: 13px 17px;
+    }
+
+    .vm-modal-title-wrap h2 {
+        font-size: 15px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vm-modal-backdrop,
+    .vm-modal {
+        animation: none;
+    }
+}
+
+/* 태블릿 */
+@media (max-width: 1050px) {
+    .vm-content {
+        padding-right: 25px;
+        padding-left: 25px;
+    }
+
+    .vm-topbar {
+        padding-right: 25px;
+        padding-left: 25px;
+    }
+
+    .vm-register-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .vm-register-form .vm-primary-btn {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
+    .vm-vehicle-card {
+        gap: 14px;
+    }
+}
+
+/* 모바일 */
+@media (max-width: 760px) {
+    .vm-topbar {
+        min-height: 57px;
+        padding: 0 18px;
+    }
+
+    .vm-top-user {
+        gap: 7px;
+    }
+
+    .vm-top-user > span:last-child {
+        display: none;
+    }
+
+    .vm-content {
+        padding: 26px 16px;
+    }
+
+    .vm-heading {
+        gap: 12px;
+    }
+
+    .vm-heading h1 {
+        font-size: 23px;
+    }
+
+    .vm-heading p {
+        max-width: 260px;
+    }
+
+    .vm-heading-icon {
+        width: 45px;
+        height: 45px;
+    }
+
+    .vm-summary-trigger {
+        min-height: 125px;
+        gap: 13px;
+        padding: 21px 18px;
+    }
+
+    .vm-summary-icon {
+        width: 49px;
+        height: 49px;
+        font-size: 25px;
+    }
+
+    .vm-summary-decoration {
+        right: 12px;
+        font-size: 28px;
+    }
+
+    .vm-vehicle-dropdown {
+        max-height: 65vh;
+        padding: 15px;
+    }
+
+    .vm-vehicle-dropdown .vm-vehicle-card {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 12px;
+    }
+
+    .vm-panel {
+        padding: 20px 16px;
+    }
+
+    .vm-register-form {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .vm-register-form .vm-primary-btn {
+        grid-column: auto;
+        justify-self: stretch;
+        width: 100%;
+    }
+
+    .vm-car-visual {
+        width: 58px;
+        height: 58px;
+        font-size: 29px;
+    }
+
+    .vm-car-info {
+        flex: 1;
+        padding-top: 1px;
+    }
+
+    .vm-car-info h3 {
+        font-size: 15px;
+    }
+
+    .vm-card-actions {
+        width: 100%;
+        margin-left: 0;
+        padding-top: 12px;
+        border-top: 1px solid #edf0f5;
+    }
+
+    .vm-card-actions button {
+        flex: 1;
+    }
+
+    .vm-edit-fields {
+        flex-basis: calc(100% - 74px);
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .vm-footer {
+        margin-top: 27px;
+    }
+}
+
+/* 작은 모바일 */
+@media (max-width: 380px) {
+    .vm-topbar {
+        padding: 0 12px;
+    }
+
+    .vm-content {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .vm-summary-trigger {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .vm-summary-decoration {
+        font-size: 22px;
+    }
+
+    .vm-vehicle-dropdown {
+        padding: 10px;
+    }
+
+    .vm-breadcrumb {
+        font-size: 11px;
+    }
+}

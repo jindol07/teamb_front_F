@@ -234,3 +234,54 @@ export const checkUsername = async (username: string) => {
         return null;
     }
 };
+
+// email
+export interface EmailVerificationResponse {
+    success: boolean;
+    reason: string;
+}
+
+const getEmailVerificationError = (
+    error: unknown,
+    fallbackReason: string
+): EmailVerificationResponse => {
+    if (
+        axios.isAxiosError<EmailVerificationResponse>(error) &&
+        error.response?.data
+    ) {
+        return error.response.data;
+    }
+
+    return { success: false, reason: fallbackReason };
+};
+
+export const sendEmailVerificationCode = async (
+    email: string
+): Promise<EmailVerificationResponse> => {
+    try {
+        const response = await axios.post<EmailVerificationResponse>(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/email/send',
+            { email: email.trim() }
+        );
+
+        return response.data;
+    } catch (error) {
+        return getEmailVerificationError(error, 'send_failed');
+    }
+};
+
+export const verifyEmailVerificationCode = async (
+    email: string,
+    code: string
+): Promise<EmailVerificationResponse> => {
+    try {
+        const response = await axios.post<EmailVerificationResponse>(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/email/verify',
+            { email: email.trim(), code: code.trim() }
+        );
+
+        return response.data;
+    } catch (error) {
+        return getEmailVerificationError(error, 'verify_failed');
+    }
+};

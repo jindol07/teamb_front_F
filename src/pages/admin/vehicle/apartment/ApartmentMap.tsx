@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './ApartmentMap.css';
 import { useVehicleStore } from '../vehicleStore';
 
@@ -13,8 +13,8 @@ type Vehicle = {
   ownerName: string;
   registeredAt: string;
 };
-
 type OfficeSlot = {
+  officeId: number;
   no: number;
   vehicle: Vehicle | null;
 };
@@ -34,7 +34,7 @@ type Building = {
 interface ApartmentMapProps {
   selectedBuilding?: string;
   selectedUnit?: string;
-  onUnitSelect?: (building: string, unit: string) => void;
+  onUnitSelect?: (building: string, unit: string, officeid: number) => void;
 }
 
 /**
@@ -62,15 +62,16 @@ const createFloors = (vehicles: Vehicle[]): Floor[] =>
       units: Array.from({ length: 4 }, (_, unitIndex) => {
         const no = floor * 100 + unitIndex + 1;
 
+        // Vehicle API already supplies officenumber. Match against the map's
+        // 101–104, 201–204 … numbering convention without relying on an
+        // office list that this screen does not load.
         const registeredVehicle = vehicles.find((vehicle) => {
-          const vehicleOfficeNumber = String(vehicle.officenumber ?? '')
-            .trim()
-            .replace(/\s*호$/, '');
-
-          return vehicleOfficeNumber === String(no);
+          const normalizedOfficeNumber = vehicle.officenumber?.replace(/\D/g, '');
+          return normalizedOfficeNumber === String(no);
         });
 
         return {
+          officeId: registeredVehicle?.officeid ?? 0,
           no,
           vehicle: registeredVehicle ?? null,
         };
@@ -84,7 +85,11 @@ export default function ApartmentMap({
   onUnitSelect,
 }: ApartmentMapProps) {
   const vehicles = useVehicleStore((state) => state.vehicles);
+  const fetchVehicles = useVehicleStore((state) => state.fetchVehicles);
 
+  useEffect(() => {
+    void fetchVehicles();
+  }, [fetchVehicles]);
   const [internalSelectedBuilding, setInternalSelectedBuilding] =
     useState<Building | null>(null);
 
@@ -183,8 +188,15 @@ export default function ApartmentMap({
   const handleUnitClick = (unit: OfficeSlot) => {
     setInternalSelectedUnit(unit);
 
+    if (unit.officeId <= 0) {
+      alert(
+        `${unit.no}호의 사무실 ID를 찾을 수 없습니다. 사무실 목록 API와 응답 데이터를 확인해 주세요.`,
+      );
+      return;
+    }
+
     if (currentBuilding && onUnitSelect) {
-      onUnitSelect(String(currentBuilding.id), String(unit.no));
+      onUnitSelect(String(currentBuilding.id), String(unit.no), unit.officeId);
     }
   };
 

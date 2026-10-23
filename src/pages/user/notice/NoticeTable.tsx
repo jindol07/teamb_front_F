@@ -9,16 +9,16 @@ export default function NoticeTable({
 }: NoticeTableProps) {
     return (
         <div className="table-responsive">
-            <table className="table table-hover align-middle">
+            <table className="table table-hover align-middle text-center">
                 <thead className="table-light">
                     <tr>
                         <th style={{ width: '60px' }}>
                             번호
                         </th>
-                        <th style={{ width: '140px' }}>
+                        <th className="text-center" style={{ width: '140px' }}>
                             공지 유형
                         </th>
-                        <th>
+                        <th className="text-center">
                             제목
                         </th>
                         <th style={{ width: '100px' }}>
@@ -49,27 +49,29 @@ export default function NoticeTable({
                             </td>
                             {/* 제목 */}
                             <td>
+                                {/* 중요·고정 표시와 클립의 자리를 확보해 각 행의 클립·제목을 정렬합니다. */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '90px 20px minmax(0, 1fr)', columnGap: '8px', alignItems: 'center' }}>
+                                <div className="d-flex align-items-center gap-1 text-nowrap">
                                 {/* 중요 공지 */}
                                 {notice.isImportant && (
-                                    <span className="text-danger fw-bold me-1">
+                                    <span className="text-danger fw-bold">
                                         [중요]
                                     </span>
                                 )}
                                 {/* 상단 고정 */}
                                 {notice.isPinned && (
-                                    <span className="badge bg-dark me-2">
+                                    <span className="badge bg-dark">
                                         고정
                                     </span>
                                 )}
+                                </div>
                                 {/* 첨부파일 표시 */}
-                                {notice.attachments?.length > 0 && (
                                     <span
-                                        className="me-2"
-                                        title="첨부파일 있음"
+                                        className="text-center"
+                                        title={notice.attachments.length > 0 ? '첨부파일 있음' : undefined}
                                     >
-                                        📎
+                                        {notice.attachments.length > 0 ? '📎' : null}
                                     </span>
-                                )}
                                 {/* 상세 페이지 이동 */}
                                 <Link
                                     to={`/user/notice/${notice.id}`}
@@ -77,6 +79,7 @@ export default function NoticeTable({
                                 >
                                     {notice.title}
                                 </Link>
+                                </div>
                             </td>
                             {/* 작성자 */}
                             <td>

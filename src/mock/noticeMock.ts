@@ -13,6 +13,7 @@ export interface Notice {
   isPinned: boolean;         // 상단 고정 여부
   isImportant: boolean;      // 중요 공지 여부
   attachments: Attachment[]; // 첨부파일 목록
+  attachmentCount?: number;  // 관리자 목록에서 상세 조회 없이 첨부 유무 표시
   content: string;
 }
 export const noticeListMock: Notice[] = [

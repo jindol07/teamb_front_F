@@ -11,7 +11,7 @@ interface AdditionalVehicleManagementProps {
   requests: AdditionalVehicleRequest[];
   onDetail: (request: AdditionalVehicleRequest) => void;
   onApprove: (request: AdditionalVehicleRequest) => void;
-  onReject: (request: AdditionalVehicleRequest, reason: string) => void;
+  onReject: (request: AdditionalVehicleRequest, reason: string) => Promise<boolean>;
 }
 
 export default function AdditionalVehicleManagement({
@@ -22,6 +22,9 @@ export default function AdditionalVehicleManagement({
 }: AdditionalVehicleManagementProps) {
   // Zustand 스토어에서 기존 차량 목록 가져오기 (중복 체크용)
   const vehicles = useVehicleStore((state) => state.vehicles);
+  const fetchAdditionalVehicleRequests = useVehicleStore(
+    (state) => state.fetchAdditionalVehicleRequests,
+  );
 
   // 검색어 상태
   const [search, setSearch] = useState('');
@@ -36,6 +39,22 @@ export default function AdditionalVehicleManagement({
 
   // 반려 사유 입력 텍스트 상태
   const [rejectReason, setRejectReason] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState('');
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setLoadError('');
+    try {
+      await fetchAdditionalVehicleRequests();
+    } catch (error) {
+      console.error('추가 차량 신청 목록 새로고침 실패:', error);
+      setLoadError('신청 목록을 불러오지 못했습니다. 서버 연결과 API 응답을 확인해주세요.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // 검색어 및 상태 필터가 적용된 요청 목록 필터링
   const filteredRequests = requests.filter((request) => {
@@ -85,8 +104,8 @@ export default function AdditionalVehicleManagement({
   };
 
   // 추가 등록 신청 반려 확정 핸들러
-  const handleReject = () => {
-    if (!rejectTarget) {
+  const handleReject = async () => {
+    if (!rejectTarget || isRejecting) {
       return;
     }
 
@@ -95,15 +114,22 @@ export default function AdditionalVehicleManagement({
       return;
     }
 
-    const confirmed = window.confirm(
-      `${rejectTarget.vehiclenumber} 차량의 신청을 반려하시겠습니까?`,
-    );
-
-    if (!confirmed) {
+    if (!rejectReason.trim()) {
+      window.alert('반려 사유를 입력해주세요.');
       return;
     }
 
-    onReject(rejectTarget, rejectReason.trim());
+    setIsRejecting(true);
+    let succeeded = false;
+    try {
+      succeeded = await onReject(rejectTarget, rejectReason.trim());
+    } catch (error) {
+      console.error('차량 신청 반려 처리 실패:', error);
+      window.alert('반려 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsRejecting(false);
+    }
+    if (!succeeded) return;
 
     // 반려 모드 초기화
     setRejectTarget(null);
@@ -118,7 +144,21 @@ export default function AdditionalVehicleManagement({
 
           <p>사용자가 신청한 차량을 검토하고 승인 또는 반려합니다.</p>
         </div>
+        <button
+          type="button"
+          className={styles.secondaryButton}
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? '불러오는 중…' : '목록 새로고침'}
+        </button>
       </div>
+
+      {loadError && (
+        <div role="alert" className={styles.requestLoadError}>
+          {loadError}
+        </div>
+      )}
 
       {/* 요약 통계 영역 */}
       <div className={styles.vehicleSummary}>
@@ -217,7 +257,7 @@ export default function AdditionalVehicleManagement({
           <p>검색어나 상태 필터를 확인해주세요.</p>
         </div>
       ) : (
-        <div className={styles.vehicleTableWrap}>
+        <div className={`${styles.vehicleTableWrap} ${styles.requestTableWrap}`}>
           <table className={styles.vehicleTable}>
             <thead>
               <tr>
@@ -251,16 +291,8 @@ export default function AdditionalVehicleManagement({
                   <td>{request.requeststatus}</td>
 
                   <td>
-                    {/* 모든 상태에서 상세보기 표시 */}
-                    <button
-                      type="button"
-                      className={styles.secondaryButton}
-                      onClick={() => onDetail(request)}
-                    >
-                      상세보기
-                    </button>
                     {request.requeststatus === '접수' && (
-                      <div className={styles.formActions}>
+                      <div className={styles.requestActions}>
                         <button
                           type="button"
                           className={styles.secondaryButton}
@@ -279,11 +311,23 @@ export default function AdditionalVehicleManagement({
                         <button
                           type="button"
                           className={styles.secondaryButton}
-                          onClick={() => setRejectTarget(request)}
+                          onClick={() => {
+                            setRejectTarget(request);
+                            setRejectReason('');
+                          }}
                         >
                           반려
                         </button>
                       </div>
+                    )}
+                    {request.requeststatus !== '접수' && (
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => onDetail(request)}
+                      >
+                        상세보기
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -293,41 +337,86 @@ export default function AdditionalVehicleManagement({
         </div>
       )}
 
-      {/* 반려 사유 입력 폼 영역 (반려 버튼 클릭 시 표시) */}
+      {/* 반려 사유 모달 */}
       {rejectTarget && (
-        <div className={styles.vehicleContent}>
-          <h3>추가 등록 신청 반려</h3>
+        <div
+          className={styles.modalOverlay}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isRejecting) {
+              setRejectTarget(null);
+              setRejectReason('');
+            }
+          }}
+        >
+          <section
+            className={styles.rejectModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rejectModalTitle"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <h3 id="rejectModalTitle">추가 등록 신청 반려</h3>
+                <p>반려 사유를 입력한 뒤 반려를 확정해주세요.</p>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseButton}
+                aria-label="닫기"
+                disabled={isRejecting}
+                onClick={() => {
+                  setRejectTarget(null);
+                  setRejectReason('');
+                }}
+              >
+                ×
+              </button>
+            </div>
 
-          <p>차량번호: {rejectTarget.vehiclenumber}</p>
+            <div className={styles.modalRequestInfo}>
+              <span>차량번호</span>
+              <strong>{rejectTarget.vehiclenumber}</strong>
+            </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="rejectReason">반려 사유</label>
+            <div className={styles.formGroup}>
+              <label htmlFor="rejectReason">
+                반려 사유 <span className={styles.requiredMark}>*</span>
+              </label>
+              <textarea
+                id="rejectReason"
+                className={styles.rejectTextarea}
+                value={rejectReason}
+                onChange={(event) => setRejectReason(event.target.value)}
+                placeholder="반려 사유를 입력해주세요."
+                rows={5}
+                autoFocus
+                disabled={isRejecting}
+              />
+            </div>
 
-            <textarea
-              id="rejectReason"
-              value={rejectReason}
-              onChange={(event) => setRejectReason(event.target.value)}
-              placeholder="반려 사유를 입력해주세요."
-              rows={4}
-            />
-          </div>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                disabled={isRejecting}
+                onClick={() => {
+                  setRejectTarget(null);
+                  setRejectReason('');
+                }}
+              >
+                취소
+              </button>
 
-          <div className={styles.formActions}>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={() => {
-                setRejectTarget(null);
-                setRejectReason('');
-              }}
-            >
-              취소
-            </button>
-
-            <button type="button" className={styles.primaryButton} onClick={handleReject}>
-              반려 확정
-            </button>
-          </div>
+              <button
+                type="button"
+                className={styles.dangerButton}
+                onClick={handleReject}
+                disabled={isRejecting}
+              >
+                {isRejecting ? '처리 중...' : '반려 확정'}
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </div>

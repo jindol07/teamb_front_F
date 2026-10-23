@@ -1,7 +1,15 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import VehicleList from '../../../components/common/VehicleList';
-import { checkUsername, officeSignup, signupData, Vehicle } from '../../../auth/actions/authActions';
+// import { checkUsername, officeSignup, signupData, Vehicle } from '../../../auth/actions/authActions';
+import {
+    checkUsername,
+    officeSignup,
+    sendEmailVerificationCode,
+    signupData,
+    Vehicle,
+    verifyEmailVerificationCode,
+} from '../../../auth/actions/authActions';
 
 /**
  * 입주민 회원가입 페이지 (/user/signup)
@@ -12,6 +20,22 @@ export interface vehicleState {
     setVehicles: (vehicles: Vehicle[]) => void,
 }
 
+const getEmailVerificationMessage = (reason: string): string => {
+    const messages: Record<string, string> = {
+        sent: "인증번호를 이메일로 보냈습니다.",
+        ok: "이메일 인증이 완료되었습니다.",
+        wrong: "인증번호가 올바르지 않습니다.",
+        expired: "인증번호가 만료되었습니다. 다시 발송해주세요.",
+        exceeded: "인증 시도 횟수를 초과했습니다. 인증번호를 다시 발송해주세요.",
+        invalid_email: "이메일 주소를 확인해주세요.",
+        invalid_request: "이메일과 인증번호를 확인해주세요.",
+        send_failed: "인증번호 발송에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        verify_failed: "인증 확인에 실패했습니다. 다시 시도해주세요.",
+    };
+
+    return messages[reason] ?? "이메일 인증 중 오류가 발생했습니다.";
+};
+
 export default function UserSignUp() {
     const [isCheckbox1, setIsCheckbox1] = useState(false);
     const [isCheckbox2, setIsCheckbox2] = useState(false);
@@ -21,51 +45,68 @@ export default function UserSignUp() {
     const [checkedUsername, setCheckedUsername] = useState<string>("");
     const [isAvailableUsername, setIsAvailableUsername] = useState<boolean>(false);
     const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+    // email
+    const [email, setEmail] = useState("");
+    const [emailCode, setEmailCode] = useState("");
+    const [verifiedEmail, setVerifiedEmail] = useState("");
+    const [emailBusy, setEmailBusy] = useState(false);
+    const [signupBusy, setSignupBusy] = useState(false);
+    const [emailMessage, setEmailMessage] = useState("");
+    const isEmailVerified = verifiedEmail === email.trim();
+        
 
     const navigate = useNavigate();
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        if (verifiedEmail !== email.trim()) {
+            setValidationErrors(prev => ({
+                ...prev,
+                email_code: "이메일 인증을 완료해주세요.",
+            }));
+            return;
+        }
 
         if (!validation()) {
             return;
         }
 
         const formData = new FormData(event.currentTarget);
-        console.log(event.currentTarget);
-        console.log(formData.get("username"));
 
-        const signupData: signupData = {
+        const signupPayload: signupData = {
             username: String(formData.get("username") ?? ""),
             password: String(formData.get("password") ?? ""),
             password_confirm: String(formData.get("password_confirm") ?? ""),
-            email: String(formData.get("email") ?? ""),
-            email_code: String(formData.get("email_code") ?? ""),
+            email: email.trim(),
+            email_code: emailCode.trim(),
             phone: String(formData.get("phone") ?? ""),
             company_id: Number(formData.get("company_id") ?? ""),
             floor_no: Number(formData.get("floor_no") ?? ""),
             office_number: String(formData.get("office_number") ?? ""),
             verification_code: String(formData.get("verification_code") ?? ""),
-
             vehicle_list: vehicles,
-
             company_company_name: String(formData.get("company_company_name") ?? ""),
             company_business_number: String(formData.get("company_business_number") ?? ""),
             company_company_addr: String(formData.get("company_company_addr") ?? ""),
-        };  
-
-        console.log(signupData);
-
-        const fetchOffice = async () => {
-            const result = await officeSignup(signupData);
-            console.log(result);
-            if (result) {
-                setUserInfo(result.data);
-                alert("가입이 정상적으로 완료되었습니다.")
-            }
         };
-        fetchOffice();
-        navigate('/user/login');
+
+        setSignupBusy(true);
+
+        try {
+            const result = await officeSignup(signupPayload);
+
+            if (!result) {
+                alert("회원가입에 실패했습니다. 입력 내용을 확인해주세요.");
+                return;
+            }
+
+            setUserInfo(result.data);
+            alert("가입이 정상적으로 완료되었습니다.");
+            navigate("/user/login");
+        } finally {
+            setSignupBusy(false);
+        }
     };
 
     const userNameCheck = async () => {
@@ -217,6 +258,64 @@ export default function UserSignUp() {
         return Object.keys(errors).length === 0;
     }
 
+
+    const handleSendEmailCode = async () => {
+        const normalizedEmail = email.trim();
+
+        if (
+            normalizedEmail.length > 30 ||
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+        ) {
+            setValidationErrors(prev => ({
+                ...prev,
+                email: "올바른 이메일 주소를 입력해주세요.",
+            }));
+            return;
+        }
+
+        setEmailBusy(true);
+        setVerifiedEmail("");
+        setEmailCode("");
+        setEmailMessage("");
+
+        try {
+            const result = await sendEmailVerificationCode(normalizedEmail);
+            setEmailMessage(getEmailVerificationMessage(result.reason));
+        } finally {
+            setEmailBusy(false);
+        }
+    };
+
+    const handleVerifyEmailCode = async () => {
+        const normalizedEmail = email.trim();
+
+        if (!/^\d{6}$/.test(emailCode.trim())) {
+            setEmailMessage("인증번호 6자리를 입력해주세요.");
+            return;
+        }
+
+        setEmailBusy(true);
+        setEmailMessage("");
+
+        try {
+            const result = await verifyEmailVerificationCode(
+                normalizedEmail,
+                emailCode
+            );
+
+            if (result.success) {
+                setVerifiedEmail(normalizedEmail);
+            } else {
+                setVerifiedEmail("");
+            }
+
+            setEmailMessage(getEmailVerificationMessage(result.reason));
+        } finally {
+            setEmailBusy(false);
+        }
+    };
+        
+
     return (
         <div className="container d-flex justify-content-center py-5">
             <div className="w-100" style={{ maxWidth: 500 }}>
@@ -317,42 +416,82 @@ export default function UserSignUp() {
                         <label htmlFor="email" className="form-label">
                             이메일
                         </label>
+
                         <div className="input-group">
                             <input
                                 type="email"
                                 id="email"
                                 name="email"
+                                value={email}
+                                maxLength={30}
                                 className={`form-control ${validationErrors.email ? "is-invalid" : ""}`}
                                 placeholder="이메일을 입력해주세요"
-                                maxLength={30}
-                                onChange={() => setValidationErrors(prev => ({ ...prev, email: "" }))}
+                                onChange={event => {
+                                    setEmail(event.target.value);
+                                    setVerifiedEmail("");
+                                    setEmailCode("");
+                                    setEmailMessage("");
+                                    setValidationErrors(prev => ({
+                                        ...prev,
+                                        email: "",
+                                        email_code: "",
+                                    }));
+                                }}
                             />
+
                             <button
                                 type="button"
                                 className="btn btn-outline-primary"
+                                disabled={emailBusy || isEmailVerified}
+                                onClick={handleSendEmailCode}
                             >
-                                인증번호 발송
+                                {emailBusy ? "처리 중..." : isEmailVerified ? "인증 완료" : "인증번호 발송"}
                             </button>
                         </div>
+
                         {validationErrors.email && (
                             <div className="text-danger small mt-1">
                                 {validationErrors.email}
                             </div>
                         )}
+
+                        {emailMessage && (
+                            <div className={`small mt-1 ${isEmailVerified ? "text-success" : "text-secondary"}`}>
+                                {emailMessage}
+                            </div>
+                        )}
                     </div>
-                    {/* 이메일 인증번호 */}
                     <div className="mb-3">
-                        <label htmlFor="emailCode" className="form-label">
+                        <label htmlFor="email_code" className="form-label">
                             인증번호
                         </label>
-                        <input
-                            type="text"
-                            id="email_code"
-                            name="email_code"
-                            className={`form-control ${validationErrors.email_code ? "is-invalid" : ""}`}
-                            placeholder="이메일로 받은 인증번호를 입력해주세요"
-                            onChange={() => setValidationErrors(prev => ({ ...prev, email_code: "" }))}
-                        />
+
+                        <div className="input-group">
+                            <input
+                                type="text"
+                                id="email_code"
+                                name="email_code"
+                                inputMode="numeric"
+                                maxLength={6}
+                                value={emailCode}
+                                className={`form-control ${validationErrors.email_code ? "is-invalid" : ""}`}
+                                placeholder="이메일로 받은 인증번호를 입력해주세요"
+                                onChange={event => {
+                                    setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                                    setValidationErrors(prev => ({ ...prev, email_code: "" }));
+                                }}
+                            />
+
+                            <button
+                                type="button"
+                                className="btn btn-outline-primary"
+                                disabled={emailBusy || isEmailVerified || emailCode.length !== 6}
+                                onClick={handleVerifyEmailCode}
+                            >
+                                {isEmailVerified ? "인증 완료" : "인증 확인"}
+                            </button>
+                        </div>
+
                         {validationErrors.email_code && (
                             <div className="text-danger small mt-1">
                                 {validationErrors.email_code}
@@ -615,6 +754,14 @@ export default function UserSignUp() {
                     >
                         회원가입
                     </button>
+
+                    {/* <button
+                        type="submit"
+                        className="btn btn-primary w-100 mb-3"
+                        disabled={signupBusy}
+                    >
+                        {signupBusy ? "가입 처리 중..." : "회원가입"}
+                    </button> */}
 
 
                     {/* 로그인 이동 */}

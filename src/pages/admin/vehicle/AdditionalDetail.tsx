@@ -9,7 +9,7 @@ interface AdditionalVehicleDetailProps {
   onReject: (
     request: AdditionalVehicleRequest,
     reason: string,
-  ) => void;
+  ) => Promise<boolean>;
 }
 
 export interface RequestType {
@@ -40,7 +40,7 @@ export default function AdditionalVehicleDetail({
     setRejectReason('');
   };
 
-  const handleReject = (
+  const handleReject = async (
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
@@ -52,8 +52,8 @@ export default function AdditionalVehicleDetail({
       return;
     }
 
-    onReject(request, reason);
-    closeRejectModal();
+    const succeeded = await onReject(request, reason);
+    if (succeeded) closeRejectModal();
   };
 
   const handleApprove = () => {

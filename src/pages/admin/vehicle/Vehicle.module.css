@@ -2,7 +2,6 @@
    차량 관리 공통 스타일
    중복 선택자를 정리한 Vehicle.module.css
 ===================================================== */
-
 /* 페이지 */
 .vehiclePage {
   width: 100%;
@@ -20,14 +19,18 @@
   line-height: 1.35;
   letter-spacing: -0.5px;
 }
-
+.pageHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
 .pageDescription {
   margin: 6px 0 26px;
   color: #7a8494;
   font-size: 14px;
   line-height: 1.5;
 }
-
 /* 상단 메뉴 */
 .vehicleMenu {
   display: flex;
@@ -47,7 +50,6 @@
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
 }
-
 .vehicleMenu button {
   display: inline-flex;
   flex: 0 0 auto;
@@ -176,7 +178,12 @@
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .primaryButton {
@@ -271,7 +278,9 @@
   border: 1px solid #edf0f3;
   border-radius: 9px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .summaryItem:hover {
@@ -420,7 +429,9 @@
   background: #fff;
   border: 1px solid #d0d5dd;
   border-radius: 6px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .searchBox:focus-within {
@@ -533,7 +544,9 @@
   text-align: center;
   white-space: nowrap;
   letter-spacing: -0.2px;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .vehicleTable tbody tr:last-child td {
@@ -607,6 +620,28 @@
 .vehicleTable td:last-child {
   min-width: 200px;
   max-width: 200px;
+}
+
+.requestTableWrap .vehicleTable th:last-child,
+.requestTableWrap .vehicleTable td:last-child {
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+}
+
+.requestActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.requestActions .primaryButton,
+.requestActions .secondaryButton {
+  min-width: 68px;
+  min-height: 36px;
+  padding: 0 14px;
 }
 
 /* 테이블 하단 */
@@ -849,7 +884,7 @@
 }
 
 .vehicleForm::before {
-  content: "차량 정보";
+  content: '차량 정보';
   display: block;
   margin-bottom: 24px;
   color: #1d3555;
@@ -928,7 +963,9 @@
   font-family: inherit;
   font-size: 13px;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .formGroup input:hover,
@@ -1038,6 +1075,12 @@
   font-weight: 700;
 }
 
+.predictionUnavailable {
+  background: #fffaeb;
+  border-color: #fedf89;
+  color: #93370d;
+}
+
 .vehicleForm > .primaryButton {
   display: flex;
   width: 100%;
@@ -1067,7 +1110,9 @@
   border: 1px solid #e4e7ec;
   border-radius: 8px;
   gap: 24px;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .editVehicleRow:hover {
@@ -1108,7 +1153,7 @@
 }
 
 .editVehicleMeta span + span::before {
-  content: "";
+  content: '';
   position: absolute;
   left: -10px;
   top: 50%;
@@ -1226,7 +1271,7 @@
 }
 
 .statusVehicleDetail span + span::before {
-  content: "";
+  content: '';
   position: absolute;
   left: -10px;
   top: 50%;
@@ -1326,7 +1371,10 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .penaltyButton:hover {
@@ -1347,7 +1395,7 @@
   box-sizing: border-box;
 }
 
-.fileUpload input[type="file"] {
+.fileUpload input[type='file'] {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1371,7 +1419,10 @@
   border: 1px dashed #cbd5e1;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .fileUploadLabel:hover {
@@ -1447,7 +1498,10 @@
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .fileUploadLabel:hover .fileUploadButton {
@@ -1554,6 +1608,16 @@
   font-weight: 650;
 }
 
+.requestLoadError {
+  margin: -8px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #fecdca;
+  border-radius: 8px;
+  background: #fef3f2;
+  color: #b42318;
+  font-size: 13px;
+}
+
 /* 반려 모달 */
 .modalOverlay {
   position: fixed;
@@ -1583,7 +1647,6 @@
 .fineEditModal {
   max-width: 680px;
 }
-
 
 .fineWorkspace {
   display: grid;
@@ -1670,7 +1733,10 @@
   border: 1px solid #e4eaf1;
   border-radius: 11px;
   background: #fff;
-  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .fineRecord:hover {
@@ -1753,7 +1819,7 @@
 }
 
 .fineRecordMeta span + span::before {
-  content: "·";
+  content: '·';
   margin-right: 14px;
   color: #a6b1bf;
 }
@@ -1872,11 +1938,11 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    "vehicle"
-    "date"
-    "reason"
-    "amount"
-    "status";
+    'vehicle'
+    'date'
+    'reason'
+    'amount'
+    'status';
   gap: 0;
   padding: 22px 26px 2px;
 }
@@ -1886,11 +1952,21 @@
   margin-bottom: 17px;
 }
 
-.fineFormGrid .formGroup:nth-child(1) { grid-area: vehicle; }
-.fineFormGrid .formGroup:nth-child(2) { grid-area: date; }
-.fineFormGrid .formGroup:nth-child(3) { grid-area: reason; }
-.fineFormGrid .formGroup:nth-child(4) { grid-area: amount; }
-.fineFormGrid .formGroup:nth-child(5) { grid-area: status; }
+.fineFormGrid .formGroup:nth-child(1) {
+  grid-area: vehicle;
+}
+.fineFormGrid .formGroup:nth-child(2) {
+  grid-area: date;
+}
+.fineFormGrid .formGroup:nth-child(3) {
+  grid-area: reason;
+}
+.fineFormGrid .formGroup:nth-child(4) {
+  grid-area: amount;
+}
+.fineFormGrid .formGroup:nth-child(5) {
+  grid-area: status;
+}
 
 .fineForm .formGroup label {
   color: #33445c;
@@ -2042,7 +2118,9 @@
   font-size: 14px;
   line-height: 1.6;
   resize: vertical;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .rejectTextarea:focus {
@@ -2118,7 +2196,612 @@
   min-width: 0;
   box-sizing: border-box;
 }
+/* 차량관리 알림 */
+.notificationWrapper {
+  position: relative;
+  flex: 0 0 auto;
+}
 
+.notificationButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #fff;
+  color: #344054;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.notificationButton:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  box-sizing: content-box;
+}
+
+.notificationPanel {
+  position: absolute;
+  z-index: 1000;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  border: 1px solid #e4e7ec;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 35px rgba(16, 24, 40, 0.14);
+}
+
+.notificationHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.notificationHeader strong {
+  color: #101828;
+  font-size: 15px;
+}
+
+.notificationHeader > span {
+  color: #667085;
+  font-size: 11px;
+}
+
+.notificationList {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 11px;
+  padding: 15px 17px;
+  border: 0;
+  border-bottom: 1px solid #f2f4f7;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.notificationItem:hover {
+  background: #f8fafc;
+}
+
+.notificationUnread {
+  background: #eff6ff;
+}
+
+.notificationUnread:hover {
+  background: #e8f1ff;
+}
+
+.notificationDot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.notificationUnread .notificationDot {
+  background: #2563eb;
+}
+
+.notificationText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 5px;
+}
+
+.notificationText strong {
+  color: #101828;
+  font-size: 13px;
+}
+
+.notificationText > span {
+  overflow-wrap: anywhere;
+  color: #475467;
+  font-size: 12px;
+}
+
+.notificationText small {
+  color: #98a2b3;
+  font-size: 11px;
+}
+
+.notificationEmpty {
+  padding: 30px 16px;
+  color: #98a2b3;
+  font-size: 13px;
+  text-align: center;
+}
+
+.notificationFooter {
+  width: 100%;
+  padding: 13px;
+  border: 0;
+  border-top: 1px solid #edf0f3;
+  background: #fff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notificationFooter:hover {
+  background: #f8fafc;
+}
+
+@media (max-width: 480px) {
+  .notificationPanel {
+    right: -4px;
+    width: 310px;
+  }
+}
+/* 알림 종 기본 스타일 */
+.notificationBell {
+  transform-origin: top center;
+}
+
+/* 새 알림이 있을 때 종 흔들림 */
+.notificationBellShake {
+  animation: notificationBellShake 0.8s ease-in-out infinite;
+}
+
+@keyframes notificationBellShake {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  15% {
+    transform: rotate(15deg);
+  }
+
+  30% {
+    transform: rotate(-15deg);
+  }
+
+  45% {
+    transform: rotate(12deg);
+  }
+
+  60% {
+    transform: rotate(-12deg);
+  }
+
+  75% {
+    transform: rotate(5deg);
+  }
+
+  90% {
+    transform: rotate(-5deg);
+  }
+}
+
+/* 흔들림 애니메이션 줄이기 설정을 사용하는 경우 */
+@media (prefers-reduced-motion: reduce) {
+  .notificationBellShake {
+    animation: none;
+  }
+}
+/* 알림 종 */
+.notificationBell {
+  display: block;
+  flex-shrink: 0;
+  transform-origin: top center;
+}
+
+/* 좌우 흔들기 */
+.notificationBellShakeOnce {
+  animation: notificationBellShake 0.8s ease-in-out 1;
+}
+
+.notificationBellShakeContinuous {
+  animation: notificationBellShake 0.8s ease-in-out infinite;
+}
+
+@keyframes notificationBellShake {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(15deg);
+  }
+  30% {
+    transform: rotate(-15deg);
+  }
+  45% {
+    transform: rotate(12deg);
+  }
+  60% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+  90% {
+    transform: rotate(-5deg);
+  }
+}
+
+/* 위아래 튀기 */
+.notificationBellBounceOnce {
+  animation: notificationBellBounce 0.7s ease-in-out 1;
+}
+
+.notificationBellBounceContinuous {
+  animation: notificationBellBounce 0.7s ease-in-out infinite;
+}
+
+@keyframes notificationBellBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+  60% {
+    transform: translateY(2px);
+  }
+}
+
+/* 커졌다 작아지기 */
+.notificationBellPulseOnce {
+  animation: notificationBellPulse 0.7s ease-in-out 1;
+}
+
+.notificationBellPulseContinuous {
+  animation: notificationBellPulse 0.7s ease-in-out infinite;
+}
+
+@keyframes notificationBellPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* 설정 버튼 */
+.notificationSettingsButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  font-size: 18px;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.notificationSettingsButton:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* 설정 패널 */
+.notificationSettingsPanel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 100;
+  width: min(340px, calc(100vw - 32px));
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 36px rgb(15 23 42 / 14%);
+  color: #1e293b;
+}
+
+.notificationSettingsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.notificationSettingsHeader h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.notificationSettingsHeader button {
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.notificationSettingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.notificationSettingRow span,
+.notificationSettingField {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.notificationSettingRow strong,
+.notificationSettingField > span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.notificationSettingRow small {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.notificationSettingRow input {
+  width: 17px;
+  height: 17px;
+  accent-color: #2563eb;
+}
+
+.notificationSettingField {
+  padding: 14px 0;
+}
+
+.notificationSettingField > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.notificationSettingField > span strong {
+  color: #2563eb;
+}
+
+.notificationSettingField select {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+}
+
+.notificationSettingField input[type='range'] {
+  width: 100%;
+  accent-color: #2563eb;
+  cursor: pointer;
+}
+
+.notificationSettingsSave {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 9px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.notificationSettingsSave:hover {
+  background: #1d4ed8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notificationBellShakeOnce,
+  .notificationBellShakeContinuous,
+  .notificationBellBounceOnce,
+  .notificationBellBounceContinuous,
+  .notificationBellPulseOnce,
+  .notificationBellPulseContinuous {
+    animation: none;
+  }
+}
+/* 알림 커스텀 설정 */
+.notificationSettingsArea {
+  padding: 10px 14px;
+  border-bottom: 1px solid #e8ebf0;
+}
+
+.notificationSettingsToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 0;
+  border: none;
+  background: transparent;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notificationSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 12px 0 4px;
+}
+
+.notificationSettingRow,
+.notificationSettingField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #475467;
+  font-size: 12px;
+}
+
+.notificationSettingRow {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notificationSettingRow input {
+  width: 16px;
+  height: 16px;
+  accent-color: #4f46e5;
+  cursor: pointer;
+}
+
+.notificationSettingField select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #d0d5dd;
+  border-radius: 7px;
+  background: #fff;
+  color: #344054;
+  font-size: 12px;
+}
+
+.notificationSettingField input[type='range'] {
+  width: 100%;
+  accent-color: #4f46e5;
+  cursor: pointer;
+}
+
+.notificationSettingField strong {
+  color: #4f46e5;
+}
+
+.notificationSettingsReset {
+  align-self: flex-start;
+  padding: 7px 10px;
+  border: 1px solid #d0d5dd;
+  border-radius: 7px;
+  background: #fff;
+  color: #475467;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.notificationSettingsReset:hover {
+  background: #f8fafc;
+}
+
+/* 알림 종 애니메이션 */
+.notificationBellShake {
+  transform-origin: top center;
+  animation: notificationBellShake 0.8s ease-in-out;
+}
+
+.notificationBellBounce {
+  animation: notificationBellBounce 0.8s ease-in-out;
+}
+
+.notificationBellPulse {
+  animation: notificationBellPulse 0.8s ease-in-out;
+}
+
+@keyframes notificationBellShake {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  15%,
+  45%,
+  75% {
+    transform: rotate(-14deg);
+  }
+  30%,
+  60%,
+  90% {
+    transform: rotate(14deg);
+  }
+}
+
+@keyframes notificationBellBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes notificationBellPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notificationBellShake,
+  .notificationBellBounce,
+  .notificationBellPulse {
+    animation: none;
+  }
+}
 /* 태블릿 */
 @media (max-width: 1024px) {
   .vehicleSummary {
@@ -2401,5 +3084,127 @@
   .rejectModal {
     animation: none;
     transition: none;
+  }
+}
+
+/* 차량 신청이 처리 완료될 때까지 유지되는 알림 종 애니메이션 */
+.notificationBellPersistentShake {
+  display: block;
+  transform-origin: top center;
+  animation: notificationBellPersistentShakeMotion 0.8s ease-in-out infinite !important;
+}
+
+@keyframes notificationBellPersistentShakeMotion {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(15deg);
+  }
+  30% {
+    transform: rotate(-15deg);
+  }
+  45% {
+    transform: rotate(12deg);
+  }
+  60% {
+    transform: rotate(-12deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+  90% {
+    transform: rotate(-5deg);
+  }
+}
+
+.notificationBellPersistentBounce {
+  display: block;
+  animation: notificationBellPersistentBounceMotion 0.7s ease-in-out infinite !important;
+}
+
+@keyframes notificationBellPersistentBounceMotion {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-6px);
+  }
+  60% {
+    transform: translateY(2px);
+  }
+}
+
+.notificationBellPersistentPulse {
+  display: block;
+  animation: notificationBellPersistentPulseMotion 0.7s ease-in-out infinite !important;
+}
+
+@keyframes notificationBellPersistentPulseMotion {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* 알림 버튼 안에서 알파카가 작게 묻히지 않도록 캐릭터와 버튼을 함께 키움 */
+.notificationButton {
+  width: 100px;
+  min-width: 100px;
+  height: 48px;
+  gap: 7px;
+  padding: 3px 9px 3px 7px;
+  overflow: visible;
+}
+
+.notificationAlpaca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 46px;
+  flex: 0 0 44px;
+  transform-origin: 50% 85%;
+}
+
+.notificationAlpaca svg {
+  display: block;
+  width: 44px;
+  height: 46px;
+  overflow: visible;
+  filter: drop-shadow(0 1px 1px rgba(108, 76, 47, 0.12));
+}
+
+.notificationAlpacaActive {
+  animation: notificationAlpacaWiggle 1.05s ease-in-out infinite;
+}
+
+@keyframes notificationAlpacaWiggle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  18% {
+    transform: translateY(-2px) rotate(-7deg);
+  }
+  36% {
+    transform: translateY(0) rotate(5deg);
+  }
+  54% {
+    transform: translateY(-3px) rotate(-4deg);
+  }
+  72% {
+    transform: translateY(0) rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notificationAlpacaActive {
+    animation: none;
   }
 }

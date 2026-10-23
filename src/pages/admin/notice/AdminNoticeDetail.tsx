@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { isAxiosError } from 'axios';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type { Notice } from '../../../mock/noticeMock';
 import {
-    getAdminNoticeList,
+    getAdminNoticeDetail,
     updateAdminNotice,
     deleteAdminNotice,
     downloadAdminNoticeFile,
@@ -39,28 +40,34 @@ export default function AdminNoticeDetail() {
     const [editPinned, setEditPinned] = useState(false);
     // 서버에서 공지사항 불러오기
     useEffect(() => {
+        let active = true;
+        setNotice(null);
+        setIsEditing(false);
+        setLoading(true);
+        setError('');
+        const noticeId = Number(id);
+        if (!id || !/^\d+$/.test(id) || !Number.isSafeInteger(noticeId) || noticeId <= 0) {
+            setError('공지사항을 찾을 수 없습니다.');
+            setLoading(false);
+            return;
+        }
         const fetchNotice = async () => {
             try {
-                setLoading(true);
-                setError('');
-                const notices = await getAdminNoticeList();
-                const selectedNotice = notices.find(
-                    (item) => item.id === Number(id)
-                );
-                if (selectedNotice) {
-                    setNotice(selectedNotice);
-                } else {
-                    setNotice(null);
-                    setError('공지사항을 찾을 수 없습니다.');
-                }
+                const selectedNotice = await getAdminNoticeDetail(noticeId);
+                if (active) setNotice(selectedNotice);
             } catch (err) {
+                if (!active) return;
                 console.error('공지사항 상세 조회 실패:', err);
-                setError('공지사항을 불러오지 못했습니다.');
+                setNotice(null);
+                setError(isAxiosError(err) && err.response?.status === 404
+                    ? '공지사항을 찾을 수 없습니다.'
+                    : '공지사항을 불러오지 못했습니다.');
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
         void fetchNotice();
+        return () => { active = false; };
     }, [id]);
     // 인증된 API 요청으로 첨부파일 다운로드
     const handleDownload = async (attachmentId: number, fileName: string) => {
@@ -111,13 +118,8 @@ export default function AdminNoticeDetail() {
                 pinnedYn: editPinned ? 'Y' : 'N',
             });
             // 저장 후 DB에서 최신 데이터 다시 조회
-            const notices = await getAdminNoticeList();
-            const updatedNotice = notices.find(
-                (item) => item.id === notice.id
-            );
-            if (updatedNotice) {
-                setNotice(updatedNotice);
-            }
+            const updatedNotice = await getAdminNoticeDetail(notice.id);
+            setNotice(updatedNotice);
             setIsEditing(false);
             alert('공지사항이 수정되었습니다.');
         } catch (err) {
