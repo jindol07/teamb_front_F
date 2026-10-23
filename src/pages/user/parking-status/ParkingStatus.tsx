@@ -4,6 +4,7 @@
  * useParkingSpaceSync(user) → U 서버 공개 현황 → 공통 스토어 → ParkingMapView.
  * 실제 예약 모달은 user/reservation/ParkingReservationModal.tsx다. 예약 생성 처리 자체는 해당 담당 모듈에 위임한다.
  */
+
 /**
  * 사용자 주차현황 및 예약 페이지
  *
@@ -27,7 +28,9 @@ import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import { useParkingSpaceSync } from '../../../shared/parking/useParkingSpaceSync';
 
-import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import type {
+  ExtendedParkingSlot,
+} from '../../../shared/parking/parking';
 
 import ParkingReservationModal from '../reservation/ParkingReservationModal';
 import './ParkingStatus.css';
@@ -52,9 +55,12 @@ interface ParkingSummary {
  *
  * 사용 가능 상태이면서 사용불가 유형이 아니어야 합니다.
  */
-// [1023_1010] 도면 클릭의 사전 조건이다. 실제 예약 가능 여부와 중복 검증은 예약 서버가 최종 판정한다.
+// [1023_1010] 도면 클릭의 사전 조건이다. 실제 예약 가능 여부와 중복 검증은 예약 서버가 최종 판정.
 function isReservable(slot: ExtendedParkingSlot): boolean {
-  return slot.status === 'EMPTY' && slot.slotType !== 'DISABLED';
+  return (
+    slot.status === 'EMPTY' &&
+    slot.slotType !== 'DISABLED'
+  );
 }
 
 /**
@@ -63,7 +69,9 @@ function isReservable(slot: ExtendedParkingSlot): boolean {
  * 전체 통계와 층별 통계에서 동일한 기준을 사용합니다.
  */
 // [1023_1010] 구획 상태를 한 범주에만 포함한다. 예약 기록 수를 그대로 사용가능 수에서 빼지 않는다.
-function calculateSummary(targetSlots: ExtendedParkingSlot[]): ParkingSummary {
+function calculateSummary(
+  targetSlots: ExtendedParkingSlot[]
+): ParkingSummary {
   const summary: ParkingSummary = {
     total: targetSlots.length,
     occupied: 0,
@@ -75,7 +83,10 @@ function calculateSummary(targetSlots: ExtendedParkingSlot[]): ParkingSummary {
 
   targetSlots.forEach((slot) => {
     // 사용 불가 상태나 유형은 가장 먼저 분류합니다.
-    if (slot.status === 'DISABLED' || slot.slotType === 'DISABLED') {
+    if (
+      slot.status === 'DISABLED' ||
+      slot.slotType === 'DISABLED'
+    ) {
       summary.disabled += 1;
       return;
     }
@@ -108,7 +119,9 @@ function calculateSummary(targetSlots: ExtendedParkingSlot[]): ParkingSummary {
  * 전체 상태 중 사용 가능한 구획의 비율을 계산합니다.
  */
 // [1023_1010] 구획이 없으면 0을 반환하여 0 나누기를 피한다.
-function getAvailablePercent(summary: ParkingSummary): number {
+function getAvailablePercent(
+  summary: ParkingSummary
+): number {
   if (summary.total === 0) return 0;
 
   return (summary.available / summary.total) * 100;
@@ -131,7 +144,8 @@ export default function ParkingStatus() {
   const [currentFloor, setCurrentFloor] = useState<number>(1);
 
   // 예약 모달에 전달할 주차구획입니다.
-  const [selectedSlot, setSelectedSlot] = useState<ExtendedParkingSlot | null>(null);
+  const [selectedSlot, setSelectedSlot] =
+    useState<ExtendedParkingSlot | null>(null);
 
   /**
    * 예약 모달 닫기
@@ -154,7 +168,9 @@ export default function ParkingStatus() {
    */
   const floorSummaries = useMemo(() => {
     return [1, 2, 3].map((floor) => {
-      const floorSlots = slots.filter((slot) => slot.floor === floor);
+      const floorSlots = slots.filter(
+        (slot) => slot.floor === floor
+      );
 
       return {
         floor,
@@ -167,7 +183,9 @@ export default function ParkingStatus() {
    * 현재 선택한 층의 주차구획
    */
   const currentFloorSlots = useMemo(() => {
-    return slots.filter((slot) => slot.floor === currentFloor);
+    return slots.filter(
+      (slot) => slot.floor === currentFloor
+    );
   }, [slots, currentFloor]);
 
   /**
@@ -187,7 +205,9 @@ export default function ParkingStatus() {
   useEffect(() => {
     if (!selectedSlot) return;
 
-    const latestSlot = slots.find((slot) => slot.id === selectedSlot.id);
+    const latestSlot = slots.find(
+      (slot) => slot.id === selectedSlot.id
+    );
 
     if (!latestSlot || !isReservable(latestSlot)) {
       setSelectedSlot(null);
@@ -198,7 +218,7 @@ export default function ParkingStatus() {
    * 층 변경
    */
   // [1023_1010] 층을 바꿀 때 선택한 구획·예약 모달 상태도 함께 정리하는 화면 처리다.
-  const handleFloorChange = (floor: number) => {
+const handleFloorChange = (floor: number) => {
     setCurrentFloor(floor);
     closeModal();
   };
@@ -209,7 +229,7 @@ export default function ParkingStatus() {
    * 사용 가능한 구획만 예약 모달을 엽니다.
    */
   // [1023_1010] 현재 표시 상태로 예약 선택 여부를 확인하고 실제 예약 처리는 별도 모달에 위임한다.
-  const handleSlotClick = (slot: ExtendedParkingSlot) => {
+const handleSlotClick = (slot: ExtendedParkingSlot) => {
     if (!isReservable(slot)) {
       return;
     }
@@ -250,6 +270,9 @@ export default function ParkingStatus() {
 
   return (
     <div className="parking-user-status">
+      {/* =====================================================
+          1. 페이지 제목
+      ===================================================== */}
       <header className="parking-user-header">
         <div className="parking-user-heading">
           <span className="parking-user-mark" aria-hidden="true">
@@ -276,6 +299,9 @@ export default function ParkingStatus() {
         </span>
       </header>
 
+      {/* =====================================================
+          2. 서버 조회 상태
+      ===================================================== */}
       {syncState === 'loading' && (
         <div role="status" className="alert alert-info">
           주차구획 정보를 불러오는 중입니다.
@@ -292,6 +318,9 @@ export default function ParkingStatus() {
         </div>
       )}
 
+      {/* =====================================================
+          3. 전체 주차장 현황
+      ===================================================== */}
       <section
         className="parking-user-overview"
         aria-labelledby="user-parking-overview-title"
@@ -340,6 +369,9 @@ export default function ParkingStatus() {
         </div>
       </section>
 
+      {/* =====================================================
+          4. 층별 주차현황
+      ===================================================== */}
       <div className="parking-user-workspace">
         <section
           className="parking-user-floor-section"
@@ -371,6 +403,7 @@ export default function ParkingStatus() {
                     <span>/ {floorData.total}면 사용가능</span>
                     <span className="parking-user-mobile-remaining">자리 남음</span>
                   </div>
+                  {/* 사용 가능 비율 */}
                   <div
                     className="parking-user-floor-progress"
                     role="progressbar"
@@ -407,6 +440,9 @@ export default function ParkingStatus() {
           </p>
         </section>
 
+        {/* =====================================================
+            5. 선택 층 상세 주차 도면
+        ===================================================== */}
         <section
           className="parking-user-map-card"
           aria-labelledby="user-parking-map-title"
@@ -445,6 +481,9 @@ export default function ParkingStatus() {
         </section>
       </div>
 
+      {/* =====================================================
+          6. 예약 담당 팀원의 모달
+      ===================================================== */}
       <ParkingReservationModal
         isOpen={selectedSlot !== null}
         slot={selectedSlot}

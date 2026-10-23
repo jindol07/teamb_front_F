@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { LuBot } from 'react-icons/lu';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import { useReservationAvailability } from './reservationAvailabilityApi';
 
 interface RecommendationModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function RecommendationModal({
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const availability = useReservationAvailability(startDate, endDate);
 
   if (!isOpen) return null;
 
@@ -128,11 +130,14 @@ export default function RecommendationModal({
         import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
       ).replace(/\/$/, '');
       const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('로그인이 필요합니다. 다시 로그인해 주세요.');
+      }
       const response = await fetch(`${apiBaseUrl}/api/recmn/recommend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -254,7 +259,13 @@ export default function RecommendationModal({
               <h4>분석 결과</h4>
               <div className="ai-recommend-item">
                 <div>
-                  {recommendedSlot ? (
+                  {recommendedSlot && availability.loading ? (
+                    <p>선택한 기간의 예약 현황을 확인하고 있습니다.</p>
+                  ) : recommendedSlot && availability.error ? (
+                    <p>{availability.error}</p>
+                  ) : recommendedSlot && !availability.availableSpaceIds?.has(recommendedSlot.parkingSpaceId ?? -1) ? (
+                    <p>{`${formatDateString(startDate)} ~ ${formatDateString(endDate)} 기간에 이미 예약된 자리입니다. 해당 기간에는 예약할 수 없습니다.`}</p>
+                  ) : recommendedSlot ? (
                     <p>
                       <span className="ai-recommend-location">
                         {`지하 ${recommendedSlot.floor}층 - ${recommendedSlot.zoneCode ?? recommendedSlot.slotNumber.replace(/[0-9]/g, '')}구역 ${recommendedSlot.slotNumber.replace(/^[^0-9]*/, '').padStart(2, '0')}번`}
@@ -267,19 +278,21 @@ export default function RecommendationModal({
                   )}
                 </div>
 
-                {recommendedSlot && (
+                {recommendedSlot && !availability.loading && (
                   <div className="d-flex gap-2">
-                    <button
-                      type="button"
-                      className="btn btn-success ai-recommend-book-button"
-                      onClick={() => {
-                        if (!startDate || !endDate) return;
-                        onSelectAndBook(recommendedSlot, startDate, endDate);
-                        onClose();
-                      }}
-                    >
-                      예약하기
-                    </button>
+                    {availability.availableSpaceIds?.has(recommendedSlot.parkingSpaceId ?? -1) && (
+                      <button
+                        type="button"
+                        className="btn btn-success ai-recommend-book-button"
+                        onClick={() => {
+                          if (!startDate || !endDate) return;
+                          onSelectAndBook(recommendedSlot, startDate, endDate);
+                          onClose();
+                        }}
+                      >
+                        예약하기
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn-outline-secondary"

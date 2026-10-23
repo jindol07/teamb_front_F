@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -6,13 +6,16 @@ import './MyBookingModal.css';
 import VehicleSearchModal from './VehicleSearchModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+import { useReservationAvailability } from './reservationAvailabilityApi';
 
 interface MyBookingModalProps {
   slot: ExtendedParkingSlot | null;
   initialStartDate: Date | null;
   initialEndDate: Date | null;
   allowSlotChange?: boolean;
+  allowDateChange?: boolean;
+  closeOnUnavailable?: boolean;
   onClose: () => void;
 }
 
@@ -30,7 +33,7 @@ interface ReservationRequest {
   end_date_str: string;
 }
 
-export default function MyBookingModal({ slot, initialStartDate, initialEndDate, allowSlotChange = true, onClose }: MyBookingModalProps) {
+export default function MyBookingModal({ slot, initialStartDate, initialEndDate, allowSlotChange = true, allowDateChange = true, closeOnUnavailable = false, onClose }: MyBookingModalProps) {
   const navigate = useNavigate();
   const slots = useParkingStore((state) => state.slots);
 
@@ -44,6 +47,39 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
   const [selectedVisitorVehicle, setSelectedVisitorVehicle] =
     useState<VisitorVehicle | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const availability = useReservationAvailability(startDate, endDate);
+  const dateAwareSlots = useMemo(() => {
+    const availableSpaceIds = availability.availableSpaceIds;
+    if (!startDate || !endDate) return slots;
+    if (!availableSpaceIds) {
+      return slots.map((parkingSlot) =>
+        parkingSlot.status === 'EMPTY'
+          ? { ...parkingSlot, status: 'UNKNOWN' as const }
+          : parkingSlot,
+      );
+    }
+    return slots.map((parkingSlot) => {
+      if (parkingSlot.status === 'OCCUPIED' || parkingSlot.status === 'DISABLED'
+          || parkingSlot.slotType === 'DISABLED') return parkingSlot;
+      const isAvailable = parkingSlot.parkingSpaceId != null
+        && availableSpaceIds.has(parkingSlot.parkingSpaceId);
+      return { ...parkingSlot, status: isAvailable ? 'EMPTY' as const : 'RESERVED' as const };
+    });
+  }, [slots, availability.availableSpaceIds, startDate, endDate]);
+
+  useEffect(() => {
+    if (!selectedSlot || !startDate || !endDate || !availability.availableSpaceIds) return;
+    if (selectedSlot.parkingSpaceId == null || !availability.availableSpaceIds.has(selectedSlot.parkingSpaceId)) {
+      const unavailableMessage = `${formatDateString(startDate)} ~ ${formatDateString(endDate)} 기간에 이미 예약된 자리입니다. 이 기간에는 예약할 수 없습니다.`;
+      if (closeOnUnavailable) {
+        alert(unavailableMessage);
+        onClose();
+        return;
+      }
+      setSelectedSlot(null);
+      setMessage(unavailableMessage);
+    }
+  }, [selectedSlot, startDate, endDate, availability.availableSpaceIds, closeOnUnavailable, onClose]);
 
   useEffect(() => {
     if (slot) {
@@ -103,6 +139,7 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
   };
 
   const handleDateClick = (value: Date) => {
+    if (!allowDateChange) return;
     setMessage('');
     const clickedDate = new Date(value);
     clickedDate.setHours(0, 0, 0, 0);
@@ -159,24 +196,28 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
       return;
     }
 
+    if (selectedSlot.status === 'OCCUPIED' || selectedSlot.status === 'DISABLED'
+        || selectedSlot.slotType === 'DISABLED') {
+      setMessage('이미 주차되어 있거나 이용할 수 없는 자리입니다.');
+      return;
+    }
+
     if (!startDate || !endDate || !selectedVisitorVehicle) {
       setMessage('시작일, 종료일, 방문 차량 정보를 모두 입력 및 선택해주세요.');
       return;
     }
 
-    // DB에서 받은 parking_space_id를 우선 사용하고, 값이 없을 때만 기존 계산 로직 사용
-    let parkingSpaceId = selectedSlot.parkingSpaceId ?? 0;
-    if (!parkingSpaceId) {
-      const slotIndex = slots.findIndex((s) => s.id === selectedSlot.id);
-      if (slotIndex !== -1) {
-        parkingSpaceId = 16 + slotIndex;
-      } else {
-        const numericMatch = selectedSlot.slotNumber?.replace(/[^0-9]/g, '');
-        parkingSpaceId = numericMatch ? 15 + Number(numericMatch) : 16;
-      }
+    if (availability.error || !availability.availableSpaceIds) {
+      setMessage(availability.error || '선택한 날짜의 자리 현황을 확인 중입니다.');
+      return;
     }
+    if (selectedSlot.parkingSpaceId == null || !availability.availableSpaceIds.has(selectedSlot.parkingSpaceId)) {
+      setMessage('선택한 날짜에는 예약할 수 없는 자리입니다.');
+      return;
+    }
+    const parkingSpaceId = selectedSlot.parkingSpaceId;
 
-    if (!Number.isSafeInteger(parkingSpaceId) || parkingSpaceId <= 0) {
+    if (parkingSpaceId == null || !Number.isSafeInteger(parkingSpaceId) || parkingSpaceId <= 0) {
       setMessage('주차 공간 ID를 확인할 수 없습니다.');
       return;
     }
@@ -277,18 +318,26 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
                 <div className="parking-map">
                   <ParkingMapView
                     mode="user"
-                    slots={slots}
+                    slots={dateAwareSlots}
                     currentFloor={currentFloor}
                     onFloorChange={(floor) => setCurrentFloor(floor)}
                     onSlotClick={(clickedSlot) => {
                       if (!allowSlotChange) return;
+                      if (availability.error || availability.loading) {
+                        setMessage(availability.error || '선택한 날짜의 자리 현황을 확인 중입니다.');
+                        return;
+                      }
                       const statusStr = String(clickedSlot.status).toUpperCase();
                       if (
-                        statusStr === 'RESERVED' ||
                         statusStr === 'OCCUPIED' ||
-                        clickedSlot.slotType === 'DISABLED'
+                        statusStr === 'DISABLED' ||
+                        clickedSlot.slotType === 'DISABLED' ||
+                        statusStr === 'UNKNOWN' ||
+                        (startDate != null && endDate != null && statusStr === 'RESERVED')
                       ) {
-                        setMessage('이미 예약되었거나 이용할 수 없는 자리입니다.');
+                        setMessage(startDate && endDate
+                          ? `${formatDateString(startDate)} ~ ${formatDateString(endDate)} 기간에는 예약할 수 없는 자리입니다.`
+                          : '현재 이용 중이거나 이용할 수 없는 자리입니다.');
                         return;
                       }
                       setSelectedSlot(clickedSlot);
@@ -327,7 +376,7 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
 
                     <div className="calendar-wrapper">
                       <Calendar
-                        disabled={!allowSlotChange}
+                      tileDisabled={() => !allowDateChange}
                         onChange={(value) => {
                           if (value instanceof Date) {
                             handleDateClick(value);
