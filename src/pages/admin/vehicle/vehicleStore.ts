@@ -54,6 +54,7 @@ export interface AdditionalVehicleRequest {
   ownername: string;
   registeredat: string;
   requestedat: string;
+  reviewedat?: string;
   requeststatus: AdditionalVehicleStatus;
   requestmemo: string;
 }
@@ -212,8 +213,9 @@ export const useVehicleStore = create<VehicleStore>((set, get) => ({
         vehicletype: item.requestedvehicletypecode ?? '',
         vehiclemodel: item.requestedvehiclemodel ?? '',
         ownername: item.requestedownername ?? '',
-        registeredat: item.requestedat ?? '',
+        registeredat: item.reviewedat ?? '',
         requestedat: item.requestedat ?? '',
+        reviewedat: item.reviewedat ?? '',
         requeststatus:
           item.requeststatuscode === 'APPROVED'
             ? '승인'
