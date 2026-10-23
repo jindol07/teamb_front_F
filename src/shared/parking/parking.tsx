@@ -1,3 +1,8 @@
+/** [1023_1010] 파일 안내
+ * 용도: 관리자·사용자·예약 도면이 공유하는 구획 타입과 도면 Props 계약.
+ * 직접 사용처: ParkingMapView, parkingSpaceAdapter, useParkingStore, SlotDetailPanel, ParkingStatus 및 사용자 예약 모달.
+ * status는 화면 코드, rawStatusCode는 응답의 코드이며 DB PK와 화면 선택용 id를 구분한다.
+ */
 /**
  * 주차구획 도메인 타입(관리자/사용자 공용).
  *

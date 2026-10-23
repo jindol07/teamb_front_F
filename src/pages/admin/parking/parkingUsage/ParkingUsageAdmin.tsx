@@ -1,3 +1,9 @@
+/** [1023_1010] 파일 안내
+ * 용도: 최근 입출차 목록과 전체 미출차 차량 집계를 보여 주는 조회 화면.
+ * 직접 사용처: AdminRouter의 parking-usage 경로.
+ * parkingUsageApi로 최근 기록과 현재 입차 목록을 따로 조회한다. 최근 목록 제한과 현재 입차 수를 혼동하지 않는다.
+ * 5초마다 보이는 문서에서 갱신하고 수동 갱신을 제공한다. 입출차 변경은 이 화면에서 수행하지 않는다.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchActiveParkingUsages, fetchParkingUsages, type ParkingUsage } from './parkingUsageApi';
 
@@ -12,6 +18,7 @@ export default function ParkingUsageAdmin() {
   const [activeError, setActiveError] = useState('');
   const requestController = useRef<AbortController | null>(null);
 
+  // [1023_1010] 최근 기록과 현재 입차 목록을 병렬 조회하고 각각의 성공·실패를 따로 표시한다.
   const refresh = useCallback(async () => {
     // 자동 조회와 수동 새로고침이 겹쳐 이전 응답이 최신 결과를 덮어쓰지 않게 한다.
     if (requestController.current) return;
@@ -58,6 +65,7 @@ export default function ParkingUsageAdmin() {
       if (requestController.current === controller) requestController.current = null;
     }
   }, []);
+  // [1023_1010] 화면 진입 시 조회하고 5초 간격으로 갱신한다. 화면 종료 시 타이머와 진행 중 요청을 정리한다.
   useEffect(() => {
     void refresh();
     const id = window.setInterval(() => { if (!document.hidden) void refresh(); }, 5000);

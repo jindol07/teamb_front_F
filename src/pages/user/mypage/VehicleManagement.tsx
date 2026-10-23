@@ -1,23 +1,37 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import axios from 'axios';
+import { userVehicleApi, type UserVehicle } from '../../../api/uservehicleApi';
 import style from './VehicleManmentag.module.css';
 
-interface Vehicle {
-  id: number;
-  carNumber: string;
-  carModel: string;
-}
-
 export default function VehicleManagement() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    { id: 1, carNumber: '12가3456', carModel: '아반떼' },
-  ]);
+  const [vehicles, setVehicles] = useState<UserVehicle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const [carNumber, setCarNumber] = useState('');
   const [carModel, setCarModel] = useState('');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isVehicleListOpen, setIsVehicleListOpen] = useState(false);
 
-  const handleAdd = () => {
+  const loadVehicles = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      setVehicles(await userVehicleApi.getMine());
+    } catch {
+      setErrorMessage('차량 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadVehicles();
+  }, [loadVehicles]);
+
+  const handleAdd = async () => {
     const number = carNumber.trim();
     const model = carModel.trim();
 
@@ -26,21 +40,26 @@ export default function VehicleManagement() {
       return;
     }
 
-    if (vehicles.some((vehicle) => vehicle.carNumber === number)) {
-      alert('이미 등록된 차량번호입니다.');
-      return;
+    setIsSubmitting(true);
+    setMessage('');
+    setErrorMessage('');
+    try {
+      await userVehicleApi.requestRegistration(number, model);
+      setCarNumber('');
+      setCarModel('');
+      setMessage('차량 등록 신청이 접수되었습니다. 관리자 승인 후 목록에 표시됩니다.');
+    } catch (error) {
+      const responseData = axios.isAxiosError(error)
+        ? (error.response?.data as { message?: string; detail?: string } | undefined)
+        : undefined;
+      const responseMessage = responseData?.message ?? responseData?.detail;
+      setErrorMessage(responseMessage ?? '차량 등록 신청에 실패했습니다. 입력 정보를 확인해주세요.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setVehicles((prev) => [
-      ...prev,
-      { id: Date.now(), carNumber: number, carModel: model },
-    ]);
-
-    setCarNumber('');
-    setCarModel('');
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (vehicle: UserVehicle) => {
     if (vehicles.length === 1) {
       alert('최소 1대의 차량은 등록되어 있어야 합니다.');
       return;
@@ -48,7 +67,13 @@ export default function VehicleManagement() {
 
     if (!confirm('차량을 삭제하시겠습니까?')) return;
 
-    setVehicles((prev) => prev.filter((vehicle) => vehicle.id !== id));
+    setErrorMessage('');
+    try {
+      await userVehicleApi.delete(vehicle.id);
+      setVehicles((prev) => prev.filter((item) => item.id !== vehicle.id));
+    } catch {
+      setErrorMessage('차량 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
   };
 
   return (
@@ -184,16 +209,12 @@ export default function VehicleManagement() {
               <div className={style['vm-summary-text']}>
                 <span>등록된 내 차량</span>
                 <strong>
-                  {vehicles.length}
+                  {isLoading ? '…' : vehicles.length}
                   <small> 대</small>
                 </strong>
                 <p>마우스를 올려 차량 목록을 확인하세요.</p>
               </div>
-
-              <span className={style['vm-summary-arrow']}>
-                {isVehicleListOpen ? '▲' : '▼'}
-              </span>
-
+              
               <div className={style['vm-summary-decoration']}>AI Alpha Parking</div>
             </button>
 
@@ -203,13 +224,17 @@ export default function VehicleManagement() {
                   <div>
                     <h2>
                       등록 차량 목록
-                      <span>{vehicles.length}</span>
+                      <span>{isLoading ? '…' : vehicles.length}</span>
                     </h2>
                     <p>등록한 차량의 정보를 확인하고 관리할 수 있어요.</p>
                   </div>
                 </div>
 
-                {vehicles.length === 0 ? (
+                {isLoading ? (
+                  <div className={style['vm-empty']}>
+                    <p>차량 목록을 불러오는 중입니다.</p>
+                  </div>
+                ) : vehicles.length === 0 ? (
                   <div className={style['vm-empty']}>
                     <div>🚘</div>
                     <h3>등록된 차량이 없습니다.</h3>
@@ -223,10 +248,10 @@ export default function VehicleManagement() {
 
                         <div className={style['vm-car-info']}>
                           <span className={style['vm-car-badge']}>등록 차량</span>
-                          <h3>{vehicle.carModel}</h3>
+                            <h3>{vehicle.vehicleModel}</h3>
                           <p>
                             <span>차량번호</span>
-                            <strong>{vehicle.carNumber}</strong>
+                            <strong>{vehicle.vehicleNumber}</strong>
                           </p>
                         </div>
 
@@ -234,7 +259,7 @@ export default function VehicleManagement() {
                           <button
                             type="button"
                             className={style['vm-delete-btn']}
-                            onClick={() => handleDelete(vehicle.id)}
+                            onClick={() => void handleDelete(vehicle)}
                           >
                             삭제
                           </button>
@@ -247,13 +272,13 @@ export default function VehicleManagement() {
             )}
           </section>
 
-          {/* 새 차량 등록 */}
+          {/* 추가 차량 등록 */}
           <section className={`${style['vm-panel']} ${style['vm-register']}`}>
             <div className={style['vm-panel-heading']}>
               <div className={style['vm-section-icon']}>＋</div>
               <div>
-                <h2>새 차량 등록</h2>
-                <p>차량번호와 차종을 입력해주세요.</p>
+                <h2>추가 차량 등록</h2>
+                <p>차량번호와 차종을 정확하게 입력해주세요.</p>
               </div>
             </div>
 
@@ -261,7 +286,7 @@ export default function VehicleManagement() {
               className={style['vm-register-form']}
               onSubmit={(e) => {
                 e.preventDefault();
-                handleAdd();
+                void handleAdd();
               }}
             >
               <label className={style['vm-field']}>
@@ -284,10 +309,12 @@ export default function VehicleManagement() {
                 />
               </label>
 
-              <button className={style['vm-primary-btn']} type="submit">
-                ＋ 차량 등록
+              <button className={style['vm-primary-btn']} type="submit" disabled={isSubmitting}>
+                {isSubmitting ? '신청 중…' : '＋ 차량 등록 신청'}
               </button>
             </form>
+            {message && <p role="status" className="mt-3 mb-0 text-success">{message}</p>}
+            {errorMessage && <p role="alert" className="mt-3 mb-0 text-danger">{errorMessage}</p>}
           </section>
 
           <footer className={style['vm-footer']}>
