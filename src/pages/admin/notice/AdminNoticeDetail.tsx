@@ -38,11 +38,15 @@ export default function AdminNoticeDetail() {
     const [editContent, setEditContent] = useState('');
     const [editImportant, setEditImportant] = useState(false);
     const [editPinned, setEditPinned] = useState(false);
+    const [editFile, setEditFile] = useState<File | null>(null);
+    const [removeAttachment, setRemoveAttachment] = useState(false);
     // 서버에서 공지사항 불러오기
     useEffect(() => {
         let active = true;
         setNotice(null);
         setIsEditing(false);
+        setEditFile(null);
+        setRemoveAttachment(false);
         setLoading(true);
         setError('');
         const noticeId = Number(id);
@@ -91,10 +95,14 @@ export default function AdminNoticeDetail() {
         setEditContent(notice.content);
         setEditImportant(notice.isImportant);
         setEditPinned(notice.isPinned);
+        setEditFile(null);
+        setRemoveAttachment(false);
         setIsEditing(true);
     };
     // 수정 취소
     const handleCancelEdit = () => {
+        setEditFile(null);
+        setRemoveAttachment(false);
         setIsEditing(false);
     };
     // 수정 저장
@@ -116,10 +124,12 @@ export default function AdminNoticeDetail() {
                 content: editContent,
                 importantYn: editImportant ? 'Y' : 'N',
                 pinnedYn: editPinned ? 'Y' : 'N',
-            });
+            }, editFile ?? undefined, removeAttachment);
             // 저장 후 DB에서 최신 데이터 다시 조회
             const updatedNotice = await getAdminNoticeDetail(notice.id);
             setNotice(updatedNotice);
+            setEditFile(null);
+            setRemoveAttachment(false);
             setIsEditing(false);
             alert('공지사항이 수정되었습니다.');
         } catch (err) {
@@ -257,6 +267,50 @@ export default function AdminNoticeDetail() {
                                 >
                                     상단 고정
                                 </label>
+                            </div>
+                            {/* 저장 전까지 기존 파일은 유지하며, 새 파일은 1개만 선택합니다. */}
+                            <div className="mb-3">
+                                <label className="form-label" htmlFor="editNoticeFile">첨부파일</label>
+                                <div className="small mb-2">
+                                    현재 파일: {notice.attachments.map((file) => file.name).join(', ') || '없음'}
+                                    {notice.attachments.length > 0 && (
+                                        <button type="button" className="btn btn-sm btn-outline-danger ms-2"
+                                            disabled={isSaving}
+                                            onClick={() => {
+                                                setRemoveAttachment(!removeAttachment);
+                                                setEditFile(null);
+                                            }}>
+                                            {removeAttachment ? '삭제 취소' : '기존 파일 삭제'}
+                                        </button>
+                                    )}
+                                </div>
+                                {removeAttachment && <div className="small text-danger mb-2">저장 시 기존 첨부파일이 삭제됩니다.</div>}
+                                <input
+                                    id="editNoticeFile"
+                                    type="file"
+                                    className="form-control"
+                                    disabled={isSaving}
+                                    onChange={(e) => {
+                                        const selected = e.target.files?.[0];
+                                        if (selected) {
+                                            setEditFile(selected);
+                                            setRemoveAttachment(false);
+                                        }
+                                        e.target.value = '';
+                                    }}
+                                />
+                                <div className="form-text">
+                                    첨부파일은 1개만 등록할 수 있습니다. 삭제를 지정하거나 새 파일을 선택하지 않으면 기존 파일이 유지됩니다.
+                                </div>
+                                {editFile && (
+                                    <div className="d-flex align-items-center gap-2 mt-2">
+                                        <span className="small">선택한 파일: {editFile.name}</span>
+                                        <button type="button" className="btn btn-sm btn-outline-secondary"
+                                            disabled={isSaving} onClick={() => setEditFile(null)}>
+                                            선택 취소
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </>
                     ) : (
