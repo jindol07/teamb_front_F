@@ -1,3 +1,9 @@
+/** [1023_1010] 파일 안내
+ * 용도: 사용자 전체·층별 현황과 모바일 도면을 표시하고 선택 구획을 예약 모달에 전달한다.
+ * 직접 사용처: UserRouter의 parking-status 경로.
+ * useParkingSpaceSync(user) → U 서버 공개 현황 → 공통 스토어 → ParkingMapView.
+ * 실제 예약 모달은 user/reservation/ParkingReservationModal.tsx다. 예약 생성 처리 자체는 해당 담당 모듈에 위임한다.
+ */
 /**
  * 사용자 주차현황 및 예약 페이지
  *
@@ -46,6 +52,7 @@ interface ParkingSummary {
  *
  * 사용 가능 상태이면서 사용불가 유형이 아니어야 합니다.
  */
+// [1023_1010] 도면 클릭의 사전 조건이다. 실제 예약 가능 여부와 중복 검증은 예약 서버가 최종 판정한다.
 function isReservable(slot: ExtendedParkingSlot): boolean {
   return slot.status === 'EMPTY' && slot.slotType !== 'DISABLED';
 }
@@ -55,6 +62,7 @@ function isReservable(slot: ExtendedParkingSlot): boolean {
  *
  * 전체 통계와 층별 통계에서 동일한 기준을 사용합니다.
  */
+// [1023_1010] 구획 상태를 한 범주에만 포함한다. 예약 기록 수를 그대로 사용가능 수에서 빼지 않는다.
 function calculateSummary(targetSlots: ExtendedParkingSlot[]): ParkingSummary {
   const summary: ParkingSummary = {
     total: targetSlots.length,
@@ -99,6 +107,7 @@ function calculateSummary(targetSlots: ExtendedParkingSlot[]): ParkingSummary {
 /**
  * 전체 상태 중 사용 가능한 구획의 비율을 계산합니다.
  */
+// [1023_1010] 구획이 없으면 0을 반환하여 0 나누기를 피한다.
 function getAvailablePercent(summary: ParkingSummary): number {
   if (summary.total === 0) return 0;
 
@@ -188,6 +197,7 @@ export default function ParkingStatus() {
   /**
    * 층 변경
    */
+  // [1023_1010] 층을 바꿀 때 선택한 구획·예약 모달 상태도 함께 정리하는 화면 처리다.
   const handleFloorChange = (floor: number) => {
     setCurrentFloor(floor);
     closeModal();
@@ -198,6 +208,7 @@ export default function ParkingStatus() {
    *
    * 사용 가능한 구획만 예약 모달을 엽니다.
    */
+  // [1023_1010] 현재 표시 상태로 예약 선택 여부를 확인하고 실제 예약 처리는 별도 모달에 위임한다.
   const handleSlotClick = (slot: ExtendedParkingSlot) => {
     if (!isReservable(slot)) {
       return;
