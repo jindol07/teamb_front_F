@@ -87,11 +87,22 @@ interface UpdateNoticeData {
 // 관리자 공지사항 수정 API
 export const updateAdminNotice = async (
     noticeId: number,
-    data: UpdateNoticeData
+    data: UpdateNoticeData,
+    file?: File,
+    removeAttachment = false
 ) => {
+    // 새 파일이 없으면 기존 JSON 수정 API를 그대로 사용합니다.
+    let payload: UpdateNoticeData | FormData = data;
+    if (file || removeAttachment) {
+        const formData = new FormData();
+        Object.entries(data).forEach(([key, value]) => formData.append(key, value));
+        if (file) formData.append('files', file);
+        if (removeAttachment) formData.append('removeAttachment', 'true');
+        payload = formData;
+    }
     const response = await adminApi.put(
         `/api/notice/${noticeId}`,
-        data
+        payload
     );
     return response.data;
 };
