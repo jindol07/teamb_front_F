@@ -1,3 +1,9 @@
+/** [1023_1010] 파일 안내
+ * 용도: 관리자 패널에서 한 구획의 전체 예약 이력을 조회·표시한다.
+ * 직접 사용처: SlotDetailPanel의 예약 내역 탭.
+ * fetchParkingReservationHistory → A ParkingSpaceController → ParkingSpaceService → parking-space.xml.
+ * 과거·취소 예약도 표시한다. 30초 조회와 수동 새로고침을 지원하며 구획 변경 시 이전 요청을 취소한다.
+ */
 import { useEffect, useState } from 'react';
 import { fetchParkingReservationHistory } from '../../../../shared/parking/parkingSpaceApi';
 import type { ParkingReservationRecord } from '../../../../shared/parking/parkingSpaceApi';
@@ -7,11 +13,13 @@ export function ParkingReservationList({ spaceId }: { spaceId?: number }) {
   const [rows, setRows] = useState<ParkingReservationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // [1023_1010] 구획 또는 수동 새로고침 버전이 바뀌면 새로 조회한다. 이전 요청·타이머는 해제한다.
   useEffect(() => {
     const controller = new AbortController();
     let inFlight = false;
     setRows([]);
     setLoading(true);
+    // [1023_1010] 진행 중 조회가 있으면 겹치지 않는다. 실패 시 빈 목록을 정상 0건으로 표시하지 않고 오류를 표시한다.
     const load = async () => {
       if (inFlight) return;
       inFlight = true;
