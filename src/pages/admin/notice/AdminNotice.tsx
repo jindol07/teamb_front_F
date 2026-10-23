@@ -395,9 +395,9 @@ export default function AdminNotice() {
                               <span
                                 className="d-inline-flex align-items-center justify-content-center flex-shrink-0"
                                 style={{ width: '20px' }}
-                                title={notice.attachments.length > 0 ? '첨부파일 있음' : undefined}
+                                title={(notice.attachmentCount ?? notice.attachments.length) > 0 ? '첨부파일 있음' : undefined}
                               >
-                                {notice.attachments.length > 0 ? '📎' : null}
+                                {(notice.attachmentCount ?? notice.attachments.length) > 0 ? '📎' : null}
                               </span>
                               <span>{notice.title}</span>
                             </div>
