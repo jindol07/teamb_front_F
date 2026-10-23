@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { loginSuccess, loginFailure, logout } from '../reducers/authReducer';
 import { AppDispatch } from "../reducers/store";
+import { adminApi, clearSession, getRefreshToken, saveTokens, userApi } from '../../api/axios';
 
 // ADMIN ---
 export const adminLogin = (username: string, password: string) =>
@@ -13,20 +14,22 @@ export const adminLogin = (username: string, password: string) =>
                 { username, password }
             );
 
-            console.log(response);
-
-            const token = response.data.accessToken;
+            const token = response.data.access_token;
+            const refreshToken = response.data.refresh_token;
 
             if (typeof token !== 'string' || !token) {
                 dispatch(loginFailure('JWT 토큰이 없습니다.'));
                 return false;
             }
-            console.log(token);
 
-            localStorage.setItem('token', token);
+            if (typeof refreshToken !== 'string' || !refreshToken) {
+                dispatch(loginFailure('리프레시 토큰이 없습니다.'));
+                return false;
+            }
+
             localStorage.setItem('username', username);
-            // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-            window.dispatchEvent(new Event('parking-auth-changed'));
+            // 관리자 세션임을 명시해 사용자 refresh와 섞이지 않게 한다.
+            saveTokens(token, refreshToken, 'admin');
 
             dispatch(loginSuccess({ username, token }));
 
@@ -43,18 +46,21 @@ export const adminLogin = (username: string, password: string) =>
         }
     };
 export const adminLogoutAction = () => async (dispatch: AppDispatch) => {
-    // 로컬 스토리지에서 토큰 제거
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-    window.dispatchEvent(new Event('parking-auth-changed'));
-    
-    try {
-        //백앤드로 로그 아웃 요청
-        await axios.get(import.meta.env.VITE_BOOT_API_BASE_URL_A + '/api/auth/logout');
+    const refreshToken = getRefreshToken();
 
-        // Redux 상태 업데이트
-        dispatch(logout());
+    // 로그인 페이지로 이동하기 전에 로컬 세션을 먼저 제거한다.
+    // 토큰이 남아 있으면 로그인 화면이 즉시 관리자 페이지로 되돌린다.
+    clearSession();
+    dispatch(logout());
+
+    try {
+        // refresh 토큰이 있을 때만 관리자 서버에 폐기를 요청한다.
+        if (refreshToken) {
+            await axios.post(
+                import.meta.env.VITE_BOOT_API_BASE_URL_A + '/api/auth/logout',
+                { refresh_token: refreshToken }
+            );
+        }
     } catch (error) {
         console.error('Logout error:', error);
     }
@@ -64,30 +70,17 @@ export const getAdmin = async (/*dispatch: AppDispatch*/) => {
     try {
         const token = localStorage.getItem('token');
 
-        const response = await axios.get(
-            import.meta.env.VITE_BOOT_API_BASE_URL_A + '/api/auth/admin',
-             {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
-
-
         if (typeof token !== 'string' || !token) {
-            // dispatch(loginFailure('JWT 토큰이 없습니다.'));
             return null;
         }
 
-        // dispatch(loginSuccess({ username, token }));
-
+        // adminApi를 사용해야 401 refresh interceptor가 동작한다.
+        const response = await adminApi.get('/api/auth/admin');
         return response;
 
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            // dispatch(loginFailure('로그인에 실패했습니다.'));
-        } else {
-            // dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
+            // 401 refresh/로그인 이동은 adminApi interceptor가 처리한다.
         }
 
         return null;
@@ -106,18 +99,21 @@ export const login = (username: string, password: string) =>
             );
 
             const token = response.data.access_token;
-            console.log(response);
+            const refreshToken = response.data.refresh_token;
 
             if (typeof token !== 'string' || !token) {
                 dispatch(loginFailure('JWT 토큰이 없습니다.'));
                 return false;
             }
-            console.log(token);
 
-            localStorage.setItem('token', token);
+            if (typeof refreshToken !== 'string' || !refreshToken) {
+                dispatch(loginFailure('리프레시 토큰이 없습니다.'));
+                return false;
+            }
+
             localStorage.setItem('username', username);
-            // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-            window.dispatchEvent(new Event('parking-auth-changed'));
+            // access/refresh 토큰을 함께 저장하고 웹소켓에 변경을 알린다.
+            saveTokens(token, refreshToken, 'user');
 
             dispatch(loginSuccess({ username, token }));
 
@@ -134,17 +130,20 @@ export const login = (username: string, password: string) =>
         }
     };
 export const logoutAction = () => async (dispatch: AppDispatch) => {
-    // 로컬 스토리지에서 토큰 제거
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    // 주차 웹소켓에 토큰 변경을 알린다. 토큰 값은 이벤트에 담지 않는다.
-    window.dispatchEvent(new Event('parking-auth-changed'));
+    const refreshToken = getRefreshToken();
+
+    // 로그인 페이지로 이동하기 전에 로컬 세션을 먼저 제거한다.
+    clearSession();
+    dispatch(logout());
 
     try {
-        //백앤드로 로그 아웃 요청
-        await axios.get(import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/logout');
-        // Redux 상태 업데이트
-        dispatch(logout());
+        // refresh 토큰이 있을 때만 서버 폐기 요청을 보낸다.
+        if (refreshToken) {
+            await axios.post(
+                import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/logout',
+                { refresh_token: refreshToken }
+            );
+        }
     } catch (error) {
         console.error('Logout error:', error);
     }
@@ -154,30 +153,17 @@ export const getOffice = async (/*dispatch: AppDispatch*/) => {
     try {
         const token = localStorage.getItem('token');
 
-        const response = await axios.get(
-            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/office',
-             {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }
-        );
-
-
         if (typeof token !== 'string' || !token) {
-            // dispatch(loginFailure('JWT 토큰이 없습니다.'));
             return null;
         }
 
-        // dispatch(loginSuccess({ username, token }));
-
+        // raw axios 대신 userApi를 사용해야 401 refresh interceptor가 동작한다.
+        const response = await userApi.get('/api/auth/office');
         return response;
 
     } catch (error) {
         if (axios.isAxiosError(error)) {
-            // dispatch(loginFailure('로그인에 실패했습니다.'));
-        } else {
-            // dispatch(loginFailure('알 수 없는 오류가 발생했습니다.'));
+            // 401 refresh/로그인 이동은 axios interceptor가 처리한다.
         }
 
         return null;

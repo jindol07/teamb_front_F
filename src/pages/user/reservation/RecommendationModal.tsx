@@ -3,6 +3,7 @@ import { LuBot } from 'react-icons/lu';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import { authFetch } from '../../../api/axios';
 
 interface RecommendationModalProps {
   isOpen: boolean;
@@ -127,12 +128,10 @@ export default function RecommendationModal({
       const apiBaseUrl = (
         import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
       ).replace(/\/$/, '');
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${apiBaseUrl}/api/recmn/recommend`, {
+      const response = await authFetch(`${apiBaseUrl}/api/recmn/recommend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'include',
         body: JSON.stringify({

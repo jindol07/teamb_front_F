@@ -6,6 +6,7 @@
 import { useEffect } from 'react';
 import { fetchPublicParkingSpaces, getParkingWebSocketUrl } from './parkingSpaceApi';
 import type { ParkingServer } from './parkingSpaceApi';
+import { refreshAccessToken, refreshAdminAccessToken } from '../../api/axios';
 import { normalizeParkingSpaces } from './parkingSpaceResponse';
 import { useParkingStore } from './useParkingStore';
 
@@ -27,6 +28,7 @@ function createParkingSpaceSync(server: ParkingServer) {
   let generation = 0;
   let token: string | null = null;
   let authBlocked = false;
+  let renewing = false;
 
   // 화면에서의 사전 확인이다. 실제 서명/권한 검증은 항상 서버가 수행한다.
   function tokenExpiration(value: string): number {
@@ -84,16 +86,52 @@ function createParkingSpaceSync(server: ParkingServer) {
     useParkingStore.getState().failSync(message);
   }
 
+  /** access 토큰 만료 시 refresh를 1회 시도하고, 실패하면 동기화를 중단한다. */
+  async function renewSession(message: string): Promise<void> {
+    if (renewing) return;
+
+    renewing = true;
+    const sessionToken = token;
+    const refreshSession = server === 'user'
+      ? refreshAccessToken
+      : refreshAdminAccessToken;
+
+    try {
+      const newAccessToken = await refreshSession();
+
+      if (subscribers === 0) return;
+
+      // refresh 중 로그아웃/재로그인으로 세션이 바뀌었으면
+      // 새 세션의 동기화가 처리하도록 이 요청은 버린다.
+      if (localStorage.getItem('token') !== sessionToken) {
+        return;
+      }
+
+      if (newAccessToken) {
+        // refreshAccessToken이 parking-auth-changed를 발생시킨다.
+        // 이벤트가 아직 처리되지 않은 경우를 대비해 직접 재시작한다.
+        if (localStorage.getItem('token') !== token) {
+          handleAuthChange();
+        }
+        return;
+      }
+
+      failAuthentication(message);
+    } finally {
+      renewing = false;
+    }
+  }
+
   function scheduleExpiration(expiresAt: number) {
     window.clearTimeout(expirationTimer);
     const remaining = expiresAt - Date.now();
     if (remaining <= 0) {
-      failAuthentication('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      void renewSession('로그인이 만료되었습니다. 다시 로그인해 주세요.');
       return;
     }
     expirationTimer = window.setTimeout(() => {
       if (localStorage.getItem('token') !== token) handleAuthChange();
-      else scheduleExpiration(expiresAt);
+      else void renewSession('로그인이 만료되었습니다. 다시 로그인해 주세요.');
     }, Math.min(remaining, 2147483647));
   }
 
@@ -245,10 +283,10 @@ function createParkingSpaceSync(server: ParkingServer) {
       socket = null;
       if (!isCurrent(epoch, currentToken)) {
         handleAuthChange();
-      } else if (event.code === 4001 || event.code === 4003 || event.code === 1008) {
-        failAuthentication(event.code === 4001
-          ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
-          : '주차현황 연결 인증에 실패했습니다. 다시 로그인해 주세요.');
+      } else if (event.code === 4001) {
+        void renewSession('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+      } else if (event.code === 4003 || event.code === 1008) {
+        failAuthentication('주차현황 연결 인증에 실패했습니다. 다시 로그인해 주세요.');
       } else {
         startPolling();
         scheduleReconnect();
@@ -265,7 +303,13 @@ function createParkingSpaceSync(server: ParkingServer) {
     }
     try {
       const expiresAt = tokenExpiration(token);
-      if (expiresAt <= Date.now()) throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+
+      // 이미 만료된 access 토큰이면 refresh부터 시도한다.
+      if (expiresAt <= Date.now()) {
+        void renewSession('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+        return;
+      }
+
       scheduleExpiration(expiresAt);
       startPolling();
       connect();

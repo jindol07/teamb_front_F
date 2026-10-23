@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { FaCarSide, FaRegClock, FaRegStar, FaStar } from 'react-icons/fa';
+import { authFetch } from '../../../api/axios';
 import './VehicleSearchModal.css';
 
 export interface VehicleItem {
@@ -37,16 +38,14 @@ export default function VehicleSearchModal({
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
-        const token = localStorage.getItem('token');
         setLoading(true);
-        const response = await fetch(
+        const response = await authFetch(
           import.meta.env.VITE_BOOT_API_BASE_URL_U +
             `/api/vehicles/number/${encodeURIComponent(query)}`,
           {
             method: 'GET',
             credentials: 'include',
             headers: {
-              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
             },
             signal: controller.signal,

@@ -8,7 +8,12 @@
  * - 공개용 DTO는 민감 정보를 제외한다는 의미이며, 로그인 정책은 서버가 적용.
  */
 import type { AxiosRequestConfig } from 'axios';
-import { adminApi, userApi } from '../../api/axios';
+import {
+  adminApi,
+  refreshAccessToken,
+  refreshAdminAccessToken,
+  userApi,
+} from '../../api/axios';
 import { normalizeParkingSpace, normalizeParkingSpaces } from './parkingSpaceResponse';
 
 // 개인별 서버 주소는 Vite 환경변수(.env, .env.local)에서 읽습니다.
@@ -153,14 +158,29 @@ async function request<T>(
   server: ParkingServer = 'admin',
 ): Promise<T> {
   const client = server === 'user' ? userApi : adminApi;
-  const response = await client.request<T>({
+  const requestConfig: AxiosRequestConfig = {
     ...init,
     baseURL: server === 'user' ? USER_CONTEXT : ADMIN_CONTEXT,
     url: `/api/parking/spaces${path}`,
     withCredentials: true,
     validateStatus: () => true,
     headers: { ...init.headers, 'Cache-Control': 'no-cache' },
-  });
+  };
+
+  let response = await client.request<T>(requestConfig);
+
+  // validateStatus: () => true 때문에 401이 reject되지 않는다.
+  // 서버별 refresh를 수행한 뒤 원 요청을 1회 재시도한다.
+  if (response.status === 401) {
+    const newAccessToken = server === 'user'
+      ? await refreshAccessToken()
+      : await refreshAdminAccessToken();
+
+    if (newAccessToken) {
+      response = await client.request<T>(requestConfig);
+    }
+  }
+
   if (response.status < 200 || response.status >= 300) {
     if (response.status === 401)
       throw new Error('로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해 주세요.');
