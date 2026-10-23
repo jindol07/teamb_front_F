@@ -9,8 +9,10 @@ export default function VehicleManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [formAlert, setFormAlert] = useState('');
 
   const [carNumber, setCarNumber] = useState('');
+  const [ownerName, setOwnerName] = useState('');
   const [carModel, setCarModel] = useState('');
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isVehicleListOpen, setIsVehicleListOpen] = useState(false);
@@ -33,10 +35,11 @@ export default function VehicleManagement() {
 
   const handleAdd = async () => {
     const number = carNumber.trim();
+    const owner = ownerName.trim();
     const model = carModel.trim();
 
-    if (!number || !model) {
-      alert('차량번호와 차종을 입력해주세요.');
+    if (!number || !owner || !model) {
+      setFormAlert('차량번호, 차주명과 차종을 입력해주세요.');
       return;
     }
 
@@ -44,8 +47,9 @@ export default function VehicleManagement() {
     setMessage('');
     setErrorMessage('');
     try {
-      await userVehicleApi.requestRegistration(number, model);
+      await userVehicleApi.requestRegistration(number, owner, model);
       setCarNumber('');
+      setOwnerName('');
       setCarModel('');
       setMessage('차량 등록 신청이 접수되었습니다. 관리자 승인 후 목록에 표시됩니다.');
     } catch (error) {
@@ -189,6 +193,37 @@ export default function VehicleManagement() {
             </div>
           )}
 
+          {formAlert && (
+            <div
+              className={style['vm-alert-backdrop']}
+              onClick={() => setFormAlert('')}
+            >
+              <section
+                className={style['vm-alert-modal']}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="vm-alert-title"
+                aria-describedby="vm-alert-message"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className={style['vm-alert-content']}>
+                  <h2 id="vm-alert-title">입력 내용을 확인해주세요</h2>
+                  <p id="vm-alert-message">{formAlert}</p>
+                </div>
+                <footer className={style['vm-alert-footer']}>
+                  <button
+                    type="button"
+                    className={style['vm-alert-confirm']}
+                    autoFocus
+                    onClick={() => setFormAlert('')}
+                  >
+                    확인
+                  </button>
+                </footer>
+              </section>
+            </div>
+          )}
+
           {/* 등록 차량 요약 및 드롭다운 */}
           <section
             className={`${style['vm-summary']} ${
@@ -247,7 +282,17 @@ export default function VehicleManagement() {
                         <div className={style['vm-car-visual']}>🚙</div>
 
                         <div className={style['vm-car-info']}>
-                          <span className={style['vm-car-badge']}>등록 차량</span>
+                          <span
+                            className={`${style['vm-car-badge']} ${
+                              vehicle.registrationTypeCode === 'ADDITIONAL'
+                                ? style['vm-car-badge-additional']
+                                : style['vm-car-badge-initial']
+                            }`}
+                          >
+                            {vehicle.registrationTypeCode === 'ADDITIONAL'
+                              ? '추가 등록 차량'
+                              : '기존 등록 차량'}
+                          </span>
                             <h3>{vehicle.vehicleModel}</h3>
                           <p>
                             <span>차량번호</span>
@@ -278,7 +323,7 @@ export default function VehicleManagement() {
               <div className={style['vm-section-icon']}>＋</div>
               <div>
                 <h2>추가 차량 등록</h2>
-                <p>차량번호와 차종을 정확하게 입력해주세요.</p>
+                <p>차량번호, 차주명, 차종을 정확하게 입력해주세요.</p>
               </div>
             </div>
 
@@ -299,6 +344,15 @@ export default function VehicleManagement() {
                 />
               </label>
 
+              <label className={style['vm-field']}>
+                <span>차주명</span>
+                <input
+                  value={ownerName}
+                  onChange={(e) => setOwnerName(e.target.value)}
+                  placeholder="예: 홍길동"
+                  maxLength={50}
+                />
+              </label>
               <label className={style['vm-field']}>
                 <span>차종</span>
                 <input
