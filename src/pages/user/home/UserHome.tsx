@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import type { Notice as NoticeType } from '../../../mock/noticeMock';
 import { getUserNoticeList } from '../../../api/userNoticeApi';
 import {
+  getUserNotificationRecipientId,
+  getUserNotifications,
+  getUserUnreadNotificationCount,
+  markUserNotificationRead,
+  type Notification,
+} from '../../../api/notificationApi';
+import {
   FaParking,
   FaRegCalendarCheck,
   FaBell,
@@ -15,17 +22,6 @@ import { LuBot, LuHand } from 'react-icons/lu';
 import style from './UserHome.module.css';
 
 import parkingBanner from '../../../assets/스마트 지하주차장 출입구.png';
-
-interface Notification {
-  notificationid: number;
-  recipienttypecode: string;
-  recipientid: number;
-  notificationtypecode: string;
-  message: string;
-  targetid: number | null;
-  isread: boolean;
-  createdat: string;
-}
 
 type AnimationStyle = 'shake' | 'bounce' | 'pulse' | 'none';
 
@@ -230,9 +226,18 @@ export default function UserHome() {
     }
   });
 
-  // TODO: 실제 로그인 사용자 ID로 교체
-  const recipientId = 1;
+  const [recipientId, setRecipientId] = useState<number | null | undefined>(undefined);
   const recipientType = 'USER';
+
+  useEffect(() => {
+    let active = true;
+    void getUserNotificationRecipientId().then((id) => {
+      if (active) setRecipientId(id);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -276,29 +281,34 @@ export default function UserHome() {
   useEffect(() => {
     let active = true;
 
+    if (recipientId === undefined) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (recipientId === null) {
+      setNotifications([]);
+      setUnreadCount(0);
+      setNotificationError(true);
+      console.error('알림 조회 실패: 로그인 토큰에서 사용자 ID를 확인할 수 없습니다.');
+      return () => {
+        active = false;
+      };
+    }
+
     const fetchNotifications = async () => {
       try {
-        const params = new URLSearchParams({
-          recipienttypecode: recipientType,
-          recipientid: String(recipientId),
-        });
-
-        const [listResponse, countResponse] = await Promise.all([
-          fetch(`/api/notifications?${params.toString()}`),
-          fetch(`/api/notifications/unread/count?${params.toString()}`),
+        const params = { recipienttypecode: recipientType, recipientid: recipientId };
+        const [list, count] = await Promise.all([
+          getUserNotifications(params),
+          getUserUnreadNotificationCount(params),
         ]);
-
-        if (!listResponse.ok || !countResponse.ok) {
-          throw new Error('알림 조회에 실패했습니다.');
-        }
-
-        const list: Notification[] = await listResponse.json();
-        const countData: { count: number } = await countResponse.json();
 
         if (!active) return;
 
         setNotifications(list);
-        setUnreadCount(countData.count);
+        setUnreadCount(count);
         setNotificationError(false);
       } catch (err) {
         if (!active) return;
@@ -322,41 +332,22 @@ export default function UserHome() {
   // 알림 읽음 처리
   const handleReadNotification = async (notification: Notification) => {
     try {
-      if (!notification.isread) {
-        const params = new URLSearchParams({
-          recipienttypecode: recipientType,
-          recipientid: String(recipientId),
-        });
-
-        const response = await fetch(
-          `/api/notifications/${notification.notificationid}/read?${params.toString()}`,
-          { method: 'POST' },
-        );
-
-        if (!response.ok) {
-          throw new Error('알림 읽음 처리에 실패했습니다.');
-        }
+      if (recipientId === null || recipientId === undefined) {
+        throw new Error('로그인 사용자 ID를 확인할 수 없습니다.');
       }
 
-      const params = new URLSearchParams({
-        recipienttypecode: recipientType,
-        recipientid: String(recipientId),
-      });
+      const params = { recipienttypecode: recipientType, recipientid: recipientId };
+      if (!notification.isread) {
+        await markUserNotificationRead(notification.notificationid, params);
+      }
 
-      const [listResponse, countResponse] = await Promise.all([
-        fetch(`/api/notifications?${params.toString()}`),
-        fetch(`/api/notifications/unread/count?${params.toString()}`),
+      const [list, count] = await Promise.all([
+        getUserNotifications(params),
+        getUserUnreadNotificationCount(params),
       ]);
 
-      if (!listResponse.ok || !countResponse.ok) {
-        throw new Error('알림 갱신에 실패했습니다.');
-      }
-
-      const list: Notification[] = await listResponse.json();
-      const countData: { count: number } = await countResponse.json();
-
       setNotifications(list);
-      setUnreadCount(countData.count);
+      setUnreadCount(count);
       setNotificationError(false);
     } catch (err) {
       console.error('알림 읽음 처리 실패:', err);

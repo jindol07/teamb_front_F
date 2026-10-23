@@ -31,7 +31,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 15px;
-    min-height: 75px;
+    min-height: 48px;
     padding: 0 42px;
     background: #fff;
     border-bottom: 1px solid var(--vm-border);
@@ -75,7 +75,7 @@
 .vm-content {
     width: 100%;
     max-width: 1240px;
-    padding: 15px 42px 24px;
+    padding: 8px 42px 24px;
     margin: 0 auto;
 }
 
