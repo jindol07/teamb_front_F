@@ -122,6 +122,11 @@ export default function VehicleDetail({ vehicleId, onBack, onEdit }: VehicleDeta
             <span>등록일</span>
             <strong>{vehicle.registeredat || '-'}</strong>
           </div>
+
+          <div className={styles.vehicleDetailRow}>
+            <span>수정일</span>
+            <strong>{vehicle.updatedat || '-'}</strong>
+          </div>
         </div>
 
         <div className={styles.vehicleDetailActions}>

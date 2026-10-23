@@ -130,13 +130,6 @@ export default function AdditionalVehicleDetail({
         </div>
 
         <div className={styles.formGroup}>
-          <label>등록 희망일</label>
-          <div className={styles.selectedUnit}>
-            <span>{request.registeredat || '-'}</span>
-          </div>
-        </div>
-
-        <div className={styles.formGroup}>
           <label>신청 일시</label>
           <div className={styles.selectedUnit}>
             <span>
@@ -148,6 +141,15 @@ export default function AdditionalVehicleDetail({
             </span>
           </div>
         </div>
+
+        {request.reviewedat && (
+          <div className={styles.formGroup}>
+            <label>검토 일시</label>
+            <div className={styles.selectedUnit}>
+              <span>{new Date(request.reviewedat).toLocaleString('ko-KR')}</span>
+            </div>
+          </div>
+        )}
 
         {request.requeststatus === '반려' && (
           <div className={styles.formGroup}>

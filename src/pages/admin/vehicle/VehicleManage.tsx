@@ -17,6 +17,7 @@ import {
 } from './vehicleStore';
 
 type ActiveMenu = 'list' | 'register' | 'upload' | 'status' | 'edit' | 'plus' | 'detail';
+type VehicleSummaryFilter = 'ALL' | 'REGISTERED' | 'ADDITIONAL' | 'VISIT' | 'PENDING';
 
 interface VehicleForm {
   vehiclenumber: string;
@@ -334,6 +335,8 @@ export default function VehicleManage() {
   const [prediction, setPrediction] = useState<VehiclePrediction | null>(null);
   const [predictionChecked, setPredictionChecked] = useState(false);
   const [vehicleSearch, setVehicleSearch] = useState('');
+  const [vehicleSummaryFilter, setVehicleSummaryFilter] =
+    useState<VehicleSummaryFilter>('ALL');
   const [fineForm, setFineForm] = useState<FineForm>(createInitialFineForm());
   const [editingFineId, setEditingFineId] = useState<number | null>(null);
   const [deletingFine, setDeletingFine] = useState<Fine | null>(null);
@@ -367,8 +370,29 @@ export default function VehicleManage() {
     ...vehicles.map((vehicle) => ({ ...vehicle, isApprovedRequest: false })),
     ...approvedRequestRows,
   ];
+  const isRegisteredVehicle = (vehicle: (typeof vehicleRows)[number]) =>
+    vehicle.isApprovedRequest ||
+    ('registrationstatuscode' in vehicle &&
+      ['REGISTERED', 'APPROVED'].includes(vehicle.registrationstatuscode));
 
   const filteredVehicles = vehicleRows.filter((vehicle) => {
+    const matchesSummaryFilter = (() => {
+      switch (vehicleSummaryFilter) {
+        case 'REGISTERED':
+          return isRegisteredVehicle(vehicle);
+        case 'ADDITIONAL':
+          return vehicle.registrationtypecode === 'ADDITIONAL' && isRegisteredVehicle(vehicle);
+        case 'VISIT':
+          return vehicle.vehicletypecode === 'VISIT';
+        case 'PENDING':
+          return 'registrationstatuscode' in vehicle &&
+            vehicle.registrationstatuscode === 'REQUESTED';
+        default:
+          return true;
+      }
+    })();
+    if (!matchesSummaryFilter) return false;
+
     const keyword = vehicleSearch.trim().toLowerCase();
 
     if (!keyword) return true;
@@ -965,45 +989,66 @@ export default function VehicleManage() {
               </div>
 
               <div className={styles.vehicleSummary}>
-                <div className={styles.summaryItem}>
+                <button
+                  type="button"
+                  className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'ALL' ? styles.summaryItemActive : ''}`}
+                  aria-pressed={vehicleSummaryFilter === 'ALL'}
+                  onClick={() => setVehicleSummaryFilter('ALL')}
+                >
                   <span>전체 차량</span>
                   <strong>
                     {vehicleRows.length}
                     <small>대</small>
                   </strong>
-                </div>
-                <div className={styles.summaryItem}>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'REGISTERED' ? styles.summaryItemActive : ''}`}
+                  aria-pressed={vehicleSummaryFilter === 'REGISTERED'}
+                  onClick={() => setVehicleSummaryFilter('REGISTERED')}
+                >
                   <span>등록된 차량</span>
                   <strong className={styles.summaryNormal}>
+                    {vehicleRows.filter(isRegisteredVehicle).length}
+                    <small>대</small>
+                  </strong>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'ADDITIONAL' ? styles.summaryItemActive : ''}`}
+                  aria-pressed={vehicleSummaryFilter === 'ADDITIONAL'}
+                  onClick={() => setVehicleSummaryFilter('ADDITIONAL')}
+                >
+                  <span>추가 등록 차량</span>
+                  <strong>
                     {
                       vehicleRows.filter(
                         (v) =>
-                          v.isApprovedRequest ||
-                          ('registrationstatuscode' in v &&
-                            v.registrationstatuscode === 'REGISTERED'),
+                          v.registrationtypecode === 'ADDITIONAL' &&
+                          isRegisteredVehicle(v),
                       ).length
                     }
                     <small>대</small>
                   </strong>
-                </div>
-                <div className={styles.summaryItem}>
-                  <span>추가 등록 차량</span>
-                  <strong>
-                    {
-                      vehicleRows.filter((v) => v.registrationtypecode === 'ADDITIONAL')
-                        .length
-                    }
-                    <small>대</small>
-                  </strong>
-                </div>
-                <div className={styles.summaryItem}>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'VISIT' ? styles.summaryItemActive : ''}`}
+                  aria-pressed={vehicleSummaryFilter === 'VISIT'}
+                  onClick={() => setVehicleSummaryFilter('VISIT')}
+                >
                   <span>방문 차량</span>
                   <strong className={styles.summaryStopped}>
                     {vehicles.filter((v) => v.vehicletypecode === 'VISIT').length}
                     <small>대</small>
                   </strong>
-                </div>
-                <div className={styles.summaryItem}>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'PENDING' ? styles.summaryItemActive : ''}`}
+                  aria-pressed={vehicleSummaryFilter === 'PENDING'}
+                  onClick={() => setVehicleSummaryFilter('PENDING')}
+                >
                   <span>접수중인 차량</span>
                   <strong>
                     {
@@ -1012,7 +1057,7 @@ export default function VehicleManage() {
                     }
                     <small>대</small>
                   </strong>
-                </div>
+                </button>
               </div>
 
               {vehicleRows.length > 0 && (
@@ -1049,9 +1094,12 @@ export default function VehicleManage() {
                   <button
                     type="button"
                     className={styles.secondaryButton}
-                    onClick={() => setVehicleSearch('')}
+                    onClick={() => {
+                      setVehicleSearch('');
+                      setVehicleSummaryFilter('ALL');
+                    }}
                   >
-                    검색 초기화
+                    필터 초기화
                   </button>
                 </div>
               ) : (
@@ -1100,6 +1148,10 @@ export default function VehicleManage() {
                             {vehicle.registrationtypecode === 'ADDITIONAL'
                               ? '추가 등록'
                               : '기존 등록'}
+                            {'registrationstatuscode' in vehicle &&
+                              vehicle.registrationstatuscode === 'REJECTED' && (
+                                <small> · 반려</small>
+                              )}
                             {vehicle.isApprovedRequest && <small> · 신청 승인</small>}
                           </td>
                         </tr>
@@ -1288,7 +1340,7 @@ export default function VehicleManage() {
                           <th>차량 모델</th>
                           <th>차주</th>
                           <th>호수</th>
-                          <th>신청일</th>
+                          <th>승인일</th>
                           <th>구분</th>
                         </tr>
                       </thead>
