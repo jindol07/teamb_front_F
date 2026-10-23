@@ -50,7 +50,14 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
   const availability = useReservationAvailability(startDate, endDate);
   const dateAwareSlots = useMemo(() => {
     const availableSpaceIds = availability.availableSpaceIds;
-    if (!availableSpaceIds) return slots;
+    if (!startDate || !endDate) return slots;
+    if (!availableSpaceIds) {
+      return slots.map((parkingSlot) =>
+        parkingSlot.status === 'EMPTY'
+          ? { ...parkingSlot, status: 'UNKNOWN' as const }
+          : parkingSlot,
+      );
+    }
     return slots.map((parkingSlot) => {
       if (parkingSlot.status === 'OCCUPIED' || parkingSlot.status === 'DISABLED'
           || parkingSlot.slotType === 'DISABLED') return parkingSlot;
@@ -58,7 +65,7 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
         && availableSpaceIds.has(parkingSlot.parkingSpaceId);
       return { ...parkingSlot, status: isAvailable ? 'EMPTY' as const : 'RESERVED' as const };
     });
-  }, [slots, availability.availableSpaceIds]);
+  }, [slots, availability.availableSpaceIds, startDate, endDate]);
 
   useEffect(() => {
     if (!selectedSlot || !startDate || !endDate || !availability.availableSpaceIds) return;

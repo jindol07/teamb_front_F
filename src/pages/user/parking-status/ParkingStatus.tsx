@@ -33,6 +33,7 @@ import type {
 } from '../../../shared/parking/parking';
 
 import ParkingReservationModal from '../reservation/ParkingReservationModal';
+import './ParkingStatus.css';
 
 /**
  * 주차현황 통계 타입
@@ -243,46 +244,60 @@ const handleSlotClick = (slot: ExtendedParkingSlot) => {
     {
       label: '전체 주차면',
       value: allSummary.total,
-      color: 'text-dark',
+      tone: 'total',
     },
     {
       label: '현재 주차',
       value: allSummary.occupied,
-      color: 'text-primary',
+      tone: 'occupied',
     },
     {
       label: '예약됨',
       value: allSummary.reserved,
-      color: 'text-warning',
+      tone: 'reserved',
     },
     {
       label: '사용 가능',
       value: allSummary.available,
-      color: 'text-success',
+      tone: 'available',
     },
     {
       label: '사용 불가',
       value: allSummary.disabled,
-      color: 'text-secondary',
+      tone: 'disabled',
     },
   ];
 
   return (
-    <div className="container-fluid py-4 px-3 px-md-4">
-
+    <div className="parking-user-status">
       {/* =====================================================
           1. 페이지 제목
       ===================================================== */}
-      <div className="mb-4">
-        <h2 className="fw-bold text-dark fs-3 mb-1">
-          주차현황 및 예약
-        </h2>
-
-        <p className="text-muted small mb-0">
-          전체 주차현황을 확인하고, 원하는 층의 빈 구획을
-          선택하여 예약할 수 있습니다.
-        </p>
-      </div>
+      <header className="parking-user-header">
+        <div className="parking-user-heading">
+          <span className="parking-user-mark" aria-hidden="true">
+            P
+          </span>
+          <div>
+            <p className="parking-user-eyebrow">주차 안내</p>
+            <h2>주차현황 및 예약</h2>
+            <p className="parking-user-description">
+              층별 빈자리를 확인하고 사용가능 구획을 선택하세요.
+            </p>
+          </div>
+        </div>
+        <span
+          className={`parking-user-connection parking-user-connection--${syncState}`}
+          role="status"
+        >
+          <i aria-hidden="true" />
+          {syncState === 'ready'
+            ? '현황 조회 정상'
+            : syncState === 'error'
+              ? '연결 확인 필요'
+              : '현황 불러오는 중'}
+        </span>
+      </header>
 
       {/* =====================================================
           2. 서버 조회 상태
@@ -292,189 +307,162 @@ const handleSlotClick = (slot: ExtendedParkingSlot) => {
           주차구획 정보를 불러오는 중입니다.
         </div>
       )}
-
       {syncState === 'error' && (
         <div role="alert" className="alert alert-danger">
           주차구획 조회 실패: {syncError}
         </div>
       )}
-
-      {syncState === 'ready' && (
-        <div className="alert alert-light py-2 small">
-          DB 주차구획 {slots.length}건 조회 완료
+      {allSummary.unknown > 0 && (
+        <div role="status" className="alert alert-warning">
+          상태 확인이 필요한 구획이 {allSummary.unknown}면 있습니다.
         </div>
       )}
 
       {/* =====================================================
           3. 전체 주차장 현황
       ===================================================== */}
-      <section className="mb-4">
-        <h5 className="fw-bold mb-3">
-          전체 주차장 현황
-        </h5>
-
-        <div className="row g-3">
+      <section
+        className="parking-user-overview"
+        aria-labelledby="user-parking-overview-title"
+      >
+        <div className="parking-user-mobile-overview" aria-label="전체 주차장 현황">
+          <div className="parking-user-mobile-available">
+            <span>사용가능</span>
+            <strong>
+              {allSummary.available}
+              <small> / 전체 {allSummary.total}면</small>
+            </strong>
+            <span className="parking-user-mobile-live">실시간</span>
+          </div>
+          <div className="parking-user-mobile-counts">
+            <span>
+              주차중 <b>{allSummary.occupied}</b>
+            </span>
+            <span>
+              예약됨 <b>{allSummary.reserved}</b>
+            </span>
+            <span>
+              사용불가 <b>{allSummary.disabled}</b>
+            </span>
+          </div>
+        </div>
+        <div className="parking-user-section-heading">
+          <h3 id="user-parking-overview-title">전체 주차장 현황</h3>
+          <span>지하 1–3층 통합</span>
+        </div>
+        <div className="parking-user-stats">
           {totalCards.map((card) => (
             <div
               key={card.label}
-              className="col-6 col-md-4 col-xl"
+              className={`parking-user-stat parking-user-stat--${card.tone}`}
             >
-              <div className="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
-                <div className="text-secondary small mb-1">
-                  {card.label}
-                </div>
-
-                <div className={`fs-3 fw-bold ${card.color}`}>
-                  {card.value}
-                  <span className="fs-6 fw-normal text-muted ms-1">
-                    면
-                  </span>
-                </div>
+              <div className="parking-user-stat-label">
+                <i aria-hidden="true" />
+                {card.label}
               </div>
+              <strong>
+                {card.value}
+                <span>면</span>
+              </strong>
             </div>
           ))}
         </div>
-
-        {allSummary.unknown > 0 && (
-          <div className="alert alert-warning mt-3 mb-0">
-            상태를 확인할 수 없는 구획이
-            {' '}{allSummary.unknown}면 있습니다.
-          </div>
-        )}
       </section>
 
       {/* =====================================================
           4. 층별 주차현황
       ===================================================== */}
-      <section className="mb-4">
-        <h5 className="fw-bold mb-3">
-          층별 주차현황
-        </h5>
-
-        <div className="row g-3">
-          {floorSummaries.map((floorData) => {
-            const isSelected =
-              currentFloor === floorData.floor;
-
-            const availablePercent =
-              getAvailablePercent(floorData);
-
-            return (
-              <div
-                key={floorData.floor}
-                className="col-12 col-md-4"
-              >
+      <div className="parking-user-workspace">
+        <section
+          className="parking-user-floor-section"
+          aria-labelledby="user-parking-floors-title"
+        >
+          <div className="parking-user-section-heading">
+            <h3 id="user-parking-floors-title">층별 주차현황</h3>
+            <span>층을 선택하면 도면이 바뀝니다.</span>
+          </div>
+          <div className="parking-user-floors">
+            {floorSummaries.map((floorData) => {
+              const isSelected = currentFloor === floorData.floor;
+              const availablePercent = getAvailablePercent(floorData);
+              return (
                 <button
+                  key={floorData.floor}
                   type="button"
-                  onClick={() =>
-                    handleFloorChange(floorData.floor)
-                  }
+                  className={`parking-user-floor${isSelected ? ' is-selected' : ''}`}
                   aria-pressed={isSelected}
-                  className={[
-                    'card w-100 text-start p-3 rounded-3 bg-white',
-                    'shadow-sm h-100',
-                    isSelected
-                      ? 'border border-primary border-2'
-                      : 'border border-light',
-                  ].join(' ')}
-                  style={{ cursor: 'pointer' }}
+                  aria-label={`지하 ${floorData.floor}층 도면 보기`}
+                  onClick={() => handleFloorChange(floorData.floor)}
                 >
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <span className="fw-bold text-dark">
-                      지하 {floorData.floor}층
+                  <div className="parking-user-floor-heading">
+                    <strong>지하 {floorData.floor}층</strong>
+                    <span>{isSelected ? '선택됨' : `전체 ${floorData.total}면`}</span>
+                  </div>
+                  <div className="parking-user-floor-count">
+                    <strong>{floorData.available}</strong>
+                    <span>/ {floorData.total}면 사용가능</span>
+                    <span className="parking-user-mobile-remaining">자리 남음</span>
+                  </div>
+                  {/* 사용 가능 비율 */}
+                  <div
+                    className="parking-user-floor-progress"
+                    role="progressbar"
+                    aria-valuenow={availablePercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`지하 ${floorData.floor}층 사용가능 비율`}
+                  >
+                    <span style={{ width: `${availablePercent}%` }} />
+                  </div>
+                  <div className="parking-user-floor-summary">
+                    <span>
+                      주차 중 <b>{floorData.occupied}</b>
                     </span>
-
-                    {isSelected && (
-                      <span className="badge bg-primary">
-                        선택됨
+                    <span>
+                      예약 <b>{floorData.reserved}</b>
+                    </span>
+                    <span>
+                      사용불가 <b>{floorData.disabled}</b>
+                    </span>
+                    {floorData.unknown > 0 && (
+                      <span>
+                        확인필요 <b>{floorData.unknown}</b>
                       </span>
                     )}
                   </div>
-
-                  <div className="d-flex align-items-baseline gap-1 mb-2">
-                    <span className="fs-3 fw-bold text-success">
-                      {floorData.available}
-                    </span>
-
-                    <span className="small text-muted">
-                      / {floorData.total}면 사용 가능
-                    </span>
-                  </div>
-
-                  {/* 사용 가능 비율 */}
-                  <div
-                    className="progress mb-3"
-                    style={{ height: '7px' }}
-                  >
-                    <div
-                      className="progress-bar bg-success"
-                      role="progressbar"
-                      style={{
-                        width: `${availablePercent}%`,
-                      }}
-                      aria-valuenow={availablePercent}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`지하 ${floorData.floor}층 사용 가능 비율`}
-                    />
-                  </div>
-
-                  <div className="small text-muted">
-                    <div className="d-flex justify-content-between mb-1">
-                      <span>주차 중</span>
-                      <span>{floorData.occupied}면</span>
-                    </div>
-
-                    <div className="d-flex justify-content-between mb-1">
-                      <span>예약됨</span>
-                      <span>{floorData.reserved}면</span>
-                    </div>
-
-                    <div className="d-flex justify-content-between">
-                      <span>사용 불가</span>
-                      <span>{floorData.disabled}면</span>
-                    </div>
-
-                    {floorData.unknown > 0 && (
-                      <div className="d-flex justify-content-between mt-1 text-warning">
-                        <span>상태 확인 필요</span>
-                        <span>{floorData.unknown}면</span>
-                      </div>
-                    )}
-                  </div>
                 </button>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+          <p className="parking-user-selection-help">
+            <span aria-hidden="true">↗</span> 도면의 사용가능 구획을 선택하면 예약 화면이
+            열립니다.
+          </p>
+        </section>
 
-      {/* =====================================================
-          5. 선택 층 상세 주차 도면
-      ===================================================== */}
-      <section>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold mb-0">
-            주차장 상세 도면
-          </h5>
-
-          <span className="badge bg-secondary">
-            지하 {currentFloor}층
-          </span>
-        </div>
-
-        <div className="card border-0 shadow-sm rounded-3 p-3 p-md-4 bg-white">
-          <div className="d-flex justify-content-between w-100 mb-3">
-            <span className="small text-secondary">
-              현재 층 전체 {currentFloorSummary.total}면
+        {/* =====================================================
+            5. 선택 층 상세 주차 도면
+        ===================================================== */}
+        <section
+          className="parking-user-map-card"
+          aria-labelledby="user-parking-map-title"
+        >
+          <div className="parking-user-map-heading">
+            <div>
+              <h3 id="user-parking-map-title">주차장 상세 도면</h3>
+              <p>원하시는 구획을 선택해 예약 정보를 확인하세요.</p>
+            </div>
+            <span className="parking-user-floor-tag">지하 {currentFloor}층</span>
+          </div>
+          <div className="parking-user-map-summary">
+            <span>
+              현재 층 전체 <strong>{currentFloorSummary.total}면</strong>
             </span>
-
-            <span className="small fw-semibold text-success">
-              사용 가능 {currentFloorSummary.available}면
+            <span>
+              사용가능 <strong>{currentFloorSummary.available}면</strong>
             </span>
           </div>
-
-          <div className="d-flex justify-content-center w-100">
+          <div className="parking-user-map-body">
             <ParkingMapView
               mode="user"
               slots={slots}
@@ -482,17 +470,16 @@ const handleSlotClick = (slot: ExtendedParkingSlot) => {
               onFloorChange={handleFloorChange}
               onSlotClick={handleSlotClick}
               selectedSlotId={selectedSlot?.id ?? null}
+              compactControls
             />
           </div>
-
           {currentFloorSlots.length > 0 && (
-            <p className="text-secondary small mt-3 mb-0 text-center">
-              사용 가능한 빈 구획을 선택하면 예약 화면이 열립니다.
-              실제 예약 가능 여부는 예약 서비스에서 최종 확인합니다.
+            <p className="parking-user-reservation-note">
+              실제 예약 가능 여부는 예약 시 최종 확인됩니다.
             </p>
           )}
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* =====================================================
           6. 예약 담당 팀원의 모달
@@ -502,7 +489,6 @@ const handleSlotClick = (slot: ExtendedParkingSlot) => {
         slot={selectedSlot}
         onClose={closeModal}
       />
-
     </div>
   );
 }
