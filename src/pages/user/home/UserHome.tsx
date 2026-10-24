@@ -380,7 +380,7 @@ export default function UserHome() {
     <div className={`container py-4 ${style.userHome}`}>
       <div className={style.homeHeader}>
         <h2 className="page-title mb-0">
-          환영합니다 <LuHand color="gold" />
+          환영합니다 - 배포T <LuHand color="gold" />
         </h2>
 
         {/* 알림 버튼 */}
