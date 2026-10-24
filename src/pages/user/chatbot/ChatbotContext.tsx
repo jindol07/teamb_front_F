@@ -181,10 +181,9 @@ function ChatbotSession({ children }: { children: ReactNode }) {
                     '상담 저장이 확인되지 않았습니다.'
                 );
             }
-            if (!active.current || localStorage.getItem('token') !== requestToken) return;
             conversationId.current = data.conversation_id;
             retryRequest.current = null;
-            setStorageNotice(data.storage_notice ?? (data.saved ? '' : '대화가 서버에 저장되지 않았습니다.'));
+            setStorageNotice(data.storage_notice ?? '');
             // 실제 AI 답변 표시
             const assistantMessage: ChatMessage = {
                 id: Date.now() + 1,

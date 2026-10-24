@@ -50,7 +50,6 @@ export default function AdminNoticeTable({ notices }: AdminNoticeTableProps) {
                         {notice.isPinned && <span className="badge bg-dark">고정</span>}
                       </div>
                       {/* 첨부파일 아이콘 / 제목 영역 */}
-                      {/* 첨부파일 아이콘 / 제목 영역 */}
                       <div className="d-flex align-items-center gap-2">
                         {/* 첨부파일 유무와 관계없이 동일한 너비 확보 */}
                         <span
