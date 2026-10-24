@@ -257,16 +257,14 @@
     clip-path: inset(0);
 }
 
-.alpharking-launcher:hover .alpharking-character::before,
-.alpharking-launcher:focus-visible .alpharking-character::before {
+.alpharking-launcher:hover .alpharking-character::before {
     animation-play-state: paused;
     background-image: url('/images/alpharking-poses.png') !important;
     background-position: 85% center !important;
     clip-path: inset(0 12%) !important;
 }
 
-.alpharking-launcher:hover .alpharking-character,
-.alpharking-launcher:focus-visible .alpharking-character {
+.alpharking-launcher:hover .alpharking-character {
     animation: alpharking-wave .8s ease-in-out infinite alternate;
 }
 
@@ -285,8 +283,7 @@
     pointer-events: none;
 }
 
-.alpharking-launcher:hover .alpharking-greeting,
-.alpharking-launcher:focus-visible .alpharking-greeting {
+.alpharking-launcher:hover .alpharking-greeting {
     opacity: 1;
 }
 
@@ -298,12 +295,6 @@
     to {
         transform: rotate(3deg) translateY(-2px);
     }
-}
-
-.alpharking-launcher:focus-visible {
-    animation-play-state: paused;
-    outline: 2px solid #0d6efd;
-    outline-offset: 3px;
 }
 
 /* 좁은 화면과 터치 환경에서는 움직이는 버튼을 쫓아 누를 필요가 없도록 고정합니다. */
