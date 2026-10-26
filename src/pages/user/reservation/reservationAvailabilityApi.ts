@@ -71,9 +71,10 @@ export function useReservationAvailability(
       setError(null);
 
       try {
-        const apiBaseUrl = (
-          import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
-        ).replace(/\/$/, '');
+        // const apiBaseUrl = (
+        //   import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
+        // ).replace(/\/$/, '');
+        const apiBaseUrl = "";
         const query = new URLSearchParams({
           start_date_str: startDateString,
           end_date_str: endDateString,

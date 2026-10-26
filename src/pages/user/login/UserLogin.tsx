@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useAppDispatch } from '../../../auth/reducers/store';
 import { RootState } from '../../../auth/reducers';
-import { login } from '../../../auth/actions/authActions';
+import { login, startNaverLogin } from '../../../auth/actions/authActions';
 import { parseJwt } from '../../../auth/jwtUtils';
 
 /**
@@ -14,6 +14,7 @@ export default function UserLogin() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+    const [naverLoading, setNaverLoading] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -39,6 +40,41 @@ export default function UserLogin() {
 
     // redux 설정 추가 --------------------------------------------------
     const dispatch = useAppDispatch();
+
+    // 네이버 로그인 실패 사유 표시 (콜백 페이지에서 ?naver=... 로 돌아온다)
+    useEffect(() => {
+        const naver = new URLSearchParams(location.search).get('naver');
+        if (!naver) return;
+
+        if (naver === 'cancel') {
+            setErrorMessage('네이버 로그인이 취소되었습니다.');
+            return;
+        }
+
+        if (naver === 'state') {
+            setErrorMessage('로그인 요청이 만료되었습니다. 다시 시도해주세요.');
+            return;
+        }
+
+        const detail = sessionStorage.getItem('naver_login_error');
+        sessionStorage.removeItem('naver_login_error');
+        setErrorMessage(detail || '네이버 로그인에 실패했습니다.');
+    }, [location.search]);
+
+    // 네이버 로그인 시작: 서버가 만든 authorize URL로 이동한다.
+    const handleNaverLogin = async () => {
+        setErrorMessage('');
+        setNaverLoading(true);
+
+        // 로그인 후 돌아갈 경로를 콜백 페이지에 넘긴다.
+        sessionStorage.setItem('naver_redirect_path', redirectPath);
+
+        const started = await startNaverLogin();
+        if (!started.ok) {
+            setNaverLoading(false);
+            setErrorMessage(started.message);
+        }
+    };
     // const error = useSelector((state: RootState) => state.auth.error);
     // ---------------------------------------------------------------------
 
@@ -92,8 +128,8 @@ export default function UserLogin() {
                         style={{ backgroundColor: '#03C75A', border: 'none' }}
                         type="button"
                         className="btn btn-primary w-100 mb-3"
-                        onClick={() => {
-                        }}
+                        disabled={naverLoading}
+                        onClick={handleNaverLogin}
                     >
                         <div className="">
                             <div
