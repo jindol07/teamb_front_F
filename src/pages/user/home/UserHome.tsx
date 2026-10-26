@@ -206,6 +206,18 @@ function AlpacaMascot() {
 }
 
 
+const getNotificationTitle = (type: string): string => {
+  switch (type) {
+    case 'REPORT_REWARD': return '신고 승인 및 마일리지 적립';
+    case 'REPORT_PENALTY': return '신고 검토 결과';
+    case 'REPORT_REJECTED': return '신고 미승인';
+    case 'VEHICLE_APPROVED': return '차량 등록 승인';
+    case 'VEHICLE_REJECTED': return '차량 등록 반려';
+    case 'VEHICLE_REQUEST': return '차량 등록 신청';
+    default: return '알림';
+  }
+};
+
 export default function UserHome() {
   const [latestNotice, setLatestNotice] = useState<NoticeType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -529,15 +541,7 @@ export default function UserHome() {
                       }`}
                     >
                       <div className={style.notificationItemTop}>
-                        <strong>
-                          {notification.notificationtypecode === 'VEHICLE_APPROVED'
-                            ? '차량 등록 승인'
-                            : notification.notificationtypecode === 'VEHICLE_REJECTED'
-                              ? '차량 등록 반려'
-                              : notification.notificationtypecode === 'VEHICLE_REQUEST'
-                                ? '차량 등록 신청'
-                                : '알림'}
-                        </strong>
+                        <strong>{getNotificationTitle(notification.notificationtypecode)}</strong>
 
                         {notification.isread ? (
                           <FaCheck color="#94a3b8" size={12} aria-label="읽음" />

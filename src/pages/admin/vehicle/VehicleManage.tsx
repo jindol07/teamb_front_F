@@ -1,10 +1,12 @@
-import { ChangeEvent, DragEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, DragEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { adminApi } from '../../../api/axios';
+import { listReportsForAdmin, type ReportRecord } from '../../../api/reportApi';
 import styles from './Vehicle.module.css';
 import ApartmentMap from './apartment/ApartmentMap';
 import VehicleDetail from './VehicleDetail';
 import AdditionalVehicleManagement from './AdditionalVehicleManagement';
 import AdditionalVehicleDetail from './AdditionalDetail';
+import AdminReportManagement from './AdminReportManagement';
 import { getAdmin } from '../../../auth/actions/authActions';
 import {
   AdditionalVehicleRequest,
@@ -16,7 +18,7 @@ import {
   VehicleType,
 } from './vehicleStore';
 
-type ActiveMenu = 'list' | 'register' | 'upload' | 'status' | 'edit' | 'plus' | 'detail';
+type ActiveMenu = 'list' | 'register' | 'upload' | 'status' | 'edit' | 'plus' | 'detail' | 'report';
 type VehicleSummaryFilter = 'ALL' | 'REGISTERED' | 'ADDITIONAL' | 'VISIT' | 'PENDING';
 
 interface VehicleForm {
@@ -51,6 +53,7 @@ const MENU_ITEMS: {
   { key: 'upload', label: '파일 업로드' },
   { key: 'status', label: '주정차 관리' },
   { key: 'plus', label: '신청 관리' },
+  { key: 'report', label: '신고 검토' },
 ];
 
 const getToday = (): string => {
@@ -116,6 +119,20 @@ export default function VehicleManage() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<number[]>([]);
   const [isNotificationSettingsLoaded, setIsNotificationSettingsLoaded] = useState(false);
+  const [reportRecords, setReportRecords] = useState<ReportRecord[]>([]);
+  const refreshReportRecords = useCallback(async () => {
+    try {
+      setReportRecords(await listReportsForAdmin());
+    } catch (error) {
+      console.error('신고 알림 조회 실패:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshReportRecords();
+    const timer = window.setInterval(() => void refreshReportRecords(), 5000);
+    return () => window.clearInterval(timer);
+  }, [refreshReportRecords]);
 
   const handleNotificationClick = (request: AdditionalVehicleRequest) => {
     setReadNotificationIds((prev) =>
@@ -159,10 +176,11 @@ export default function VehicleManage() {
   const pendingNotifications = additionalVehicleRequests.filter(
     (request) => request.requeststatus !== '승인' && request.requeststatus !== '반려',
   );
+  const pendingReports = reportRecords.filter((report) => report.statuscode === 'RECEIVED');
 
   const unreadNotificationCount = pendingNotifications.filter(
     (request) => !readNotificationIds.includes(request.id),
-  ).length;
+  ).length + pendingReports.length;
   const approveAdditionalVehicleRequest = useVehicleStore(
     (state) => state.approveAdditionalVehicleRequest,
   );
@@ -301,7 +319,10 @@ export default function VehicleManage() {
     )
       return;
 
-    const currentIds = pendingNotifications.map((request) => request.id);
+    const currentIds = [
+      ...pendingNotifications.map((request) => request.id),
+      ...pendingReports.map((report) => -report.reportid),
+    ];
     const previousIds = previousPendingIdsRef.current;
 
     if (previousIds !== null && currentIds.some((id) => !previousIds.includes(id))) {
@@ -311,6 +332,7 @@ export default function VehicleManage() {
     previousPendingIdsRef.current = currentIds;
   }, [
     additionalVehicleRequests,
+    reportRecords,
     hasLoadedRequests,
     notificationSettings.enabled,
     notificationSettings.animation,
@@ -752,7 +774,7 @@ export default function VehicleManage() {
           <button
             type="button"
             className={styles.notificationButton}
-            aria-label={`차량 신청 알림 ${unreadNotificationCount}개`}
+            aria-label={`차량 신청 및 신고 알림 ${unreadNotificationCount}개`}
             aria-expanded={isNotificationOpen}
             onClick={() => setIsNotificationOpen((prev) => !prev)}
           >
@@ -786,7 +808,7 @@ export default function VehicleManage() {
           {isNotificationOpen && (
             <div className={styles.notificationPanel}>
               <div className={styles.notificationHeader}>
-                <strong>차량 신청 알림</strong>
+                <strong>신청 및 신고 알림</strong>
                 <span>{unreadNotificationCount}개의 새 알림</span>
               </div>
 
@@ -887,9 +909,9 @@ export default function VehicleManage() {
                 )}
               </div>
 
-              {pendingNotifications.length === 0 ? (
+              {pendingNotifications.length === 0 && pendingReports.length === 0 ? (
                 <div className={styles.notificationEmpty}>
-                  새로운 차량 신청이 없습니다.
+                  새로운 차량 신청이나 신고가 없습니다.
                 </div>
               ) : (
                 <div className={styles.notificationList}>
@@ -914,6 +936,25 @@ export default function VehicleManage() {
                       </span>
                     </button>
                   ))}
+                  {pendingReports.map((report) => (
+                    <button
+                      key={`report-${report.reportid}`}
+                      type="button"
+                      className={`${styles.notificationItem} ${styles.notificationUnread}`}
+                      onClick={() => {
+                        setIsNotificationOpen(false);
+                        setActiveMenu('report');
+                        void refreshReportRecords();
+                      }}
+                    >
+                      <span className={styles.notificationDot} />
+                      <span className={styles.notificationText}>
+                        <strong>신고 접수</strong>
+                        <span>{report.targetvehiclenumber} · {report.reporterofficenumber ?? `신고 #${report.reportid}`}</span>
+                        <small>{report.createdat ? new Date(report.createdat).toLocaleString('ko-KR') : ''}</small>
+                      </span>
+                    </button>
+                  ))}
                 </div>
               )}
 
@@ -927,6 +968,15 @@ export default function VehicleManage() {
               >
                 신청 관리로 이동
               </button>
+              {pendingReports.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.notificationFooter}
+                  onClick={() => { setIsNotificationOpen(false); setActiveMenu('report'); }}
+                >
+                  신고 검토로 이동
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -951,6 +1001,7 @@ export default function VehicleManage() {
                   alert('추가 차량 신청 목록을 불러오지 못했습니다.');
                 }
               }
+              if (key === 'report') await refreshReportRecords();
             }}
           >
             {label}
@@ -1463,6 +1514,13 @@ export default function VehicleManage() {
                 onReject={handleRejectRequest}
               />
             ))}
+
+          {activeMenu === 'report' && (
+            <AdminReportManagement
+              initialReports={reportRecords}
+              onReportsChange={setReportRecords}
+            />
+          )}
 
           {activeMenu === 'status' && (
             <div className={styles.vehicleContent}>

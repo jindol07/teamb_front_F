@@ -1,0 +1,195 @@
+.page {
+  padding: 22px;
+  border: 1px solid #e1e7ef;
+  border-radius: 12px;
+  background: #fff;
+}
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.heading h3 {
+  margin: 0 0 5px;
+  color: #223450;
+  font-size: 19px;
+}
+.heading p {
+  margin: 0;
+  color: #718096;
+  font-size: 13px;
+}
+.heading > button {
+  min-height: 35px;
+  padding: 0 12px;
+  border: 1px solid #d7e0ec;
+  border-radius: 7px;
+  background: #fff;
+  color: #405571;
+  cursor: pointer;
+}
+.message {
+  padding: 28px 8px;
+  color: #708198;
+  text-align: center;
+}
+.error {
+  margin: 0 0 12px;
+  color: #b42332;
+  font-size: 13px;
+}
+.list {
+  display: grid;
+  gap: 13px;
+}
+.card {
+  padding: 16px;
+  border: 1px solid #e0e7f0;
+  border-radius: 10px;
+}
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cardTop > div {
+  display: grid;
+  gap: 5px;
+}
+.cardTop strong {
+  color: #293d59;
+  font-size: 14px;
+}
+.cardTop span {
+  color: #8492a6;
+  font-size: 11px;
+}
+.status {
+  padding: 4px 8px;
+  border-radius: 99px;
+  font-size: 11px !important;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pending {
+  background: #fff5db;
+  color: #946200 !important;
+}
+.accepted {
+  background: #e7f7ee;
+  color: #237546 !important;
+}
+.rejected {
+  background: #f1f3f6;
+  color: #67758a !important;
+}
+.meta {
+  display: flex;
+  gap: 22px;
+  margin: 14px 0 10px;
+}
+.meta div {
+  display: flex;
+  gap: 7px;
+}
+.meta dt {
+  color: #8290a3;
+  font-size: 12px;
+}
+.meta dd {
+  margin: 0;
+  color: #344862;
+  font-size: 12px;
+  font-weight: 650;
+}
+.content {
+  margin: 0;
+  padding: 11px;
+  border-radius: 7px;
+  background: #f7f9fc;
+  color: #465a74;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+.reviewReason {
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.fields label {
+  display: grid;
+  gap: 6px;
+  color: #586b84;
+  font-size: 11px;
+  font-weight: 650;
+}
+.fields input,
+.fields select,
+.fields textarea {
+  width: 100%;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid #d7e0eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #30435d;
+  font: inherit;
+  font-size: 12px;
+}
+.fields textarea {
+  min-height: 58px;
+  resize: vertical;
+}
+.fields .reason {
+  grid-column: 1 / -1;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.actions button {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.actions button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.reject {
+  border: 1px solid #d7e0eb;
+  background: #fff;
+  color: #52647a;
+}
+.approve {
+  border: 1px solid #285fc7;
+  background: #2e6bd6;
+  color: white;
+}
+@media (max-width: 700px) {
+  .page {
+    padding: 15px;
+  }
+  .fields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .meta {
+    flex-direction: column;
+    gap: 7px;
+  }
+}

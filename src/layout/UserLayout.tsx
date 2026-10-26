@@ -4,6 +4,7 @@ import UserFooter from './UserFooter';
 import FloatingChatbot from '../components/FloatingChatbot';
 import { ChatbotProvider } from '../pages/user/chatbot/ChatbotContext';
 import RequireAuth from '../auth/RequireAuthProps'; // 만약 경로가 다르다면 기존 경로를 확인해주세요!
+import ReportButton from '../components/ui/ReportButton';
 
 /**
  * UserLayout
@@ -27,6 +28,8 @@ export default function UserLayout() {
           <UserFooter />
           {/* 사용자 페이지 공통 플로팅 AI 챗봇 */}
           <FloatingChatbot />
+          {/* 사용자 신고하기 버튼 */}
+          <ReportButton />
         </div>
       </ChatbotProvider>
     </RequireAuth>
