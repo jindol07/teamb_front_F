@@ -22,7 +22,7 @@ export default function SmartParkingStatus() {
   // 1. 초기 예약 정보 로드 및 2. 웹소켓 실시간 동기화
   useEffect(() => {
     const apiBaseUrl = (
-      import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
+      import.meta.env.VITE_BOOT_API_BASE_URL_U /*|| 'http://localhost/alpharking'*/
     ).replace(/\/+$/, '');
 
     // 최초 진입 시 REST API로 전체 예약 상태 동기화
