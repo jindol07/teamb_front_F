@@ -128,7 +128,7 @@ export default function RecommendationModal({
 
     try {
       const apiBaseUrl = (
-        import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
+        import.meta.env.VITE_BOOT_API_BASE_URL_U /*|| 'http://localhost/alpharking'*/
       ).replace(/\/$/, '');
       const response = await authFetch(`${apiBaseUrl}/api/recmn/recommend`, {
         method: 'POST',
