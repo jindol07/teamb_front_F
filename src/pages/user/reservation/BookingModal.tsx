@@ -7,6 +7,7 @@ import VehicleSearchModal from './VehicleSearchModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import { authFetch } from '../../../api/axios';
 
 interface BookingModalProps {
   slot: ExtendedParkingSlot | null;
@@ -180,12 +181,10 @@ export default function BookingModal({ slot, onClose }: BookingModalProps) {
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
       const targetUrl = '/api/reservation';
-      const response = await fetch(import.meta.env.VITE_BOOT_API_BASE_URL_U + targetUrl, {
+      const response = await authFetch(import.meta.env.VITE_BOOT_API_BASE_URL_U + targetUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         credentials: 'include',

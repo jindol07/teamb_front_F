@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LuBot } from 'react-icons/lu';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import { authFetch } from '../../../api/axios';
 import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 import { useReservationAvailability } from './reservationAvailabilityApi';
 
@@ -129,15 +130,10 @@ export default function RecommendationModal({
       const apiBaseUrl = (
         import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
       ).replace(/\/$/, '');
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('로그인이 필요합니다. 다시 로그인해 주세요.');
-      }
-      const response = await fetch(`${apiBaseUrl}/api/recmn/recommend`, {
+      const response = await authFetch(`${apiBaseUrl}/api/recmn/recommend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify({
