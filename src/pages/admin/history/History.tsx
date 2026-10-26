@@ -25,7 +25,8 @@ const FIELD_LABELS: Record<string, string> = {
   reporthistoryid: '이력 번호', noticehistoryid: '이력 번호', parkingspacehistoryid: '이력 번호',
   reportid: '신고 번호', reporterofficeid: '신고자 사무실 ID', reporterofficenumber: '신고자 사무실',
   targetvehicleid: '대상 차량 ID', targetvehiclenumber: '신고 대상 차량번호', reporttypecode: '신고 유형',
-  revieweradminid: '검토 관리자 번호', reviewreason: '처리 의견',
+  revieweradminid: '검토 관리자 번호', reviewreason: '처리 의견', actortypecode: '변경 주체',
+  changetypecode: '변경 유형', changereason: '변경 사유',
   officename: '관리사무소', officenumber: '관리사무소 번호', mileagetypecode: '구분',
   amount: '마일리지', description: '내용', referencetypecode: '관련 유형', referenceid: '관련 번호',
   vehiclenumber: '차량번호', parkingreservationid: '예약 번호', parkingspaceid: '주차공간 번호',
@@ -37,7 +38,10 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const normalizeField = (key: string) => key.replace(/[_-]/g, '').toLowerCase();
-const NOTICE_HISTORY_HIDDEN_FIELDS = new Set(['actorid', 'filepath', 'storedname']);
+const ACTOR_ID_HIDDEN_FIELDS = new Set(['actorid']);
+const NOTICE_HISTORY_HIDDEN_FIELDS = new Set(['filepath', 'storedname']);
+const MILEAGE_HISTORY_HIDDEN_FIELDS = new Set(['office']);
+const RESERVATION_HISTORY_HIDDEN_FIELDS = new Set(['reservation']);
 const isDateTimeField = (field: string) => {
   const normalized = normalizeField(field);
   return /(?:at|date|time)$/.test(normalized) || normalized === 'validfrom' || normalized === 'validto';
@@ -73,7 +77,7 @@ const fetchCategoryRecords = async (table: string, signal: AbortSignal): Promise
     return historyLists.flat();
   }
   if (table === 'mileage_history') {
-    const response = await userApi.get<unknown>('/api/mileage/history', { signal });
+    const response = await adminApi.get<unknown>('/api/mileage', { signal });
     return toRecords(response.data);
   }
   if (table === 'parking_reservation_history') {
@@ -85,7 +89,7 @@ const fetchCategoryRecords = async (table: string, signal: AbortSignal): Promise
     return toRecords(response.data);
   }
   if (table === 'report_history') {
-    const response = await adminApi.get<unknown>('/api/reports', { signal });
+    const response = await adminApi.get<unknown>('/api/reports/history', { signal });
     return toRecords(response.data);
   }
   throw new Error(`이력 API가 연결되지 않았습니다: ${table}`);
@@ -94,10 +98,10 @@ const fetchCategoryRecords = async (table: string, signal: AbortSignal): Promise
 const getCategoryApiPath = (table: string) => {
   if (table === 'notice_history') return '/api/notice → /api/notice/{noticeId}/history';
   if (table === 'parking_usage') return '/api/parking/usages';
-  if (table === 'mileage_history') return '사용자 API /api/mileage/history';
+  if (table === 'mileage_history') return '관리자 API /api/mileage';
   if (table === 'parking_reservation_history') return '사용자 API /api/reservation-histories';
   if (table === 'vehicle_history') return '/api/vehiclehistory';
-  if (table === 'report_history') return '관리자 서버 /api/reports';
+  if (table === 'report_history') return '관리자 서버 /api/reports/history';
   return `/api/history/${table}`;
 };
 
@@ -108,7 +112,10 @@ const renderCell = (value: unknown, field?: string) => {
   if (value == null || value === '') return '—';
   if (typeof value === 'boolean') return value ? '예' : '아니오';
   if (field && isDateTimeField(field) && typeof value === 'string') {
-    return value.replace(/(\d{1,2}:\d{2}):\d{2}(?:\.\d+)?/g, '$1');
+    return value
+      .replace('T', ' ')
+      .replace(/Z$/, '')
+      .replace(/(\d{1,2}:\d{2}):\d{2}(?:\.\d+)?/g, '$1');
   }
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
@@ -125,7 +132,8 @@ export default function History() {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [activeSource, setActiveSource] = useState<HistorySource>('user');
+  // 신고 이력 조회 API가 관리자 서버에 있으므로 History 진입 시 관리자 서버 탭을 기본으로 연다.
+  const [activeSource, setActiveSource] = useState<HistorySource>('admin');
   const visibleCategories = HISTORY_CATEGORIES.filter((category) => category.source === activeSource);
 
   const loadCounts = useCallback(async (signal: AbortSignal) => {
@@ -167,11 +175,16 @@ export default function History() {
     const keys = new Set<string>();
     records.forEach((record) => Object.keys(record).forEach((key) => keys.add(key)));
     const visibleKeys = Array.from(keys).filter((key) => (
-      selected?.table !== 'notice_history' || !NOTICE_HISTORY_HIDDEN_FIELDS.has(normalizeField(key))
+      !ACTOR_ID_HIDDEN_FIELDS.has(normalizeField(key))
+      && (selected?.table !== 'notice_history' || !NOTICE_HISTORY_HIDDEN_FIELDS.has(normalizeField(key)))
+      && (selected?.table !== 'mileage_history' || !MILEAGE_HISTORY_HIDDEN_FIELDS.has(normalizeField(key)))
+      && (selected?.table !== 'parking_reservation_history' || !RESERVATION_HISTORY_HIDDEN_FIELDS.has(normalizeField(key)))
     ));
-    if (selected?.table === 'notice_history') {
-      visibleKeys.sort((left, right) => Number(normalizeField(right) === 'noticehistoryid') - Number(normalizeField(left) === 'noticehistoryid'));
-    }
+    const isNumberColumn = (key: string) => {
+      const normalized = normalizeField(key);
+      return normalized === 'id' || FIELD_LABELS[normalized]?.endsWith('번호') === true;
+    };
+    visibleKeys.sort((left, right) => Number(isNumberColumn(right)) - Number(isNumberColumn(left)));
     return visibleKeys;
   }, [records, selected]);
 

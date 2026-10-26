@@ -9,6 +9,7 @@ import VehicleManage from '../pages/admin/vehicle/VehicleManage';
 import History from '../pages/admin/history/History';
 import AdminSignup from '../pages/admin/login/AdminSignUp';
 import AdminNoticeDetail from '../pages/admin/notice/AdminNoticeDetail';
+import AdminMileage from '../pages/admin/mileage/AdminMileage';
 
 /** 관리자 메뉴의 주차관제는 기존 현황 화면을 단일 페이지로 사용합니다. */
 export default function AdminRoutes() {
@@ -29,6 +30,7 @@ export default function AdminRoutes() {
                 <Route path="parking/manage" element={<Navigate to="/admin/parking" replace />} />
                 <Route path="parking-usage" element={<ParkingUsageAdmin />} />
                 <Route path="vehicle" element={<VehicleManage />} />
+                <Route path="mileage" element={<AdminMileage />} />
                 <Route path="history" element={<History />} />
                 <Route path="notice/:id" element={<AdminNoticeDetail />} />
             </Route>
