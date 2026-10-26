@@ -41,7 +41,10 @@ export const getUserNotifications = async (
       recipientid: params.recipientid,
       notificationtypecode: String(value.notificationtypecode ?? value.notification_type_code ?? ''),
       message: String(value.message ?? value.content ?? ''),
-      targetid: Number(value.targetid ?? value.vehicleChangeRequestId ?? value.vehicle_change_request_id) || null,
+      targetid: Number(
+        value.targetid ?? value.reportId ?? value.report_id ??
+        value.vehicleChangeRequestId ?? value.vehicle_change_request_id,
+      ) || null,
       isread: readFlag === true || readFlag === 'Y',
       createdat: String(value.createdat ?? value.created_at ?? ''),
     };
