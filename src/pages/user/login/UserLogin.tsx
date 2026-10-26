@@ -118,9 +118,9 @@ export default function UserLogin() {
                         <Link to="/user/signup" className="text-decoration-none">
                             회원가입
                         </Link>
-                        {/* <Link to="/admin/login" className="text-decoration-none">
+                        <Link to="/admin/login" className="text-decoration-none">
                             관리자 로그인 &rarr;
-                        </Link> */}
+                        </Link>
                     </div>
                 </form>
             </div>
