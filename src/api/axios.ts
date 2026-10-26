@@ -4,7 +4,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 export type AuthScope = 'user' | 'admin';
 
 const USER_API_BASE_URL = (
-    import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
+    import.meta.env.VITE_BOOT_API_BASE_URL_U /*|| 'http://localhost/alpharking'*/
 ).replace(/\/+$/, '');
 
 const ADMIN_API_BASE_URL = (
