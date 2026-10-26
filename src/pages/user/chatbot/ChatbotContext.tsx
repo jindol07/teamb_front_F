@@ -22,11 +22,6 @@ import { isAxiosError } from 'axios';
 const API_BASE_URL =
     import.meta.env.VITE_AI_API_BASE_URL ??
     'http://localhost:8001';
-// API 모드에서는 기존 로그인 JWT로 본인 데이터를 조회합니다.
-const DATA_MODE =
-    import.meta.env.VITE_INQUIRY_DATA_MODE ?? 'API';
-const MOCK_USER_ID =
-    import.meta.env.VITE_MOCK_USER_ID ?? '1';
 // FastAPI 응답 형식
 interface ChatResponse {
     conversation_id: string;
@@ -57,11 +52,6 @@ interface ChatbotContextValue {
 // 공통 Context 생성
 const ChatbotContext =
     createContext<ChatbotContextValue | null>(null);
-// =========================
-// 대화 저장 키
-// =========================
-const CHAT_MESSAGES_KEY = 'alpharking_chat_messages';
-const CHAT_CONVERSATION_KEY = 'alpharking_chat_conversation_id';
 
 // 다른 브라우저 탭에서 계정이 바뀌어도 이전 계정의 대화를 계속 표시하지 않습니다.
 const subscribeToken = (onChange: () => void) => {
@@ -78,36 +68,6 @@ const initialMessages: ChatMessage[] = [
             '안녕하세요! 주차 도우미 알파킹이에요. 빈자리, 내 예약, 주차 이용 이력이 궁금하면 물어보세요.'
     }
 ];
-// =========================
-// 브라우저에 저장된 대화 불러오기
-// =========================
-const loadSavedMessages = (): ChatMessage[] => {
-    // 실제 개인 정보는 기존 공통 저장 키에서 복원하지 않습니다.
-    if (DATA_MODE !== 'MOCK') return initialMessages;
-    try {
-        const saved = localStorage.getItem(CHAT_MESSAGES_KEY);
-        if (!saved) {
-            return initialMessages;
-        }
-        const parsed: unknown = JSON.parse(saved);
-        if (!Array.isArray(parsed)) {
-            return initialMessages;
-        }
-        const valid = parsed.every(
-            item =>
-                item !== null &&
-                typeof item === 'object' &&
-                typeof item.id === 'number' &&
-                (item.role === 'assistant' || item.role === 'user') &&
-                typeof item.content === 'string'
-        );
-        return valid && parsed.length > 0
-            ? parsed as ChatMessage[]
-            : initialMessages;
-    } catch {
-        return initialMessages;
-    }
-};
 // =========================
 // 챗봇 공통 상태 제공
 // =========================
@@ -129,13 +89,13 @@ function ChatbotSession({ children }: { children: ReactNode }) {
     const floatingScrollPosition = useRef<{ top: number; followLatest: boolean } | null>(null);
     // 전체 화면과 플로팅이 공유하는 메시지
     const [messages, setMessages] =
-        useState<ChatMessage[]>(loadSavedMessages);
+        useState<ChatMessage[]>(initialMessages);
     const [input, setInput] = useState('');
     const [voiceError, setVoiceError] =
         useState<string | null>(null);
     // API 통신 상태
     const [sending, setSending] = useState(false);
-    const [restoring, setRestoring] = useState(DATA_MODE !== 'MOCK');
+    const [restoring, setRestoring] = useState(true);
     const [error, setError] = useState('');
     const [storageNotice, setStorageNotice] = useState('');
     const retryRequest = useRef<{ question: string; id: string } | null>(null);
@@ -150,17 +110,8 @@ function ChatbotSession({ children }: { children: ReactNode }) {
     // =========================
     // 두 챗봇에서 동일한 대화 ID 사용
     const conversationId = useRef<string | null>(null);
-    // 기존 대화 ID가 있다면 재사용
-    // 없다면 새로운 UUID 생성
-    if (DATA_MODE === 'MOCK' && conversationId.current === null) {
-        const savedId = localStorage.getItem(
-            CHAT_CONVERSATION_KEY
-        );
-        conversationId.current = savedId || uuidv4();
-    }
     // 서버가 인증된 본인의 최근 대화를 조회합니다. 메시지 본문은 브라우저에 저장하지 않습니다.
     useEffect(() => {
-        if (DATA_MODE === 'MOCK') return;
         let cancelled = false;
         const requestToken = readToken();
         const restore = async () => {
@@ -184,34 +135,6 @@ function ChatbotSession({ children }: { children: ReactNode }) {
         void restore();
         return () => { cancelled = true; };
     }, []);
-    // 대화 ID를 브라우저에 저장
-    useEffect(() => {
-        if (DATA_MODE !== 'MOCK') return;
-        if (conversationId.current) {
-            try {
-                localStorage.setItem(
-                    CHAT_CONVERSATION_KEY,
-                    conversationId.current
-                );
-            } catch (err) {
-                console.error('챗봇 대화 ID 저장 실패:', err);
-            }
-        }
-    }, []);
-    // =========================
-    // 메시지 변경 시 자동 저장
-    // =========================
-    useEffect(() => {
-        if (DATA_MODE !== 'MOCK') return;
-        try {
-            localStorage.setItem(
-                CHAT_MESSAGES_KEY,
-                JSON.stringify(messages)
-            );
-        } catch (err) {
-            console.error('챗봇 대화 저장 실패:', err);
-        }
-    }, [messages]);
     // =========================
     // 공통 메시지 전송 함수
     // =========================
@@ -239,7 +162,7 @@ function ChatbotSession({ children }: { children: ReactNode }) {
         ]);
         try {
             const requestToken = localStorage.getItem('token');
-            if (DATA_MODE !== 'MOCK' && !requestToken) {
+            if (!requestToken) {
                 throw new Error('로그인 후 이용해 주세요.');
             }
             // FastAPI 전체 주소를 지정하고, JWT 첨부는 userApi 인터셉터에 맡깁니다.
@@ -248,23 +171,19 @@ function ChatbotSession({ children }: { children: ReactNode }) {
                 {
                     conversation_id: conversationId.current,
                     request_id: retryRequest.current.id,
-                    question,
-                    ...(DATA_MODE === 'MOCK'
-                        ? { mock_user_id: MOCK_USER_ID }
-                        : {})
+                    question
                 }
             );
-            if (!active.current || (DATA_MODE !== 'MOCK' && localStorage.getItem('token') !== requestToken)) return;
+            if (!active.current || localStorage.getItem('token') !== requestToken) return;
             const data = response.data;
             if (!data.saved) {
                 throw new Error(
                     '상담 저장이 확인되지 않았습니다.'
                 );
             }
-            if (!active.current || (DATA_MODE !== 'MOCK' && localStorage.getItem('token') !== requestToken)) return;
             conversationId.current = data.conversation_id;
             retryRequest.current = null;
-            setStorageNotice(data.storage_notice ?? (data.saved ? '' : '대화가 서버에 저장되지 않았습니다.'));
+            setStorageNotice(data.storage_notice ?? '');
             // 실제 AI 답변 표시
             const assistantMessage: ChatMessage = {
                 id: Date.now() + 1,

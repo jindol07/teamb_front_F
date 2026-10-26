@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import './ApartmentMap.css';
 import { useVehicleStore } from '../vehicleStore';
 
@@ -12,11 +13,14 @@ type Vehicle = {
   officenumber: string | null;
   ownerName: string;
   registeredAt: string;
+  registrationStatusCode: string;
+  registrationTypeCode: string;
 };
 type OfficeSlot = {
   officeId: number;
   no: number;
-  vehicle: Vehicle | null;
+  vehicles: Vehicle[];
+  additionalVehicles: Vehicle[];
 };
 
 type Floor = {
@@ -65,15 +69,25 @@ const createFloors = (vehicles: Vehicle[]): Floor[] =>
         // Vehicle API already supplies officenumber. Match against the map's
         // 101–104, 201–204 … numbering convention without relying on an
         // office list that this screen does not load.
-        const registeredVehicle = vehicles.find((vehicle) => {
+        const registeredVehicles = vehicles.filter((vehicle) => {
           const normalizedOfficeNumber = vehicle.officenumber?.replace(/\D/g, '');
-          return normalizedOfficeNumber === String(no);
+          const isRegistered =
+            vehicle.registrationStatusCode === 'REGISTERED' ||
+            vehicle.registrationStatusCode === 'APPROVED';
+          return normalizedOfficeNumber === String(no) && isRegistered;
         });
+        const additionalVehicles = registeredVehicles.filter(
+          (vehicle) => vehicle.registrationTypeCode === 'ADDITIONAL',
+        );
+        const baseVehicles = registeredVehicles.filter(
+          (vehicle) => vehicle.registrationTypeCode !== 'ADDITIONAL',
+        );
 
         return {
-          officeId: registeredVehicle?.officeid ?? 0,
+          officeId: baseVehicles[0]?.officeid ?? additionalVehicles[0]?.officeid ?? 0,
           no,
-          vehicle: registeredVehicle ?? null,
+          vehicles: baseVehicles,
+          additionalVehicles,
         };
       }),
     };
@@ -98,6 +112,18 @@ export default function ApartmentMap({
   const [internalSelectedUnit, setInternalSelectedUnit] = useState<OfficeSlot | null>(
     null,
   );
+  const [isUnitModalOpen, setIsUnitModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isUnitModalOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsUnitModalOpen(false);
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isUnitModalOpen]);
 
   /**
    * 차량 목록 변경 시 건물과 층 데이터를 다시 구성합니다.
@@ -112,6 +138,8 @@ export default function ApartmentMap({
         vehicleType: v.vehicletypecode,
         ownerName: v.ownername,
         registeredAt: v.registeredat ?? '',
+        registrationStatusCode: v.registrationstatuscode,
+        registrationTypeCode: v.registrationtypecode,
         building: v.building ?? '',
         officenumber: v.officenumber ?? null,
       })),
@@ -143,7 +171,7 @@ export default function ApartmentMap({
   const registeredVehicleCount = currentBuilding
     ? currentBuilding.floors
         .flatMap((floor) => floor.units)
-        .filter((unit) => unit.vehicle !== null).length
+        .filter((unit) => unit.vehicles.length > 0 || unit.additionalVehicles.length > 0).length
     : 0;
 
   /**
@@ -195,6 +223,8 @@ export default function ApartmentMap({
       return;
     }
 
+    setIsUnitModalOpen(true);
+
     if (currentBuilding && onUnitSelect) {
       onUnitSelect(String(currentBuilding.id), String(unit.no), unit.officeId);
     }
@@ -206,6 +236,7 @@ export default function ApartmentMap({
   const handleClosePanel = () => {
     setSelectedFloor(null);
     setInternalSelectedUnit(null);
+    setIsUnitModalOpen(false);
   };
 
   return (
@@ -590,7 +621,7 @@ export default function ApartmentMap({
                   const isFloorSelected = selectedFloor?.floor === floor.floor;
 
                   const floorRegistered = floor.units.filter(
-                    (unit) => unit.vehicle !== null,
+                    (unit) => unit.vehicles.length > 0 || unit.additionalVehicles.length > 0,
                   ).length;
 
                   return (
@@ -732,7 +763,7 @@ export default function ApartmentMap({
             {/* 호수 목록 */}
             <div className="officenumber">
               {selectedFloor.units.map((unit) => {
-                const isRegistered = unit.vehicle !== null;
+                const isRegistered = unit.vehicles.length > 0 || unit.additionalVehicles.length > 0;
                 const isSelected = currentUnit?.no === unit.no;
 
                 return (
@@ -752,10 +783,13 @@ export default function ApartmentMap({
                       </small>
                     </div>
 
-                    {isRegistered && unit.vehicle && (
+                    {unit.vehicles.length > 0 && (
                       <div className="unit-vehicle">
-                        <span>{unit.vehicle.vehicleNumber}</span>
-                        <small>{unit.vehicle.ownerName}</small>
+                        {unit.vehicles.map((vehicle) => (
+                          <span key={vehicle.id ?? vehicle.vehicleNumber}>
+                            {vehicle.vehicleNumber} · {vehicle.ownerName}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -763,41 +797,78 @@ export default function ApartmentMap({
               })}
             </div>
 
-            {/* 선택된 호수 정보 */}
-            {currentUnit && (
-              <div className="selected-unit-detail">
-                <div>
-                  <span>선택 호수</span>
-
-                  <strong>
-                    {currentBuilding.id}동 {currentUnit.no}호
-                  </strong>
-                </div>
-
-                {currentUnit.vehicle ? (
-                  <div className="selected-vehicle">
-                    <div>
-                      <span>차량번호</span>
-                      <strong>{currentUnit.vehicle.vehicleNumber}</strong>
-                    </div>
-
-                    <div>
-                      <span>차주</span>
-                      <strong>{currentUnit.vehicle.ownerName}</strong>
-                    </div>
-
-                    <div>
-                      <span>차종</span>
-                      <strong>{currentUnit.vehicle.vehicleType}</strong>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="no-vehicle">등록된 차량이 없습니다.</p>
-                )}
-              </div>
-            )}
           </div>
         )}
+
+        {isUnitModalOpen && currentUnit && currentBuilding &&
+          createPortal(
+            <div
+              className="unit-detail-backdrop"
+              onClick={() => setIsUnitModalOpen(false)}
+            >
+              <section
+                className="unit-detail-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="unit-detail-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <header className="unit-detail-modal-header">
+                  <div>
+                    <span>차량 등록 현황</span>
+                    <h3 id="unit-detail-title">
+                      {currentBuilding.id}동 {currentUnit.no}호
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    className="panel-close"
+                    aria-label="상세 창 닫기"
+                    onClick={() => setIsUnitModalOpen(false)}
+                  >
+                    ×
+                  </button>
+                </header>
+
+                <div className="unit-detail-modal-content">
+                  {currentUnit.vehicles.length > 0 || currentUnit.additionalVehicles.length > 0 ? (
+                    <div className="selected-vehicles">
+                      {currentUnit.vehicles.length > 0 && (
+                        <div className="selected-registered-vehicles">
+                          <strong>기존 차량</strong>
+                          {currentUnit.vehicles.map((vehicle) => (
+                            <div className="selected-vehicle" key={vehicle.id ?? vehicle.vehicleNumber}>
+                              <div><span>차량번호</span><strong>{vehicle.vehicleNumber}</strong></div>
+                              <div><span>차주</span><strong>{vehicle.ownerName}</strong></div>
+                              <div><span>차종</span><strong>{vehicle.vehicleType}</strong></div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {currentUnit.additionalVehicles.length > 0 && (
+                        <div className="selected-additional-vehicles">
+                          <div className="additional-vehicles-heading">
+                            <strong>추가 등록 차량</strong>
+                            <span>{currentUnit.additionalVehicles.length}대</span>
+                          </div>
+                          {currentUnit.additionalVehicles.map((vehicle) => (
+                            <div className="selected-vehicle selected-vehicle-additional" key={vehicle.id ?? vehicle.vehicleNumber}>
+                              <div><span>차량번호</span><strong>{vehicle.vehicleNumber}</strong></div>
+                              <div><span>차주</span><strong>{vehicle.ownerName}</strong></div>
+                              <div><span>차종</span><strong>{vehicle.vehicleType}</strong></div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="no-vehicle">등록된 차량이 없습니다.</p>
+                  )}
+                </div>
+              </section>
+            </div>,
+            document.body,
+          )}
 
         {/* 범례 */}
         <div className="map-legend">

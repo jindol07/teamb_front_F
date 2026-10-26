@@ -5,8 +5,12 @@ import RecommendationModal from './RecommendationModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import { useParkingSpaceSync } from '../../../shared/parking/useParkingSpaceSync';
+<<<<<<< HEAD
 import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import { authFetch } from '../../../api/axios';
+=======
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
+>>>>>>> develop
 import './Reservation.css';
 
 interface ReservationResponse {
@@ -182,7 +186,18 @@ export default function Reservation() {
     }
   };
 
-  const slots = rawSlots;
+  const slots = rawSlots.map((parkingSlot) => {
+    const isActiveReservation =
+      reservation != null &&
+      Number(reservation.parking_space_id) === Number(parkingSlot.parkingSpaceId) &&
+      new Date(reservation.reservation_end_at).getTime() > now.getTime();
+
+    if (!isActiveReservation || parkingSlot.status !== 'EMPTY') {
+      return parkingSlot;
+    }
+
+    return { ...parkingSlot, status: 'RESERVED' as const };
+  });
   const currentSlot =
     slots.find((s) => {
       if (!reservation) return false;
@@ -215,7 +230,9 @@ export default function Reservation() {
           <div className="parking-status-board">
             {!reservation ? (
               <div className="text-center py-5">
-                <div style={{ fontSize: '3rem', marginBottom: '15px', color: 'cadetblue' }}>
+                <div
+                  style={{ fontSize: '3rem', marginBottom: '15px', color: 'cadetblue' }}
+                >
                   <FaCarSide aria-hidden="true" />
                 </div>
                 <h4 className="fw-bold mb-2">주차 정보를 찾을 수 없습니다</h4>
@@ -232,6 +249,7 @@ export default function Reservation() {
                     onClick={() => {
                       setBookingSlot(null);
                       setIsAiRecommendedBooking(false);
+                      setBookingDates(null);
                       setIsBookingModalOpen(true);
                     }}
                   >
@@ -350,6 +368,7 @@ export default function Reservation() {
         <MyBookingModal
           slot={bookingSlot}
           allowSlotChange={!isAiRecommendedBooking}
+          allowDateChange={!isAiRecommendedBooking}
           initialStartDate={bookingDates?.startDate ?? null}
           initialEndDate={bookingDates?.endDate ?? null}
           onClose={() => {

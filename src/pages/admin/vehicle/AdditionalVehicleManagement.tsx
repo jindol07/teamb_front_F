@@ -266,6 +266,7 @@ export default function AdditionalVehicleManagement({
                 <th>차주</th>
                 <th>호수</th>
                 <th>신청일</th>
+                <th>승인/반려일</th>
                 <th>승인 상태</th>
                 <th>관리</th>
               </tr>
@@ -286,7 +287,9 @@ export default function AdditionalVehicleManagement({
                       ? request.officenumber: `${request.officenumber}호` : '-'}
                   </td>
 
-                  <td>{request.registeredat || '-'}</td>
+                  <td>{request.requestedat || '-'}</td>
+
+                  <td>{request.reviewedat || '-'}</td>
 
                   <td>{request.requeststatus}</td>
 

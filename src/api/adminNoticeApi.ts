@@ -17,6 +17,7 @@ interface AdminNoticeResponse {
     title: string;
     content: string;
     viewCount: number;
+    attachmentCount: number;
     createdAt: string;
     importantYn: string;
     pinnedYn: string;
@@ -45,6 +46,7 @@ const convertAdminNotice = (
     isPinned: data.pinnedYn === 'Y',
     isImportant: data.importantYn === 'Y',
     attachments: [],
+    attachmentCount: data.attachmentCount ?? 0,
 });
 // 공지사항 등록 API
 export const registerNotice = async (
@@ -71,28 +73,8 @@ export const getAdminNoticeList = async (): Promise<Notice[]> => {
     const response = await adminApi.get<AdminNoticeResponse[]>(
         '/api/notice'
     );
-    const notices = response.data.map(convertAdminNotice);
-    // 각 공지사항의 첨부파일 정보 조회
-    const noticesWithAttachments = await Promise.all(
-        notices.map(async (notice) => {
-            try {
-                const attachments = await getAdminNoticeAttachments(
-                    notice.id
-                );
-                return {
-                    ...notice,
-                    attachments,
-                };
-            } catch (err) {
-                console.error(
-                    `${notice.id}번 공지사항 첨부파일 조회 실패:`,
-                    err
-                );
-                return notice;
-            }
-        })
-    );
-    return noticesWithAttachments;
+    // 목록 응답의 첨부 개수를 사용해 공지별 상세 추가 요청을 생략합니다.
+    return response.data.map(convertAdminNotice);
 };
 // 공지사항 수정 요청 데이터 타입
 interface UpdateNoticeData {
@@ -105,11 +87,22 @@ interface UpdateNoticeData {
 // 관리자 공지사항 수정 API
 export const updateAdminNotice = async (
     noticeId: number,
-    data: UpdateNoticeData
+    data: UpdateNoticeData,
+    file?: File,
+    removeAttachment = false
 ) => {
+    // 새 파일이 없으면 기존 JSON 수정 API를 그대로 사용합니다.
+    let payload: UpdateNoticeData | FormData = data;
+    if (file || removeAttachment) {
+        const formData = new FormData();
+        Object.entries(data).forEach(([key, value]) => formData.append(key, value));
+        if (file) formData.append('files', file);
+        if (removeAttachment) formData.append('removeAttachment', 'true');
+        payload = formData;
+    }
     const response = await adminApi.put(
         `/api/notice/${noticeId}`,
-        data
+        payload
     );
     return response.data;
 };
@@ -149,20 +142,22 @@ interface AdminNoticeAttachment {
     originalName: string;
 }
 // 관리자 공지사항 상세 조회 응답 타입
-interface AdminNoticeDetailResponse {
-    noticeId: number;
+interface AdminNoticeDetailResponse extends Omit<AdminNoticeResponse, 'getfilelist'> {
     getfilelist: AdminNoticeAttachment[] | null;
 }
-// 공지사항 상세 첨부파일 정보 조회
-export const getAdminNoticeAttachments = async (
+// 상세 화면은 해당 공지와 첨부파일을 한 번의 요청으로 조회합니다.
+export const getAdminNoticeDetail = async (
     noticeId: number
-) => {
+): Promise<Notice> => {
     const response = await adminApi.get<AdminNoticeDetailResponse>(
         `/api/notice/${noticeId}`
     );
-    return (response.data.getfilelist ?? []).map((file) => ({
-        id: file.noticeAttachmentId,
-        name: file.originalName,
-        url: `${import.meta.env.VITE_BOOT_API_BASE_URL_A}/api/notice/${noticeId}/file/download`,
-    }));
+    return {
+        ...convertAdminNotice(response.data),
+        attachments: (response.data.getfilelist ?? []).map((file) => ({
+            id: file.noticeAttachmentId,
+            name: file.originalName,
+            url: `${import.meta.env.VITE_BOOT_API_BASE_URL_A}/api/notice/${noticeId}/file/download`,
+        })),
+    };
 };

@@ -1,3 +1,9 @@
+/** [1023_1010] 파일 안내
+ * 용도: 관리자 요약 카드·층별 현황·공통 도면·구획 보정 패널을 조립한다.
+ * 직접 사용처: AdminRouter의 parking 경로.
+ * 공통 스토어에는 공개 현황을, 로컬 adminRows에는 관리자 상세를 보관한다.
+ * 예약 집계·달력과 관리자 상세는 각각 주기 조회한다. 저장은 saveParkingSpace 성공 후 재조회한다.
+ */
 /**
  * 관리자 주차현황 페이지.
  * 전체 45개 및 층별 주차구획 통계, 공통 React Konva 도면, 상세 설정 패널을 조립합니다.
@@ -35,6 +41,7 @@ export default function ParkingStatusAdmin() {
   /** 관리자 전용 조회 결과는 공용 Zustand에 넣지 않습니다(사용자 화면 노출 방지). */
   const [adminRows, setAdminRows] = useState<ParkingSpaceDto[] | null>(null);
   const [adminReloadVersion, setAdminReloadVersion] = useState(0);
+  // [1023_1010] 달력용 진행 중·향후 예약 건수다. 현재 구획의 RESERVED 상태와 구분한다.
   const [reservationCounts, setReservationCounts] = useState<Record<number, number>>({});
   const [reservationError, setReservationError] = useState<string | null>(null);
   const [reservationLoading, setReservationLoading] = useState(true);
@@ -46,6 +53,7 @@ export default function ParkingStatusAdmin() {
   }>(() => ({ date: parkingToday(), count: null, bySpace: {}, error: null }));
 
   // 상단 카드는 도면에서 선택한 날짜와 무관하게 한국 시간의 오늘 예약을 집계한다.
+  // [1023_1010] 오늘 예약 집계는 한국 날짜 기준이다. 종료 시 요청·타이머·focus 리스너를 정리한다.
   useEffect(() => {
     const controller = new AbortController();
     let inFlight = false;
@@ -167,6 +175,7 @@ export default function ParkingStatusAdmin() {
   } = useParkingStore();
 
   /** 서버 저장이 성공하기 전에는 로컬 Zustand/도면 상태를 변경하지 않는다. */
+  // [1023_1010] 저장 성공과 재조회 실패를 구분하여 성공한 보정을 다시 요청하지 않게 한다.
   const handleSave = async (input: ParkingCorrectionInput) => {
     if (!selectedSlot?.parkingSpaceId) throw new Error('구획을 다시 선택해 주세요.');
     const spaceId = selectedSlot.parkingSpaceId;
@@ -192,6 +201,7 @@ export default function ParkingStatusAdmin() {
   };
 
   /** 중복 집계 방지: 각 주차구획은 하나의 상태 범주에만 포함합니다. */
+  // [1023_1010] 사용불가·사용중·예약·사용가능·확인필요를 구획별로 중복 없이 집계한다.
   const summarize = (items: typeof slots) => {
     const total = items.length;
     const disabled = items.filter(
@@ -217,6 +227,7 @@ export default function ParkingStatusAdmin() {
   };
 
   /** 관리자 차량번호는 관리자 전용 응답에서만 꺼내 도면에 일시적으로 합칩니다. */
+  // [1023_1010] 관리자 전용 응답의 메모·차량번호를 도면에만 합치고 공용 스토어에는 넣지 않는다.
   const adminMapSlots = useMemo(() => {
     const byId = new Map((adminRows ?? []).map((row) => [row.parkingSpaceId, row]));
     return slots.map((slot) => {
@@ -234,6 +245,7 @@ export default function ParkingStatusAdmin() {
 
   // 전체 45개에 대한 총괄 통계는 선택한 층과 무관합니다.
   const allSummary = summarize(slots);
+  // [1023_1010] 오늘 예약은 기록 건수로 집계한다. 사용가능 수는 중복 차감 없이 구획 상태로 계산한다.
   const floorSummaries = [1, 2, 3].map((floor) => ({
     floor,
     ...summarize(slots.filter((slot) => slot.floor === floor)),

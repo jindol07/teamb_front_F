@@ -1,3 +1,11 @@
+/** [1023_1010] 파일 안내
+ * 용도: A/U 주차구획 API 호출과 화면에서 공유하는 요청·응답 타입 정의.
+ * 직접 사용처: ParkingStatusAdmin, SlotDetailPanel, ParkingReservationList,
+ * useParkingSpaceSync, parkingSpaceResponse, parkingSpaceAdapter, useParkingStore.
+ * 연결: api/axios.ts의 adminApi·userApi → A/U ParkingSpaceController.
+ * 관리자 상세에는 메모·차량번호가 포함될 수 있으므로 공개 현황과 구분한다.
+ * API 계약의 타입 선언은 런타임 검증이 아니며, 구획 응답 검증은 정규화 함수가 맡는다.
+ */
 /**
  * Spring Boot A·U 서버의 주차구획 API 통신 모듈.
  *
@@ -29,6 +37,7 @@ const USER_CONTEXT = (import.meta.env.VITE_BOOT_API_BASE_URL_U ?? '/alpharking')
 
 export type ParkingServer = 'admin' | 'user';
 
+/** [1023_1010] 관리자 예약 집계·달력·이력 목록에서 사용하는 예약 조회 응답. */
 export interface ParkingReservationRecord {
   parkingReservationId: number;
   parkingSpaceId: number;
@@ -38,6 +47,7 @@ export interface ParkingReservationRecord {
   statusCode: string;
 }
 
+/** [1023_1010] 관리자 오늘 예약 집계용 날짜. 브라우저 시간대와 무관하게 한국 날짜를 사용한다. */
 export function parkingToday() {
   return new Intl.DateTimeFormat('sv-SE', {
     timeZone: 'Asia/Seoul',
@@ -47,6 +57,7 @@ export function parkingToday() {
   }).format(new Date());
 }
 
+/** [1023_1010] 지정일 예약 조회. spaceId가 없으면 전체 구획, 있으면 해당 구획만 요청한다. */
 export function fetchParkingReservations(
   date: string,
   signal?: AbortSignal,
@@ -76,6 +87,7 @@ export function fetchParkingReservationHistory(spaceId: number, signal?: AbortSi
 
 /** 화면 역할에 맞는 서버의 현황 소켓에 연결합니다. */
 export function getParkingWebSocketUrl(server: ParkingServer = 'admin'): string {
+  // [1023_1010] 현재 페이지 기준으로 상대 주소를 해석하고 HTTP 보안 여부를 소켓 프로토콜에 반영한다.
   const context = server === 'user' ? USER_CONTEXT : ADMIN_CONTEXT;
   const url = new URL(`${context}/ws/parking/spaces`, window.location.origin);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -103,6 +115,7 @@ export interface ParkingSpaceDto {
   updatedAt?: string | null;
 }
 
+/** [1023_1010] 보정 패널에서 선택·연결할 기존 이용 기록. 구획 미배정·미출차 값은 null일 수 있다. */
 export interface ParkingUsageRecord {
   parkingUsageId: number;
   vehicleId: number | null;
@@ -114,6 +127,7 @@ export interface ParkingUsageRecord {
   parkingTypeCode: string;
 }
 
+/** [1023_1010] 관리자 변경 이력 표시용 스냅샷. changeReason은 저장된 변경 사유다. */
 export interface ParkingSpaceHistory {
   parkingSpaceHistoryId: number;
   spaceStatusCode: string;
@@ -126,14 +140,17 @@ export interface ParkingSpaceHistory {
   validTo: string | null;
 }
 
+/** [1023_1010] 보정 화면의 기준값 묶음: DB 구획 원본·연결된 미출차 기록·최근 이력. */
 export interface ParkingCorrectionDetail {
   space: ParkingSpaceDto;
   activeUsages: ParkingUsageRecord[];
   history: ParkingSpaceHistory[];
 }
 
+/** [1023_1010] 이용 기록 유지 / 기존 기록 연결 / 구획 연결만 해제 / 누락 출차 처리. */
 export type ParkingUsageAction = 'KEEP' | 'ASSIGN' | 'DETACH' | 'EXIT';
 
+/** [1023_1010] expected 계열은 조회 당시 기준값이다. 서버가 현재 값과 대조해 덮어쓰기를 방지한다. */
 export interface ParkingCorrectionInput {
   spaceStatusCode: string;
   spaceTypeCode: string;
@@ -157,6 +174,7 @@ async function request<T>(
   init: AxiosRequestConfig = {},
   server: ParkingServer = 'admin',
 ): Promise<T> {
+  // [1023_1010] 서버 역할별 axios 인증 인터셉터를 사용하고, 오류 상태는 아래에서 직접 해석한다.
   const client = server === 'user' ? userApi : adminApi;
   const requestConfig: AxiosRequestConfig = {
     ...init,
@@ -186,6 +204,7 @@ async function request<T>(
       throw new Error('로그인이 필요하거나 인증이 만료되었습니다. 다시 로그인해 주세요.');
     if (response.status === 403)
       throw new Error('주차구획 조회·변경 권한이 없거나 인증을 확인할 수 없습니다.');
+    // [1023_1010] 서버가 보정 실패 사유를 제공하면 일반 HTTP 문구보다 그 사유를 우선 표시한다.
     const errorBody: unknown = response.data;
     if (
       errorBody &&
@@ -198,6 +217,7 @@ async function request<T>(
     }
     throw new Error(`주차구획 API 오류: HTTP ${response.status}`);
   }
+  // [1023_1010] 프록시·로그인 HTML을 정상 구획 JSON으로 오인하지 않도록 응답 형식을 확인한다.
   const contentType = String(response.headers['content-type'] ?? '');
   if (!contentType.includes('application/json')) {
     throw new Error(
@@ -222,19 +242,6 @@ export function fetchPublicParkingSpaces(
   );
 }
 
-/**
- * 관리자 메모 변경. 변경 성공 후 서버가 DB의 최신 구획 1개를 다시 반환함.
- * 변경 ID는 프론트 임시 id가 아닌 실제 PARKING_SPACE_ID여야 함.
- * 서버에서는 adminId를 요청 본문에서 신뢰하지 않고 JWT 인증 정보에서 가져옴.
- */
-export function saveParkingMemo(parkingSpaceId: number, memo: string) {
-  return request<unknown>(`/${parkingSpaceId}/memo`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    data: { memo },
-  }).then(normalizeParkingSpace);
-}
-
 /** 관리자 구획 강제 변경: JWT 인증 및 ADMIN 권한이 필요하다. */
 export function saveParkingSpace(parkingSpaceId: number, input: ParkingCorrectionInput) {
   return request<unknown>(`/${parkingSpaceId}`, {
@@ -255,6 +262,7 @@ export async function fetchParkingCorrection(
   return { ...detail, space: normalizeParkingSpace(detail.space) };
 }
 
+/** [1023_1010] 보정 패널의 차량 검색. 새 입차를 만들지 않고 기존 미출차 기록 후보만 조회한다. */
 export function searchParkingUsageRecords(vehicleNumber: string, signal?: AbortSignal) {
   return request<ParkingUsageRecord[]>('/usage-candidates', {
     params: { vehicleNumber },

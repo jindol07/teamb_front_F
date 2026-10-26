@@ -1,3 +1,9 @@
+/** [1023_1010] 파일 안내
+ * 용도: DB 기준 좌표로 구획·동선·전용 아이콘·예약 달력 표시를 그리는 공통 도면.
+ * 직접 사용처: 관리자·사용자 현황, Reservation, BookingModal, MyBookingModal, 실제 예약 ParkingReservationModal.
+ * 현재 라우트 미연결 SmartParkingStatus에도 참조가 남아 있다.
+ * 클릭 처리는 부모에 위임한다. 표시 배율을 바꿔도 DB 좌표와 640×480 기준은 바꾸지 않는다.
+ */
 /** DB 좌표는 유지하고 화면 크기에 맞춰 확대·축소하는 관리자/사용자 공통 도면. */
 import { useEffect, useRef, useState } from 'react';
 import { Stage, Layer, Rect, Text, Group, Arc, Arrow, Path, Circle } from 'react-konva';
@@ -5,6 +11,7 @@ import type { ExtendedParkingSlot, ParkingMapProps } from './parking';
 import { PARKING_FLOORS, PARKING_STAGE_SIZE, PARKING_MAP_BOUNDS } from './parkingLayout';
 import './ParkingMapView.css';
 
+// [1023_1010] 구획 상태에 따른 문구·색상이다. 전용 구획 종류와는 별도 기준이다.
 const STATUS = {
   EMPTY: {
     label: '사용가능',
@@ -37,6 +44,7 @@ const STATUS = {
     border: '#d0c2e0',
   },
 };
+// [1023_1010] 사용불가 종류는 상태보다 우선하여 표시하고 미지원 상태는 확인필요로 표시한다.
 const statusFor = (slot: ExtendedParkingSlot) =>
   STATUS[slot.slotType === 'DISABLED' ? 'DISABLED' : slot.status] ?? STATUS.UNKNOWN;
 const TYPE_COLORS = { ELECTRIC: '#0f6d82', DISABLED_PERSON: '#2458b5' };
@@ -57,6 +65,7 @@ export function ParkingMapView({
   const [showPath, setShowPath] = useState(true);
   const [canvasWidth, setCanvasWidth] = useState<number>(PARKING_STAGE_SIZE.width);
   const viewport = useRef<HTMLDivElement>(null);
+  // [1023_1010] 컨테이너 크기를 관찰해 표시 배율만 조정한다. 언마운트 시 ResizeObserver를 해제한다.
   useEffect(() => {
     const element = viewport.current;
     if (!element) return;
@@ -69,6 +78,7 @@ export function ParkingMapView({
     return () => observer.disconnect();
   }, []);
 
+  // [1023_1010] 기준 좌표는 640×480으로 두고 Stage 전체에 같은 배율을 적용한다.
   const scale = canvasWidth / PARKING_STAGE_SIZE.width;
   const floorSlots = slots.filter((slot) => slot.floor === currentFloor);
   const electric = floorSlots.filter((slot) => slot.slotType === 'ELECTRIC').length;
@@ -210,6 +220,7 @@ export function ParkingMapView({
               </Group>
             )}
             {floorSlots.map((slot) => {
+              // [1023_1010] 구획별 표시 계산: 선택 테두리·점유 상태·전용 아이콘을 독립적으로 결정한다.
               const isSelected = selectedSlotId === slot.id;
               const state = statusFor(slot);
               const special =

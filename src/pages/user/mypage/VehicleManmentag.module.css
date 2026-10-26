@@ -31,7 +31,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 15px;
-    min-height: 75px;
+    min-height: 48px;
     padding: 0 42px;
     background: #fff;
     border-bottom: 1px solid var(--vm-border);
@@ -75,7 +75,7 @@
 .vm-content {
     width: 100%;
     max-width: 1240px;
-    padding: 15px 42px 24px;
+    padding: 8px 42px 24px;
     margin: 0 auto;
 }
 
@@ -297,9 +297,15 @@
 /* 차량 등록 폼 */
 .vm-register-form {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: end;
     gap: 15px;
+}
+
+.vm-register-form .vm-primary-btn {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(100%, 220px);
 }
 
 .vm-field {
@@ -480,6 +486,16 @@
     color: var(--vm-primary);
     font-size: 10px;
     font-weight: 700;
+}
+
+.vm-car-badge-initial {
+    background: #edf2ff;
+    color: var(--vm-primary);
+}
+
+.vm-car-badge-additional {
+    background: #e8f8f0;
+    color: #16834b;
 }
 
 .vm-car-info h3 {
@@ -829,6 +845,73 @@
     background: #244bd7;
 }
 
+/* 차량 등록 입력 확인 모달 */
+.vm-alert-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(2px);
+    animation: vm-backdrop-in 0.16s ease-out;
+}
+
+.vm-alert-modal {
+    width: 100%;
+    max-width: 450px;
+    overflow: hidden;
+    border: 1px solid #dce3ef;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 20px 55px rgba(15, 23, 42, 0.22);
+    animation: vm-modal-in 0.18s ease-out;
+}
+
+.vm-alert-content {
+    padding: 23px 22px 15px;
+}
+
+.vm-alert-content h2 {
+    margin: 0;
+    color: #17243b;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.vm-alert-content p {
+    margin: 8px 0 0;
+    color: #536176;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.vm-alert-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 20px 17px;
+}
+
+.vm-alert-confirm {
+    min-width: 64px;
+    min-height: 38px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 999px;
+    background: #1557d5;
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.vm-alert-confirm:hover {
+    background: #1048b4;
+}
+
 /* 등장 애니메이션 */
 @keyframes vm-backdrop-in {
     from { opacity: 0; }
@@ -854,6 +937,14 @@
 
     .vm-modal-header {
         padding: 17px;
+    }
+
+    .vm-alert-content {
+        padding: 21px 18px 14px;
+    }
+
+    .vm-alert-footer {
+        padding: 0 16px 15px;
     }
 
     .vm-modal-body {
@@ -890,12 +981,7 @@
     }
 
     .vm-register-form {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .vm-register-form .vm-primary-btn {
-        grid-column: 1 / -1;
-        justify-self: start;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
     .vm-vehicle-card {

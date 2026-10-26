@@ -1,3 +1,8 @@
+/** [1023_1010] 파일 안내
+ * 용도: 차량번호로 수동 입차·출차를 요청하는 기존 관리 화면.
+ * 직접 사용처: 현재 src 라우터·컴포넌트에서 참조가 확인되지 않는다. 보관 중인 구현이다.
+ * parkingUsageApi의 입차·목록·출차 API를 사용한다. 현재 운영 조회 경로는 ParkingUsageAdmin이다.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import {
   createParkingEntry, fetchParkingUsages, finishParkingUsage,
@@ -5,6 +10,7 @@ import {
 } from './parkingUsageApi';
 
 /** 서버의 PARKING_USAGE 조회 결과를 사용합니다. 임의 Mock 데이터는 사용하지 않습니다. */
+// [1023_1010] 현재 라우트 미연결인 수동 처리 UI다. 보관 중인 동작을 바꾸지 않고 설명만 추가한다.
 export default function ParkingManage() {
   const [items, setItems] = useState<ParkingUsage[]>([]);
   const [plate, setPlate] = useState('');
