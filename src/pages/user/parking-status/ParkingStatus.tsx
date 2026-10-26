@@ -33,6 +33,7 @@ import type {
 } from '../../../shared/parking/parking';
 
 import ParkingReservationModal from '../reservation/ParkingReservationModal';
+import { useReservationAvailability } from '../reservation/reservationAvailabilityApi';
 import './ParkingStatus.css';
 
 /**
@@ -138,6 +139,22 @@ export default function ParkingStatus() {
   const slots = useParkingStore((state) => state.slots);
   const syncState = useParkingStore((state) => state.syncState);
   const syncError = useParkingStore((state) => state.syncError);
+  const today = useMemo(() => new Date(), []);
+  const reservationAvailability = useReservationAvailability(today, today);
+
+  const displaySlots = useMemo(() => {
+    return slots.map((slot) => {
+      if (slot.status !== 'EMPTY' || slot.parkingSpaceId == null) return slot;
+      if (reservationAvailability.loading || reservationAvailability.error
+          || reservationAvailability.availableSpaceIds == null) {
+        return { ...slot, status: 'UNKNOWN' as const };
+      }
+      return reservationAvailability.availableSpaceIds.has(slot.parkingSpaceId)
+        ? slot
+        : { ...slot, status: 'RESERVED' as const };
+    });
+  }, [slots, reservationAvailability.availableSpaceIds,
+    reservationAvailability.error, reservationAvailability.loading]);
 
   // 사용자가 선택한 층입니다.
   // 관리자 화면의 selectedFloor와는 독립적으로 관리합니다.
@@ -160,15 +177,15 @@ export default function ParkingStatus() {
    * 선택된 층과 무관하게 전체 주차구획을 계산합니다.
    */
   const allSummary = useMemo(() => {
-    return calculateSummary(slots);
-  }, [slots]);
+    return calculateSummary(displaySlots);
+  }, [displaySlots]);
 
   /**
    * 층별 주차현황 통계
    */
   const floorSummaries = useMemo(() => {
     return [1, 2, 3].map((floor) => {
-      const floorSlots = slots.filter(
+      const floorSlots = displaySlots.filter(
         (slot) => slot.floor === floor
       );
 
@@ -177,16 +194,16 @@ export default function ParkingStatus() {
         ...calculateSummary(floorSlots),
       };
     });
-  }, [slots]);
+  }, [displaySlots]);
 
   /**
    * 현재 선택한 층의 주차구획
    */
   const currentFloorSlots = useMemo(() => {
-    return slots.filter(
+    return displaySlots.filter(
       (slot) => slot.floor === currentFloor
     );
-  }, [slots, currentFloor]);
+  }, [displaySlots, currentFloor]);
 
   /**
    * 현재 선택 층 통계
@@ -205,14 +222,14 @@ export default function ParkingStatus() {
   useEffect(() => {
     if (!selectedSlot) return;
 
-    const latestSlot = slots.find(
+    const latestSlot = displaySlots.find(
       (slot) => slot.id === selectedSlot.id
     );
 
     if (!latestSlot || !isReservable(latestSlot)) {
       setSelectedSlot(null);
     }
-  }, [slots, selectedSlot]);
+  }, [displaySlots, selectedSlot]);
 
   /**
    * 층 변경
@@ -465,7 +482,7 @@ const handleSlotClick = (slot: ExtendedParkingSlot) => {
           <div className="parking-user-map-body">
             <ParkingMapView
               mode="user"
-              slots={slots}
+              slots={displaySlots}
               currentFloor={currentFloor}
               onFloorChange={handleFloorChange}
               onSlotClick={handleSlotClick}

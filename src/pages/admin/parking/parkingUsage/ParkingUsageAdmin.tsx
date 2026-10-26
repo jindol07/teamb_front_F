@@ -5,7 +5,13 @@
  * 5초마다 보이는 문서에서 갱신하고 수동 갱신을 제공한다. 입출차 변경은 이 화면에서 수행하지 않는다.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchActiveParkingUsages, fetchParkingUsages, type ParkingUsage } from './parkingUsageApi';
+import { fetchActiveParkingUsages, fetchParkingUsages, fetchAiParkingDecisions, type AiParkingDecision, type ParkingDecisionCode, type ParkingUsage } from './parkingUsageApi';
+
+const decisionLabels: Record<ParkingDecisionCode, string> = {
+  MATCHED: '정상 주차', WRONG_SPACE: '다른 자리 주차',
+  NO_VALID_RESERVATION: '유효 예약 없음', UNDETERMINED: '판정 불가',
+};
+const decisionTime = (value: string) => new Date(value).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
 
 /** 관리자 조회 전용. 입차/출차/주차 위치는 AI 이벤트에서 자동으로 반영됩니다. */
 export default function ParkingUsageAdmin() {
@@ -14,6 +20,9 @@ export default function ParkingUsageAdmin() {
   const [active, setActive] = useState<ParkingUsage[] | null>(null);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [activeLoading, setActiveLoading] = useState(true);
+  const [decisions, setDecisions] = useState<AiParkingDecision[] | null>(null);
+  const [decisionsLoading, setDecisionsLoading] = useState(true);
+  const [decisionsError, setDecisionsError] = useState('');
   const [itemsError, setItemsError] = useState('');
   const [activeError, setActiveError] = useState('');
   const requestController = useRef<AbortController | null>(null);
@@ -26,9 +35,22 @@ export default function ParkingUsageAdmin() {
     requestController.current = controller;
     setItemsLoading(true);
     setActiveLoading(true);
+    setDecisionsLoading(true);
 
     try {
       await Promise.all([
+        (async () => {
+          try {
+            const rows = await fetchAiParkingDecisions(controller.signal);
+            if (controller.signal.aborted) return;
+            setDecisions(rows);
+            setDecisionsError('');
+          } catch (error) {
+            if (!controller.signal.aborted) setDecisionsError(error instanceof Error ? error.message : '조회 실패');
+          } finally {
+            if (!controller.signal.aborted) setDecisionsLoading(false);
+          }
+        })(),
         (async () => {
           try {
             const rows = await fetchParkingUsages(controller.signal);
@@ -76,7 +98,7 @@ export default function ParkingUsageAdmin() {
     };
   }, [refresh]);
   const unknown = active?.filter(item => item.parkingSpaceId == null);
-  const loading = itemsLoading || activeLoading;
+  const loading = itemsLoading || activeLoading || decisionsLoading;
   return (
     <div>
       <h2 className="page-title">차량 입출차 현황</h2>
@@ -96,6 +118,33 @@ export default function ParkingUsageAdmin() {
           </div>
         )}
       </div>
+      <section className="card p-3 mt-4" aria-labelledby="ai-parking-decisions-title">
+        <h3 id="ai-parking-decisions-title" className="h5">최근 AI 주차 판정</h3>
+        <p className="text-muted small">판정 당시의 관찰 기록입니다. 현재 점유 상태와 다를 수 있으며, 판정 불가는 다른 자리 주차로 확정하지 않습니다.</p>
+        {decisionsError && <div className={`alert ${decisions === null ? 'alert-danger' : 'alert-warning'}`} role="alert">
+          {decisions === null ? '주차 판정 조회 실패' : '주차 판정 갱신 실패 · 이전 조회 결과입니다'}: {decisionsError}
+        </div>}
+        <div className="table-responsive">
+          <table className="table table-hover align-middle mb-0 text-nowrap">
+            <thead><tr><th>판정 시각</th><th>차량번호</th><th>관찰 구획</th><th>주차 판정</th><th>연결 처리</th></tr></thead>
+            <tbody>
+              {decisions?.map(row => <tr key={row.aiDetectionEventId}>
+                <td>{decisionTime(row.detectedAt)}</td><td>{row.plateNumber}</td><td>{row.spaceCode}</td>
+                <td><span className={`badge ${row.parkingDecision === 'MATCHED' ? 'bg-success' : row.parkingDecision === 'UNDETERMINED' ? 'bg-secondary' : 'bg-warning text-dark'}`}>
+                  {decisionLabels[row.parkingDecision]}
+                </span></td>
+                <td>{row.outcome === 'PENDING' ? '연결 보류' : row.outcome === 'UNCHANGED' ? '기존 연결 유지' : '연결 완료'}</td>
+              </tr>)}
+              {decisions !== null && decisions.length === 0 && <tr><td colSpan={5} className="text-center text-muted py-4">
+                {decisionsError ? '마지막으로 조회된 판정은 0건입니다.' : '저장된 AI 주차 판정이 없습니다.'}
+              </td></tr>}
+              {decisions === null && decisionsLoading && <tr><td colSpan={5} className="text-center py-4" role="status">주차 판정 조회 중...</td></tr>}
+              {decisions === null && !decisionsLoading && decisionsError && <tr><td colSpan={5} className="text-center text-muted py-4">주차 판정을 불러오지 못했습니다.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-muted small mt-3 mb-0">최근 저장 200건 · 시각은 한국 시간 · 5초 간격 자동 조회 · 기능 적용 이후의 판정부터 표시</p>
+      </section>
       {itemsError && (
         <div className={`alert ${items === null ? 'alert-danger' : 'alert-warning'}`} role="alert">
           {items === null ? '입출차 기록 조회 실패' : '입출차 기록 갱신 실패 · 이전 조회 결과입니다'}: {itemsError}
