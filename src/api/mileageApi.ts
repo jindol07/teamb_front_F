@@ -9,6 +9,8 @@ export interface MileageHistoryDto {
   referenceid?: number | null;
   description?: string | null;
   createdat: string;
+  officeid?: number;
+  officenumber?: string;
   office?: {
     office_id?: number;
     officeid?: number;
@@ -20,13 +22,16 @@ export interface MileageHistoryDto {
 export type AdminMileageHistoryDto = Omit<MileageHistoryDto, 'createdat'> & { createdat: string | number };
 
 export interface AdminMileagePayload {
-  mileagetypecode: string;
-  /** 적립은 양수, 사용은 음수로 저장합니다. */
+  mileageTypeCode: 'ADMIN_REWARD' | 'USE';
+  /** 화면에서는 양수로 입력하고, 차감은 API가 음수로 저장합니다. */
   amount: number;
-  referencetypecode?: string | null;
-  referenceid?: number | null;
-  description?: string | null;
-  office: { office_id: number };
+  description: string;
+  officeId: number;
+}
+
+export interface AdminMileageOffice {
+  officeid: number;
+  officenumber: string;
 }
 
 export const getSignedMileageAmount = (item: Pick<MileageHistoryDto, 'amount' | 'mileagetypecode'>): number => {
@@ -53,6 +58,10 @@ export const adminMileageApi = {
   },
   create: async (payload: AdminMileagePayload): Promise<AdminMileageHistoryDto> => {
     const response = await adminApi.post<AdminMileageHistoryDto>(ADMIN_MILEAGE_URL, payload);
+    return response.data;
+  },
+  getOffices: async (): Promise<AdminMileageOffice[]> => {
+    const response = await adminApi.get<AdminMileageOffice[]>(`${ADMIN_MILEAGE_URL}/offices`);
     return response.data;
   },
 };
