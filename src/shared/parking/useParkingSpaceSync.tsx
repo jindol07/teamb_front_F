@@ -97,7 +97,6 @@ function createParkingSpaceSync(server: ParkingServer) {
     useParkingStore.getState().failSync(message);
   }
 
-<<<<<<< HEAD
   /** access 토큰 만료 시 refresh를 1회 시도하고, 실패하면 동기화를 중단한다. */
   async function renewSession(message: string): Promise<void> {
     if (renewing) return;
@@ -134,9 +133,6 @@ function createParkingSpaceSync(server: ParkingServer) {
     }
   }
 
-=======
-  // [1023_1010] 긴 만료 시간은 브라우저 타이머 상한 안에서 나눠 확인한다.
->>>>>>> develop
   function scheduleExpiration(expiresAt: number) {
     window.clearTimeout(expirationTimer);
     const remaining = expiresAt - Date.now();

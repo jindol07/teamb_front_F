@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { authFetch } from '../../../api/axios';
 
 interface ReservationAvailabilityResponse {
   availableSpaceIds?: unknown;
@@ -77,14 +78,10 @@ export function useReservationAvailability(
           start_date_str: startDateString,
           end_date_str: endDateString,
         });
-        const token = localStorage.getItem('token');
-        const response = await fetch(
+        const response = await authFetch(
           `${apiBaseUrl}/api/reservation/availability?${query.toString()}`,
           {
             method: 'GET',
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
             credentials: 'include',
             signal: controller.signal,
           },

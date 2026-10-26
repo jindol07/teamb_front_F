@@ -5,12 +5,8 @@ import RecommendationModal from './RecommendationModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
 import { useParkingSpaceSync } from '../../../shared/parking/useParkingSpaceSync';
-<<<<<<< HEAD
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
 import { authFetch } from '../../../api/axios';
-=======
 import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
->>>>>>> develop
 import './Reservation.css';
 
 interface ReservationResponse {
