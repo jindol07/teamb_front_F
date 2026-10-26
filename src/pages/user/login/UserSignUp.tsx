@@ -366,10 +366,6 @@ export default function UserSignUp() {
                                 사용할 수 있는 아이디입니다.
                             </div>
                         )}
-                        
-                        
-                        
-
 
                     </div>
                     {/* 비밀번호 */}

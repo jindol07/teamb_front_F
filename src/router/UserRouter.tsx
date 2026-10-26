@@ -6,6 +6,7 @@ import ParkingStatus from '../pages/user/parking-status/ParkingStatus';
 import Notice from '../pages/user/notice/Notice';
 import Reservation from '../pages/user/reservation/Reservation';
 import UserSignUp from '../pages/user/login/UserSignUp';
+import NaverCallback from '../pages/user/login/NaverCallback';
 import MyPage from '../pages/user/mypage/MyPage';
 import NoticeDetail from '../pages/user/notice/NoticeDetail';
 import AlpacaChatbot from '../pages/user/chatbot/AlpacaChatbot';
@@ -35,6 +36,8 @@ export default function UserRoutes() {
       {/* 로그인 화면은 공통 Header/Footer가 필요 없으므로 UserLayout 밖에 둡니다 */}
       <Route path="/user/login" element={<UserLogin />} />
       <Route path="/user/signup" element={<UserSignUp />} />
+      {/* 네이버 로그인 콜백 (Layout 밖) */}
+      <Route path="/user/oauth/naver/callback" element={<NaverCallback />} />
 
       {/* 아래 화면들은 모두 UserLayout(Header + Footer)을 함께 사용합니다 */}
       <Route path="/user" element={<UserLayout />}>

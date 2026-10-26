@@ -271,3 +271,72 @@ export const verifyEmailVerificationCode = async (
         return getEmailVerificationError(error, 'verify_failed');
     }
 };
+
+// ---------------------------------------------------------------------------
+// 네이버 로그인 (회원가입 없이 기존 회원만 로그인)
+// ---------------------------------------------------------------------------
+export type NaverLoginResult =
+    | { ok: true; accessToken: string; refreshToken: string }
+    | { ok: false; message: string };
+
+/**
+ * 네이버 인증 페이지로 이동한다.
+ * authorize URL과 state는 서버가 만들어(인가 코드 노출 방지),
+ * 브라우저는 그 주소로 이동만 한다.
+ */
+export const startNaverLogin = async (): Promise<{ ok: true } | { ok: false; message: string }> => {
+    try {
+        const response = await axios.get(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/naver/authorize'
+        );
+
+        const authorizeUrl = response.data?.authorize_url;
+        if (typeof authorizeUrl !== 'string' || !authorizeUrl) {
+            return { ok: false, message: '네이버 로그인 주소를 가져오지 못했습니다.' };
+        }
+
+        window.location.assign(authorizeUrl);
+        return { ok: true };
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const data = error.response?.data as { message?: string } | undefined;
+            if (data && typeof data.message === 'string' && data.message) {
+                return { ok: false, message: data.message };
+            }
+        }
+        return {
+            ok: false,
+            message: '네이버 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        };
+    }
+};
+
+/** 콜백으로 받은 code/state를 서버에 넘겨 우리 서비스 토큰을 발급받는다. */
+export const naverLogin = async (code: string, state: string): Promise<NaverLoginResult> => {
+    try {
+        const response = await axios.post(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/naver/login',
+            { code, state }
+        );
+
+        const accessToken = response.data?.access_token;
+        const refreshToken = response.data?.refresh_token;
+
+        if (typeof accessToken !== 'string' || !accessToken) {
+            return { ok: false, message: '로그인 토큰을 받지 못했습니다.' };
+        }
+        if (typeof refreshToken !== 'string' || !refreshToken) {
+            return { ok: false, message: '로그인 토큰을 받지 못했습니다.' };
+        }
+
+        return { ok: true, accessToken, refreshToken };
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            const data = error.response?.data as { message?: string } | undefined;
+            if (data && typeof data.message === 'string' && data.message) {
+                return { ok: false, message: data.message };
+            }
+        }
+        return { ok: false, message: '네이버 로그인에 실패했습니다.' };
+    }
+};
