@@ -62,3 +62,37 @@ export const assignParkingSpace = (id: number, spaceId: number) =>
     method: 'PATCH', headers: { 'Content-Type': 'application/json' },
     data: { parkingSpaceId: spaceId },
   });
+
+
+// 1. 판정 시점의 이력입니다. 현재 주차 위치나 위반 확정을 뜻하지 않습니다.
+export type ParkingDecisionCode = 'MATCHED' | 'WRONG_SPACE' | 'NO_VALID_RESERVATION' | 'UNDETERMINED';
+export interface AiParkingDecision {
+  aiDetectionEventId: number;
+  eventId: string;
+  detectedAt: string;
+  cameraId: string;
+  plateNumber: string;
+  spaceCode: string;
+  parkingUsageId: number | null;
+  expectedParkingUsageId: number | null;
+  parkingDecision: ParkingDecisionCode;
+  outcome: 'PROCESSED' | 'UNCHANGED' | 'PENDING';
+}
+
+export async function fetchAiParkingDecisions(signal?: AbortSignal): Promise<AiParkingDecision[]> {
+  const data = await request<unknown>('/ai-decisions', { signal });
+  const isId = (value: unknown) => typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+  if (!Array.isArray(data) || !data.every(row => {
+    if (typeof row !== 'object' || row === null) return false;
+    return isId(row.aiDetectionEventId) && typeof row.eventId === 'string'
+      && typeof row.detectedAt === 'string' && Number.isFinite(Date.parse(row.detectedAt))
+      && typeof row.cameraId === 'string' && typeof row.plateNumber === 'string'
+      && typeof row.spaceCode === 'string'
+      && (row.parkingUsageId === null || isId(row.parkingUsageId))
+      && (row.expectedParkingUsageId === null || isId(row.expectedParkingUsageId))
+      && ['MATCHED', 'WRONG_SPACE', 'NO_VALID_RESERVATION', 'UNDETERMINED'].includes(row.parkingDecision)
+      && ['PROCESSED', 'UNCHANGED', 'PENDING'].includes(row.outcome)
+      && ((row.parkingDecision === 'MATCHED') !== (row.outcome === 'PENDING'));
+  })) throw new Error('주차 판정 응답 형식을 확인할 수 없습니다.');
+  return data as AiParkingDecision[];
+}
