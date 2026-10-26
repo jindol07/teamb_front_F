@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { authFetch } from '../../../api/axios';
 
 interface ReservationAvailabilityResponse {
   availableSpaceIds?: unknown;
@@ -71,18 +70,21 @@ export function useReservationAvailability(
       setError(null);
 
       try {
-        // const apiBaseUrl = (
-        //   import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
-        // ).replace(/\/$/, '');
-        const apiBaseUrl = "";
+        const apiBaseUrl = (
+          import.meta.env.VITE_BOOT_API_BASE_URL_U || 'http://localhost/alpharking'
+        ).replace(/\/$/, '');
         const query = new URLSearchParams({
           start_date_str: startDateString,
           end_date_str: endDateString,
         });
-        const response = await authFetch(
+        const token = localStorage.getItem('token');
+        const response = await fetch(
           `${apiBaseUrl}/api/reservation/availability?${query.toString()}`,
           {
             method: 'GET',
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             credentials: 'include',
             signal: controller.signal,
           },
