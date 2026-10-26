@@ -6,7 +6,7 @@ import './BookingModal.css';
 import VehicleSearchModal from './VehicleSearchModal';
 import { ParkingMapView } from '../../../shared/parking/ParkingMapView';
 import { useParkingStore } from '../../../shared/parking/useParkingStore';
-import type { ExtendedParkingSlot } from '../../admin/parking/status/parking';
+import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 import { authFetch } from '../../../api/axios';
 
 interface BookingModalProps {
