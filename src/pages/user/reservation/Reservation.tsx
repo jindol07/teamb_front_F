@@ -321,9 +321,48 @@ export default function Reservation() {
           <div className="reservation-summary-header">
             <div>
               <h4>&nbsp;예약 확인</h4>
-              <p>예약 정보를 확인하세요.</p>
+              <p>예약 목록에서 확인할 예약을 선택하세요.</p>
             </div>
           </div>
+
+          {reservations.length > 0 && (
+            <section className="my-reservation-list" aria-label="내 예약 목록">
+              <h5>내 예약 목록</h5>
+              <div className="my-reservation-list__items">
+                {reservations.map((item) => {
+                  const itemSlot = rawSlots.find(
+                    (slot) =>
+                      Number(slot.parkingSpaceId) ===
+                      Number(item.parking_space_id),
+                  );
+                  const isSelected =
+                    item.parking_reservation_id ===
+                    reservation?.parking_reservation_id;
+
+                  return (
+                    <button
+                      key={item.parking_reservation_id}
+                      type="button"
+                      className={`my-reservation-list__item${isSelected ? ' is-selected' : ''}`}
+                      aria-pressed={isSelected}
+                      onClick={() => setReservation(item)}
+                    >
+                      <strong>
+                        {itemSlot
+                          ? `지하 ${itemSlot.floor}층 ${itemSlot.slotNumber}`
+                          : `구획 ID ${item.parking_space_id}`}
+                      </strong>
+                      <span>
+                        {item.reservation_start_at?.split('T')[0]} ~{' '}
+                        {item.reservation_end_at?.split('T')[0]}
+                      </span>
+                      <span>차량 {item.vehicle_number}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {reservation && (
             <div className="reservation-detail">
