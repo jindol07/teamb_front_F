@@ -22,7 +22,7 @@ export interface MileageHistoryDto {
 export type AdminMileageHistoryDto = Omit<MileageHistoryDto, 'createdat'> & { createdat: string | number };
 
 export interface AdminMileagePayload {
-  mileageTypeCode: 'ADMIN_REWARD' | 'USE';
+  mileageTypeCode: 'ADMIN_REWARD' | 'USE' | 'ON_TIME_EXIT_REWARD';
   /** 화면에서는 양수로 입력하고, 차감은 API가 음수로 저장합니다. */
   amount: number;
   description: string;
