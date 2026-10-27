@@ -8,7 +8,7 @@ import {
 } from '../../../api/mileageApi';
 import styles from './AdminMileage.module.css';
 
-type MileageType = 'ADMIN_REWARD' | 'USE';
+type MileageType = 'ADMIN_REWARD' | 'USE' | 'ON_TIME_EXIT_REWARD';
 
 function errorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -60,8 +60,21 @@ export default function AdminMileage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const parsedAmount = Number(amount);
-    if (!officeId || !Number.isSafeInteger(parsedAmount) || parsedAmount <= 0 || !description.trim()) {
-      setError('사무실, 올바른 마일리지 금액, 처리 사유를 입력해 주세요.');
+    const validMileageType = ['ADMIN_REWARD', 'USE', 'ON_TIME_EXIT_REWARD'].includes(mileageTypeCode);
+    if (!officeId) {
+      setError('사무실을 선택해 주세요.');
+      return;
+    }
+    if (!validMileageType) {
+      setError('처리 유형을 선택해 주세요.');
+      return;
+    }
+    if (!Number.isSafeInteger(parsedAmount) || parsedAmount <= 0) {
+      setError('마일리지는 1 이상의 정수로 입력해 주세요.');
+      return;
+    }
+    if (!description.trim()) {
+      setError('처리 사유를 입력해 주세요.');
       return;
     }
 
@@ -115,6 +128,7 @@ export default function AdminMileage() {
           <label>
             처리 유형
             <select value={mileageTypeCode} onChange={(event) => setMileageTypeCode(event.target.value as MileageType)}>
+              <option value="ON_TIME_EXIT_REWARD">정시 출차 보상</option>
               <option value="ADMIN_REWARD">적립</option>
               <option value="USE">차감</option>
             </select>
@@ -159,7 +173,7 @@ export default function AdminMileage() {
                     <tr key={item.mileagehistoryid}>
                       <td>{formatDate(item.createdat)}</td>
                       <td>{item.office?.officenumber ?? item.officeid ?? '—'}</td>
-                      <td>{item.mileagetypecode === 'USE' ? '차감' : item.mileagetypecode === 'ADMIN_REWARD' ? '적립' : item.mileagetypecode}</td>
+                      <td>{item.mileagetypecode === 'USE' ? '차감' : item.mileagetypecode === 'ON_TIME_EXIT_REWARD' ? '정시 출차 보상' : item.mileagetypecode === 'ADMIN_REWARD' ? '적립' : item.mileagetypecode}</td>
                       <td className={signedAmount < 0 ? styles.negativeAmount : styles.positiveAmount}>
                         {signedAmount > 0 ? '+' : ''}{signedAmount.toLocaleString()}
                       </td>

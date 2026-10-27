@@ -16,7 +16,7 @@ const HISTORY_CATEGORIES: HistoryCategory[] = [
   { table: 'parking_usage', label: '입·출차 이력', description: '입·출차 기록', source: 'admin' },
   { table: 'office_history', label: '사무실 이력', description: '백엔드 조회 API 미구현', source: 'admin', available: false },
   { table: 'report_history', label: '신고 이력', description: '접수·검토·처리 결과 기록', source: 'admin' },
-  { table: 'parking_space_history', label: '주차공간 이력', description: '전체 이력 조회 API 미구현', source: 'admin', available: false },
+  { table: 'parking_space_history', label: '주차공간 이력', description: '주차공간 이력 기록', source: 'admin'},
 ];
 
 const FIELD_LABELS: Record<string, string> = {
@@ -76,6 +76,10 @@ const fetchCategoryRecords = async (table: string, signal: AbortSignal): Promise
     }));
     return historyLists.flat();
   }
+  if (table === 'parking_space_history') {
+    const response = await adminApi.get<unknown>('/api/parking/spaces', { signal });
+    return toRecords(response.data);
+  }
   if (table === 'mileage_history') {
     const response = await adminApi.get<unknown>('/api/mileage', { signal });
     return toRecords(response.data);
@@ -97,6 +101,7 @@ const fetchCategoryRecords = async (table: string, signal: AbortSignal): Promise
 
 const getCategoryApiPath = (table: string) => {
   if (table === 'notice_history') return '/api/notice → /api/notice/{noticeId}/history';
+  if (table === 'parking_space_history') return '관리자 API /api/parking/spaces';
   if (table === 'parking_usage') return '/api/parking/usages';
   if (table === 'mileage_history') return '관리자 API /api/mileage';
   if (table === 'parking_reservation_history') return '사용자 API /api/reservation-histories';
