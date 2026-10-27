@@ -10,6 +10,21 @@ export interface VehicleItem {
   isFavorite: boolean;
 }
 
+const getFavoriteStorageKey = () => {
+  const token = localStorage.getItem('token');
+  const payload = token?.split('.')[1];
+  if (!payload) return 'alpharking_reservation_favorite_vehicles';
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const decodedPayload = atob(normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, '='));
+    const loginId = JSON.parse(decodedPayload).sub;
+    return `alpharking_reservation_favorite_vehicles_${String(loginId || 'anonymous')}`;
+  } catch {
+    return 'alpharking_reservation_favorite_vehicles';
+  }
+};
+
 interface VehicleSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -23,6 +38,21 @@ export default function VehicleSearchModal({
 }: VehicleSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [vehicles, setVehicles] = useState<VehicleItem[]>([]);
+  const [favoriteVehicles, setFavoriteVehicles] = useState<VehicleItem[]>(() => {
+    try {
+      const savedFavorites = localStorage.getItem(getFavoriteStorageKey());
+      const parsedFavorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+      return Array.isArray(parsedFavorites)
+        ? parsedFavorites.filter(
+            (vehicle): vehicle is VehicleItem =>
+              Number.isSafeInteger(vehicle?.id) && vehicle.id > 0 &&
+              typeof vehicle.number === 'string' && typeof vehicle.visitDate === 'string',
+          )
+        : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -111,18 +141,27 @@ export default function VehicleSearchModal({
   }, [isOpen, searchTerm]);
 
   // 즐겨찾기 토글
-  const handleToggleFavorite = (e: React.MouseEvent, id: number) => {
+  const handleToggleFavorite = (e: React.MouseEvent, vehicle: VehicleItem) => {
     e.stopPropagation();
-    setVehicles((prev) =>
-      prev.map((vehicle) =>
-        vehicle.id === id ? { ...vehicle, isFavorite: !vehicle.isFavorite } : vehicle,
-      ),
-    );
+    const isFavorite = favoriteVehicles.some((favorite) => favorite.id === vehicle.id);
+    const nextFavorites = isFavorite
+      ? favoriteVehicles.filter((favorite) => favorite.id !== vehicle.id)
+      : [...favoriteVehicles, { ...vehicle, isFavorite: true }];
+    setFavoriteVehicles(nextFavorites);
+    localStorage.setItem(getFavoriteStorageKey(), JSON.stringify(nextFavorites));
   };
 
   // 💡 검색어 일부만 포함해도 실시간 필터링 (예: 23, 34, 67 등)
   const filteredVehicles = useMemo(() => {
-    return vehicles
+    const favoriteIds = new Set(favoriteVehicles.map((vehicle) => vehicle.id));
+    const allVehicles = [
+      ...favoriteVehicles.map((vehicle) => ({ ...vehicle, isFavorite: true })),
+      ...vehicles
+        .filter((vehicle) => !favoriteIds.has(vehicle.id))
+        .map((vehicle) => ({ ...vehicle, isFavorite: false })),
+    ];
+
+    return allVehicles
       .filter(
         (vehicle) =>
           vehicle.number.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
@@ -133,7 +172,7 @@ export default function VehicleSearchModal({
         if (!a.isFavorite && b.isFavorite) return 1;
         return 0;
       });
-  }, [vehicles, searchTerm]);
+  }, [vehicles, favoriteVehicles, searchTerm]);
 
   const handleClose = () => {
     setSearchTerm('');
@@ -216,7 +255,7 @@ export default function VehicleSearchModal({
                           <button
                             type="button"
                             className="btn btn-sm btn-outline-warning"
-                            onClick={(e) => handleToggleFavorite(e, vehicle.id)}
+                            onClick={(e) => handleToggleFavorite(e, vehicle)}
                             title={vehicle.isFavorite ? '즐겨찾기 해제' : '즐겨찾기 등록'}
                           >
                             {vehicle.isFavorite ? (
