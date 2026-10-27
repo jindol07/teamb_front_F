@@ -62,6 +62,23 @@
     background-color: #f8f9fa;
 }
 
+/* 대화 날짜 구분: 전체 화면·플로팅 공통 */
+.chat-date-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.chat-date-separator::before,
+.chat-date-separator::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid #dee2e6;
+}
+
 /* 메시지 한 줄 */
 .chat-message-container {
     position: relative;
@@ -96,6 +113,31 @@
     display: flex;
     align-items: flex-start;
     margin-bottom: 16px;
+}
+
+/* 말풍선 크기는 유지하고 작성 시각만 아래에 표시합니다. */
+.chat-message.has-time {
+    margin-bottom: 36px;
+}
+
+.chat-message.has-time .message-bubble {
+    position: relative;
+}
+
+.message-time {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    color: #6c757d;
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+
+.user-message .message-time {
+    left: auto;
+    right: 0;
 }
 
 /* =========================
