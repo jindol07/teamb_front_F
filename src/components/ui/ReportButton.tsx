@@ -5,9 +5,7 @@ import { submitReport } from '../../api/reportApi';
 import './report-button.css';
 
 const reportReasons = [
-  { label: '불법 주차', code: 'ZONE_VIOLATION' },
-  { label: '시설물 파손', code: 'FACILITY_DAMAGE' },
-  { label: '안전 문제', code: 'SAFETY_ISSUE' },
+  { label: '지정구역', code: 'ZONE_VIOLATION' },
   { label: '기타', code: 'ETC' },
 ];
 function getSubmitError(error: unknown): string {
