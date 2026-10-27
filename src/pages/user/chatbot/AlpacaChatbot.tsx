@@ -32,7 +32,9 @@ export default function AlpacaChatbot({
         { id: 1, text: '빈자리 확인', question: '지금 빈자리 몇 개야?' },
         { id: 2, text: '내 예약', question: '내 예약 내역 알려줘' },
         { id: 3, text: '주차 이력', question: '내 최근 주차 이용 이력 알려줘' },
-        { id: 4, text: '주차 이용 안내', question: '주차장 이용 방법 알려줘' }
+        { id: 4, text: '주차 이용 안내', question: '주차장 이용 방법 알려줘' },
+        { id: 5, text: '마일리지 안내', question: '마일리지는 어떻게 적립되고 사용되나요?' },
+        { id: 6, text: '예약 방법', question: '주차 예약은 어떻게 하나요?' }
     ];
     // 음성 인식 결과를 입력창에 반영
     const handleTranscriptChange = (text: string) => {
