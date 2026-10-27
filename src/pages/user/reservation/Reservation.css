@@ -105,6 +105,40 @@
   box-sizing: border-box;
 }
 
+.reservation-map-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  width: 100%;
+  padding: 8px 12px 0;
+  color: #596579;
+  font-size: 12px;
+}
+
+.reservation-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reservation-map-legend i {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+}
+
+.reservation-map-legend__reserved {
+  background: #fff2d8;
+  border: 1px solid #e5cd98;
+}
+
+.reservation-map-legend__selected {
+  background: #fff;
+  border: 2px solid #2563eb;
+}
+
 /* 구획 클릭 안내 문구 및 하단 알림 숨김 */
 .parking-reservation-map .alert,
 .parking-reservation-map .alert-primary,
