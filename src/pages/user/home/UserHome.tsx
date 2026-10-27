@@ -19,11 +19,14 @@ import {
 } from 'react-icons/fa';
 import { TfiAnnouncement } from 'react-icons/tfi';
 import { LuBot, LuHand } from 'react-icons/lu';
+import ReportButton from '../../../components/ui/ReportButton';
 import style from './UserHome.module.css';
 
 import parkingBanner from '../../../assets/스마트 지하주차장 출입구.png';
 
 type AnimationStyle = 'shake' | 'bounce' | 'pulse' | 'none';
+type NotificationTab = 'unread' | 'read';
+const NOTIFICATIONS_PER_PAGE = 3;
 
 interface NotificationSettings {
   enabled: boolean;
@@ -218,6 +221,52 @@ const getNotificationTitle = (type: string): string => {
   }
 };
 
+function NotificationMessage({ notification }: { notification: Notification }) {
+  const message = notification.message.trim();
+
+  if (notification.notificationtypecode === 'VEHICLE_APPROVED') {
+    return (
+      <p>
+        <span className={`${style.notificationMessageDetail} ${style.notificationApproval}`}>
+          <strong>승인 결과</strong>
+          {message}
+        </span>
+      </p>
+    );
+  }
+
+  if (notification.notificationtypecode === 'VEHICLE_REJECTED') {
+    const reasonIndex = message.indexOf('반려 사유:');
+    if (reasonIndex >= 0) {
+      return (
+        <p>
+          {message.slice(0, reasonIndex).trim()}
+          <span className={`${style.notificationMessageDetail} ${style.notificationReason}`}>
+            <strong>반려 사유</strong>
+            {message.slice(reasonIndex + '반려 사유:'.length).trim()}
+          </span>
+        </p>
+      );
+    }
+  }
+
+  if (notification.notificationtypecode === 'VEHICLE_REQUEST') {
+    const reviewIndex = message.indexOf('관리자 검토 후');
+    if (reviewIndex >= 0) {
+      return (
+        <p>
+          {message.slice(0, reviewIndex).trim()}
+          <span className={`${style.notificationMessageDetail} ${style.notificationFollowup}`}>
+            {message.slice(reviewIndex).trim()}
+          </span>
+        </p>
+      );
+    }
+  }
+
+  return <p>{message}</p>;
+}
+
 export default function UserHome() {
   const [latestNotice, setLatestNotice] = useState<NoticeType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -228,6 +277,8 @@ export default function UserHome() {
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notificationError, setNotificationError] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notificationTab, setNotificationTab] = useState<NotificationTab>('unread');
+  const [notificationPage, setNotificationPage] = useState(1);
 
   const [settings, setSettings] = useState<NotificationSettings>(() => {
     try {
@@ -388,6 +439,19 @@ export default function UserHome() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const sortedNotifications = [...notifications].sort(
+    (a, b) => new Date(b.createdat).getTime() - new Date(a.createdat).getTime(),
+  );
+  const unreadNotifications = sortedNotifications.filter((notification) => !notification.isread);
+  const readNotifications = sortedNotifications.filter((notification) => notification.isread);
+  const selectedNotifications = notificationTab === 'unread' ? unreadNotifications : readNotifications;
+  const totalNotificationPages = Math.ceil(selectedNotifications.length / NOTIFICATIONS_PER_PAGE);
+  const currentNotificationPage = Math.min(notificationPage, Math.max(totalNotificationPages, 1));
+  const visibleNotifications = selectedNotifications.slice(
+    (currentNotificationPage - 1) * NOTIFICATIONS_PER_PAGE,
+    currentNotificationPage * NOTIFICATIONS_PER_PAGE,
+  );
+
   return (
     <div className={`container py-4 ${style.userHome}`}>
       <div className={style.homeHeader}>
@@ -397,6 +461,7 @@ export default function UserHome() {
 
         {/* 알림 버튼 */}
         <div className={style.notificationArea}>
+          <ReportButton />
           <div className={style.notificationWrapper}>
             <button
               type="button"
@@ -513,8 +578,31 @@ export default function UserHome() {
                   </div>
                 )}
 
-                <div className={style.notificationCount}>
-                  읽지 않음 <strong>{unreadCount}</strong>개
+                <div className={style.notificationTabs} role="tablist" aria-label="알림 읽음 상태">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={notificationTab === 'unread'}
+                    className={`${style.notificationTab} ${notificationTab === 'unread' ? style.notificationTabActive : ''}`}
+                    onClick={() => {
+                      setNotificationTab('unread');
+                      setNotificationPage(1);
+                    }}
+                  >
+                    읽지 않음 <span>{unreadNotifications.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={notificationTab === 'read'}
+                    className={`${style.notificationTab} ${notificationTab === 'read' ? style.notificationTabActive : ''}`}
+                    onClick={() => {
+                      setNotificationTab('read');
+                      setNotificationPage(1);
+                    }}
+                  >
+                    읽음 <span>{readNotifications.length}</span>
+                  </button>
                 </div>
 
                 {notificationError && (
@@ -523,15 +611,15 @@ export default function UserHome() {
                   </p>
                 )}
 
-                {!notificationError && notifications.length === 0 && (
+                {!notificationError && selectedNotifications.length === 0 && (
                   <div className={style.notificationEmpty}>
                     <FaBell size={25} />
-                    <p>새로운 알림이 없습니다.</p>
+                    <p>{notificationTab === 'unread' ? '읽지 않은 알림이 없습니다.' : '읽은 알림이 없습니다.'}</p>
                   </div>
                 )}
 
                 {!notificationError &&
-                  notifications.map((notification) => (
+                  visibleNotifications.map((notification) => (
                     <button
                       type="button"
                       key={notification.notificationid}
@@ -550,13 +638,39 @@ export default function UserHome() {
                         )}
                       </div>
 
-                      <p>{notification.message}</p>
+                      <NotificationMessage notification={notification} />
 
                       <span className={style.notificationDate}>
-                        {new Date(notification.createdat).toLocaleString('ko-KR')}
+                        {new Date(notification.createdat).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </span>
                     </button>
                   ))}
+
+                {!notificationError && totalNotificationPages > 1 && (
+                  <nav className={style.notificationPagination} aria-label="알림 페이지 이동">
+                    <button
+                      type="button"
+                      disabled={currentNotificationPage === 1}
+                      onClick={() => setNotificationPage((page) => Math.max(1, page - 1))}
+                    >
+                      이전
+                    </button>
+                    <span>{currentNotificationPage} / {totalNotificationPages}</span>
+                    <button
+                      type="button"
+                      disabled={currentNotificationPage === totalNotificationPages}
+                      onClick={() => setNotificationPage((page) => Math.min(totalNotificationPages, page + 1))}
+                    >
+                      다음
+                    </button>
+                  </nav>
+                )}
               </div>
             )}
           </div>

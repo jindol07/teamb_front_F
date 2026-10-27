@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import axios from 'axios';
-import { CircleAlert, Settings, X } from 'lucide-react';
+import { CircleAlert, X } from 'lucide-react';
 import { submitReport } from '../../api/reportApi';
 import './report-button.css';
 
@@ -10,18 +10,6 @@ const reportReasons = [
   { label: '안전 문제', code: 'SAFETY_ISSUE' },
   { label: '기타', code: 'ETC' },
 ];
-const preferencesKey = 'apcms-report-button-preferences';
-type Preferences = {
-  label: string;
-  position: 'left' | 'right';
-  color: 'red' | 'blue' | 'navy';
-};
-const defaultPreferences: Preferences = {
-  label: '신고하기',
-  position: 'right',
-  color: 'red',
-};
-
 function getSubmitError(error: unknown): string {
   if (!axios.isAxiosError(error)) return '신고 접수 중 오류가 발생했습니다.';
   const payload = error.response?.data;
@@ -40,15 +28,6 @@ function getSubmitError(error: unknown): string {
   return '사용자 서버에 연결할 수 없습니다. 서버 주소와 실행 상태를 확인해 주세요.';
 }
 
-function readPreferences(): Preferences {
-  try {
-    const saved = localStorage.getItem(preferencesKey);
-    return saved ? { ...defaultPreferences, ...JSON.parse(saved) } : defaultPreferences;
-  } catch {
-    return defaultPreferences;
-  }
-}
-
 /** 로그인한 사용자 화면에서 신고를 접수하는 플로팅 버튼과 폼입니다. */
 export default function ReportButton() {
   const [open, setOpen] = useState(false);
@@ -57,19 +36,6 @@ export default function ReportButton() {
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [customizeOpen, setCustomizeOpen] = useState(false);
-  const [preferences, setPreferences] = useState<Preferences>(readPreferences);
-
-  const updatePreferences = (update: Partial<Preferences>) => {
-    const next = { ...preferences, ...update };
-    setPreferences(next);
-    localStorage.setItem(preferencesKey, JSON.stringify(next));
-  };
-  const positionStyle =
-    preferences.position === 'right'
-      ? { right: 164, left: 'auto' }
-      : { left: 24, right: 'auto' };
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
@@ -94,79 +60,10 @@ export default function ReportButton() {
 
   return (
     <>
-      <div className="report-widget" style={{ ...positionStyle, bottom: 26 }}>
-        {customizeOpen && (
-          <section className="report-customizer" aria-label="신고 버튼 꾸미기">
-            <div className="report-customizer-heading">
-              <strong>버튼 꾸미기</strong>
-              <button
-                type="button"
-                aria-label="설정 닫기"
-                onClick={() => setCustomizeOpen(false)}
-              >
-                <X size={16} />
-              </button>
-            </div>
-            <label className="report-customizer-field">
-              버튼 문구
-              <input
-                maxLength={16}
-                value={preferences.label}
-                onChange={(event) => updatePreferences({ label: event.target.value })}
-                placeholder="신고하기"
-              />
-            </label>
-            <label className="report-customizer-field">
-              위치
-              <select
-                value={preferences.position}
-                onChange={(event) =>
-                  updatePreferences({
-                    position: event.target.value as Preferences['position'],
-                  })
-                }
-              >
-                <option value="right">오른쪽 아래</option>
-                <option value="left">왼쪽 아래</option>
-              </select>
-            </label>
-            <label className="report-customizer-field">
-              색상
-              <select
-                value={preferences.color}
-                onChange={(event) =>
-                  updatePreferences({ color: event.target.value as Preferences['color'] })
-                }
-              >
-                <option value="red">레드</option>
-                <option value="blue">블루</option>
-                <option value="navy">네이비</option>
-              </select>
-            </label>
-            <button
-              className="report-customizer-reset"
-              type="button"
-              onClick={() => updatePreferences(defaultPreferences)}
-            >
-              기본값으로 초기화
-            </button>
-          </section>
-        )}
-        <div
-          className={`report-trigger-shell report-trigger-shell--${preferences.color}`}
-        >
-          <button className="report-trigger" type="button" onClick={() => setOpen(true)}>
+      <div className="report-widget">
+        <div className="report-trigger-shell">
+          <button className="report-trigger" type="button" aria-label="신고하기" title="신고하기" onClick={() => setOpen(true)}>
             <CircleAlert size={19} aria-hidden="true" />
-            <span>{preferences.label || '신고하기'}</span>
-          </button>
-          <button
-            className="report-customize-toggle"
-            type="button"
-            aria-label="신고 버튼 꾸미기"
-            aria-expanded={customizeOpen}
-            onClick={() => setCustomizeOpen((value) => !value)}
-          >
-            <Settings size={16} />
           </button>
         </div>
       </div>
