@@ -209,41 +209,100 @@ export function refreshAdminAccessToken(): Promise<string | null> {
  * native fetch용 사용자 공통 래퍼.
  * 기존 fetch 코드의 옵션(AbortSignal, FormData, credentials)을 그대로 유지한다.
  */
+
+/**
+ * native fetch용 사용자 공통 래퍼.
+ * 1. 요청 전 토큰 만료 임박 여부 확인
+ * 2. 필요하면 사전 갱신
+ * 3. 401 발생 시 다른 요청의 갱신 여부 확인
+ * 4. 필요하면 갱신 후 원 요청을 1회 재시도
+ */
 export async function authFetch(
     input: RequestInfo | URL,
     init: RequestInit = {},
 ): Promise<Response> {
     const fetchWithToken = (accessToken: string | null): Promise<Response> => {
-        const headers = new Headers(init.headers);
+        const headers = new Headers(
+            input instanceof Request ? input.headers : undefined
+        );
+
+        new Headers(init.headers).forEach((value, key) => {
+            headers.set(key, value);
+        });
 
         if (accessToken) {
             headers.set('Authorization', `Bearer ${accessToken}`);
+        } else {
+            headers.delete('Authorization');
         }
 
         return fetch(input, { ...init, headers });
     };
 
-    const response = await fetchWithToken(getAccessToken());
-    if (response.status !== 401) return response;
+    const requestUrl =
+        input instanceof Request ? input.url : String(input);
 
-    // 관리자 세션을 사용자 refresh로 갱신하지 않는다.
-    if (getAuthScope() !== 'user') return response;
+    let accessTokenUsed = getAccessToken();
 
-    if (getRefreshToken() === null) {
-        redirectToLogin();
+    // 1. 사용자 세션이고 토큰 만료가 임박했다면 요청 전에 갱신
+    if (
+        getAuthScope() === 'user' &&
+        accessTokenUsed &&
+        getRefreshToken() &&
+        !isAuthEndpoint(requestUrl) &&
+        isTokenExpiringSoon(accessTokenUsed)
+    ) {
+        const refreshedToken = await refreshAccessToken();
+
+        if (refreshedToken) {
+            accessTokenUsed = refreshedToken;
+        }
+    }
+
+    // 2. 현재 토큰으로 요청
+    const response = await fetchWithToken(accessTokenUsed);
+
+    if (response.status !== 401) {
         return response;
     }
 
-    const newAccessToken = await refreshAccessToken();
+    // 3. 관리자 세션은 사용자 refresh로 갱신하지 않음
+    if (getAuthScope() !== 'user' || isAuthEndpoint(requestUrl)) {
+        return response;
+    }
+
+    // 4. 다른 요청이 이미 토큰을 갱신했는지 확인
+    const currentToken = getAccessToken();
+
+    let newAccessToken: string | null = null;
+
+    if (currentToken && currentToken !== accessTokenUsed) {
+        // 기존 요청의 401이 늦게 도착한 경우
+        // 이미 저장된 새 토큰으로 재시도
+        newAccessToken = currentToken;
+    } else {
+        // 다른 요청이 갱신하지 않았다면 직접 갱신
+        if (!getRefreshToken()) {
+            redirectToLogin();
+            return response;
+        }
+
+        newAccessToken = await refreshAccessToken();
+    }
+
     if (!newAccessToken) {
-        if (getRefreshToken() === null) {
+        if (!getRefreshToken()) {
             redirectToLogin();
         }
+
         return response;
     }
 
+    // 5. 새 토큰으로 딱 한 번 재시도
+    // 재시도에서도 401이면 그대로 반환하여 무한 반복 방지
     return fetchWithToken(newAccessToken);
 }
+
 
 // =========================
 // JWT 인증 토큰 자동 추가
@@ -261,26 +320,76 @@ function isAuthEndpoint(url?: string): boolean {
 }
 
 // 사용자 API 요청 시 JWT 첨부
-userApi.interceptors.request.use((config) => {
-    const token = getAccessToken();
+userApi.interceptors.request.use(
+    async (config) => {
+        let token = localStorage.getItem('token');
+        const refreshToken = getRefreshToken();
 
-    if (token) {
-        config.headers.set('Authorization', `Bearer ${token}`);
-    }
+        // 인증 관련 API는 사전 갱신 대상에서 제외
+        if (
+            getAuthScope() === 'user' &&
+            token &&
+            refreshToken &&
+            !isAuthEndpoint(config.url) &&
+            isTokenExpiringSoon(token)
+        ) {
+            const newAccessToken = await refreshAccessToken();
 
-    return config;
-});
+            if (newAccessToken) {
+                token = newAccessToken;
+            }
+        }
 
-// 관리자 API 요청 시 JWT 첨부
-adminApi.interceptors.request.use((config) => {
-    const token = getAccessToken();
+        if (token) {
+            config.headers.set('Authorization', `Bearer ${token}`);
+        }
 
-    if (token) {
-        config.headers.set('Authorization', `Bearer ${token}`);
-    }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
 
-    return config;
-});
+// // 관리자 API 요청 시 JWT 첨부
+// adminApi.interceptors.request.use((config) => {
+//     const token = getAccessToken();
+
+//     if (token) {
+//         config.headers.set('Authorization', `Bearer ${token}`);
+//     }
+
+//     return config;
+// });
+
+adminApi.interceptors.request.use(
+    async (config) => {
+        let token = localStorage.getItem('token');
+        const refreshToken = getRefreshToken();
+
+        // 인증 관련 API는 사전 갱신 대상에서 제외
+        if (
+            getAuthScope() === 'user' &&
+            token &&
+            refreshToken &&
+            !isAuthEndpoint(config.url) &&
+            isTokenExpiringSoon(token)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+
+            if (newAccessToken) {
+                token = newAccessToken;
+            }
+        }
+
+        if (token) {
+            config.headers.set('Authorization', `Bearer ${token}`);
+        }
+
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
     _retry?: boolean;
@@ -306,7 +415,6 @@ userApi.interceptors.response.use(
         }
 
         config._retry = true;
-
         const newAccessToken = await refreshAccessToken();
 
         if (!newAccessToken) {
@@ -354,3 +462,34 @@ adminApi.interceptors.response.use(
         return adminApi.request(config);
     },
 );
+
+
+/**
+ * 액세스 토큰의 만료가 임박했는지 확인
+ * 만료까지 30초 이하이면 true 반환
+ */
+const isTokenExpiringSoon = (token: string): boolean => {
+    try {
+        const payload = token.split('.')[1];
+
+        if (!payload) {
+            return true;
+        }
+
+        const base64 = payload
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+
+        const decoded = JSON.parse(
+            atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='))
+        );
+
+        if (typeof decoded.exp !== 'number') {
+            return true;
+        }
+
+        return decoded.exp * 1000 - Date.now() <= 30_000;
+    } catch {
+        return true;
+    }
+};
