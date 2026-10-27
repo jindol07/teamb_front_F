@@ -31,7 +31,7 @@ interface ChatResponse {
 }
 interface ConversationHistory {
     conversationId: string | null;
-    messages: { id: string; senderTypeCode: 'USER' | 'AI'; content: string }[];
+    messages: { id: string; senderTypeCode: 'USER' | 'AI'; content: string; createdAt?: string | null }[];
 }
 // 공유할 상태와 함수의 타입
 interface ChatbotContextValue {
@@ -116,6 +116,7 @@ function ChatbotSession({ children, session }: { children: ReactNode; session: s
                 conversationId.current = response.data.conversationId;
                 const restored = response.data.messages.map((m): ChatMessage => ({
                     id: m.id, role: m.senderTypeCode === 'USER' ? 'user' : 'assistant', content: m.content,
+                    createdAt: m.createdAt,
                 }));
                 setMessages(restored.length ? restored : initialMessages);
                 setStorageNotice(response.data.conversationId ? '저장된 최근 대화의 메시지 최대 40개를 불러왔습니다.' : '대화는 계정별로 서버에 저장됩니다.');
@@ -153,7 +154,8 @@ function ChatbotSession({ children, session }: { children: ReactNode; session: s
         const userMessage: ChatMessage = {
             id: Date.now(),
             role: 'user',
-            content: question
+            content: question,
+            createdAt: new Date().toISOString()
         };
         setMessages(prev => [
             ...prev,
@@ -187,7 +189,8 @@ function ChatbotSession({ children, session }: { children: ReactNode; session: s
             const assistantMessage: ChatMessage = {
                 id: Date.now() + 1,
                 role: 'assistant',
-                content: data.answer
+                content: data.answer,
+                createdAt: new Date().toISOString()
             };
             setMessages(prev => [
                 ...prev,
