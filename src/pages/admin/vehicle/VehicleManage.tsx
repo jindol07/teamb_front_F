@@ -368,6 +368,13 @@ export default function VehicleManage() {
   const [fineStatusFilter, setFineStatusFilter] = useState<'전체' | FineStatus>('전체');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isFileDragging, setIsFileDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<{
+    type: 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    details?: string[];
+  } | null>(null);
 
   const registeredNumbers = new Set(
     vehicles.map((vehicle) => vehicle.vehiclenumber.replace(/\s/g, '').toLowerCase()),
@@ -628,7 +635,11 @@ export default function VehicleManage() {
     if (!file) return;
     const fileName = file.name.toLowerCase();
     if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls')) {
-      alert('xlsx, xls 파일만 업로드할 수 있습니다.');
+      setUploadFeedback({
+        type: 'error',
+        title: '지원하지 않는 파일 형식',
+        message: 'xlsx 또는 xls 파일만 업로드할 수 있습니다.',
+      });
       return;
     }
     setSelectedFile(file);
@@ -658,8 +669,14 @@ export default function VehicleManage() {
   };
 
   const handleFileUpload = async (): Promise<void> => {
-    if (!selectedFile) {
-      alert('업로드할 파일을 선택해주세요.');
+    if (!selectedFile || isUploading) {
+      if (!selectedFile) {
+        setUploadFeedback({
+          type: 'error',
+          title: '파일을 선택해주세요',
+          message: '업로드할 엑셀 파일을 먼저 선택해주세요.',
+        });
+      }
       return;
     }
 
@@ -667,7 +684,11 @@ export default function VehicleManage() {
     const isValid = fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
 
     if (!isValid) {
-      alert('xlsx, xls 파일만 업로드할 수 있습니다.');
+      setUploadFeedback({
+        type: 'error',
+        title: '지원하지 않는 파일 형식',
+        message: 'xlsx 또는 xls 파일만 업로드할 수 있습니다.',
+      });
       return;
     }
 
@@ -675,10 +696,33 @@ export default function VehicleManage() {
     formData.append('file', selectedFile);
 
     try {
+      setIsUploading(true);
       const response = await adminApi.post('/api/vehicleup/upload-excel', formData);
-      await fetchVehicles();
+      const result = response.data as {
+        totalCount?: number;
+        successCount?: number;
+        failureCount?: number;
+        errors?: string[];
+      };
       setSelectedFile(null);
-      alert(`업로드가 완료되었습니다.\n${JSON.stringify(response.data, null, 2)}`);
+      void fetchVehicles().catch((refreshError) => {
+        console.error('업로드 후 차량 목록 새로고침 실패:', refreshError);
+      });
+
+      const totalCount = result?.totalCount ?? 0;
+      const successCount = result?.successCount ?? 0;
+      const failureCount = result?.failureCount ?? 0;
+      const details = Array.isArray(result?.errors) ? result.errors : [];
+      const message = totalCount > 0
+        ? `전체 ${totalCount}건 중 ${successCount}건 등록, ${failureCount}건 실패했습니다.`
+        : '차량 정보 파일 처리가 완료되었습니다.';
+
+      setUploadFeedback({
+        type: failureCount === 0 ? 'success' : successCount === 0 ? 'error' : 'warning',
+        title: failureCount === 0 ? '업로드 성공' : successCount === 0 ? '업로드 실패' : '일부 차량 등록 실패',
+        message,
+        details,
+      });
     } catch (error) {
       console.error('차량 파일 업로드 오류:', error);
       const message =
@@ -686,9 +730,13 @@ export default function VehicleManage() {
           ? (error as { response?: { data?: { message?: string } } }).response?.data
               ?.message
           : undefined;
-      alert(
-        message || '파일 업로드에 실패했습니다. 파일 형식과 서버 연결을 확인해주세요.',
-      );
+      setUploadFeedback({
+        type: 'error',
+        title: '업로드 실패',
+        message: message || '파일 업로드에 실패했습니다. 파일 형식과 서버 연결을 확인해주세요.',
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -1477,6 +1525,7 @@ export default function VehicleManage() {
                   type="file"
                   accept=".xlsx,.xls"
                   onChange={handleFileChange}
+                  disabled={isUploading}
                 />
                 <label
                   htmlFor="vehicleFile"
@@ -1509,6 +1558,7 @@ export default function VehicleManage() {
                       className={styles.fileRemoveButton}
                       onClick={() => setSelectedFile(null)}
                       aria-label="파일 삭제"
+                      disabled={isUploading}
                     >
                       ×
                     </button>
@@ -1521,16 +1571,17 @@ export default function VehicleManage() {
                   type="button"
                   className={styles.secondaryButton}
                   onClick={() => setSelectedFile(null)}
+                  disabled={isUploading}
                 >
                   초기화
                 </button>
                 <button
                   type="button"
                   className={styles.primaryButton}
-                  disabled={!selectedFile}
+                  disabled={!selectedFile || isUploading}
                   onClick={handleFileUpload}
                 >
-                  파일 업로드
+                  {isUploading ? '업로드 중...' : '파일 업로드'}
                 </button>
               </div>
             </div>
@@ -1958,6 +2009,70 @@ export default function VehicleManage() {
                   </section>
                 </div>
               )}
+            </div>
+          )}
+          {uploadFeedback && (
+            <div
+              className={styles.modalOverlay}
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setUploadFeedback(null);
+              }}
+            >
+              <section
+                className={styles.rejectModal}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="vehicleUploadResultTitle"
+                aria-describedby="vehicleUploadResultMessage"
+              >
+                <div className={styles.modalHeader}>
+                  <div>
+                    <span
+                      className={`${styles.uploadResultIcon} ${
+                        uploadFeedback.type === 'success'
+                          ? styles.uploadResultSuccess
+                          : uploadFeedback.type === 'warning'
+                            ? styles.uploadResultWarning
+                            : styles.uploadResultError
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {uploadFeedback.type === 'success'
+                        ? '✓'
+                        : uploadFeedback.type === 'warning'
+                          ? '!'
+                          : '×'}
+                    </span>
+                    <h3 id="vehicleUploadResultTitle">{uploadFeedback.title}</h3>
+                    <p id="vehicleUploadResultMessage">{uploadFeedback.message}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.modalCloseButton}
+                    aria-label="닫기"
+                    onClick={() => setUploadFeedback(null)}
+                  >
+                    ×
+                  </button>
+                </div>
+                {uploadFeedback.details && uploadFeedback.details.length > 0 && (
+                  <ul className={styles.uploadResultErrors}>
+                    {uploadFeedback.details.map((detail, index) => (
+                      <li key={`${index}-${detail}`}>{detail}</li>
+                    ))}
+                  </ul>
+                )}
+                <div className={styles.modalActions}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => setUploadFeedback(null)}
+                    autoFocus
+                  >
+                    확인
+                  </button>
+                </div>
+              </section>
             </div>
           )}
         </>
