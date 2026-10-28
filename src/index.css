@@ -46,15 +46,18 @@ body {
 /* ---------- 사용자(User) 영역 ---------- */
 .user-header {
   height: var(--user-header-height);
+  background: #ffffff;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.user-header > .container {
   background: #4dabf7;
-  border-bottom: 1px solid #4dabf7;
 }
 
 .user-header-brand {
   display: inline-flex;
   align-items: center;
-  padding: 0.45rem 0.85rem;
-  border-radius: 0.5rem;
+  padding: 0.45rem 0;
   background: transparent;
   color: #ffffff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
@@ -63,6 +66,14 @@ body {
 
 .user-header-brand:hover {
   color: #ffffff;
+}
+
+.user-header-brand-icon {
+  width: 45px;
+  height: 45px;
+  margin-right: 7px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .user-header-brand-text {
@@ -134,9 +145,14 @@ body {
 }
 
 .admin-header-brand {
+  color: inherit;
   font-style: italic;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   transform: skewX(-5deg);
+}
+
+.admin-header-brand:hover {
+  color: inherit;
 }
 
 .admin-sidebar {
