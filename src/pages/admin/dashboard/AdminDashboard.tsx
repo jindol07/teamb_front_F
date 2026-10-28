@@ -2,10 +2,10 @@
  * 용도: 주차현황, 일별 통계, 차량 추가 신청, 최근 입출차와 위험알림 영역을 조립하는 관리자 첫 화면.
  * 직접 사용처: AdminRouter의 dashboard 경로.
  * 구획은 useParkingSpaceSync의 공통 연결을 사용하고 통계·신청·입출차·오늘 예약은 각 조회 API에서 받는다.
- * 통계의 주간·월간은 최근 7일·30일이다. 신청·입출차·오늘 예약·위험알림은 30초 주기와 화면 복귀 시 갱신한다.
- * 목록은 읽기 전용이다. 위험알림 상세 조회 성공 뒤 해당 알림만 읽음 처리하며 사건 상태는 변경하지 않는다.
+ * 통계의 주간·월간은 최근 7일·30일이다. 신청·입출차·오늘 예약은 30초마다, 위험알림은 공통 Provider에서 5초마다 갱신한다.
+ * 위험알림 목록은 공통 Provider를 공유하며 항목 선택 시 전역 상세·처리 모달을 연다.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { VehicleChangeRequestDTO } from '../../../api/vehicleApi';
 import {
@@ -19,13 +19,11 @@ import {
   fetchDailyParkingSummary,
   fetchDashboardVehicleRequests,
   fetchRecentParkingEvents,
-  fetchDashboardSafetyAlerts,
 } from './dashboardApi';
 import type {
   DailyParkingSummaryRow,
   DashboardPeriod,
   DashboardParkingEventRow,
-  DashboardSafetyAlert,
 } from './dashboardApi';
 import SummaryCards from './SummaryCards';
 import VehicleBarChart from './VehicleBarChart';
@@ -51,11 +49,6 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState<DashboardParkingEventRow[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
-  const [alerts, setAlerts] = useState<DashboardSafetyAlert[] | null>(null);
-  const [alertsLoading, setAlertsLoading] = useState(true);
-  const [alertsError, setAlertsError] = useState<string | null>(null);
-  const [incidentError, setIncidentError] = useState<string | null>(null);
-  const [alertsVersion, setAlertsVersion] = useState(0);
   const [reservations, setReservations] = useState<{
     date: string;
     count: number | null;
@@ -91,7 +84,6 @@ export default function AdminDashboard() {
     setRequestsError(null);
     setEventsLoading(true);
     setEventsError(null);
-    setAlertsLoading(true);
 
     const loadOperational = async () => {
       if (inFlight || controller.signal.aborted) return;
@@ -104,20 +96,6 @@ export default function AdminDashboard() {
       );
       try {
         await Promise.all([
-          fetchDashboardSafetyAlerts(controller.signal)
-            .then((result) => {
-              if (controller.signal.aborted) return;
-              setAlerts(result.alerts);
-              setAlertsVersion((version) => version + 1);
-              setIncidentError(result.incidentError);
-              setAlertsError(null);
-            })
-            .catch((error: unknown) => {
-              if (!controller.signal.aborted) setAlertsError(dashboardError(error));
-            })
-            .finally(() => {
-              if (!controller.signal.aborted) setAlertsLoading(false);
-            }),
           fetchRecentParkingEvents(controller.signal)
             .then((rows) => {
               if (!controller.signal.aborted) {
@@ -167,7 +145,7 @@ export default function AdminDashboard() {
       }
     };
     void loadOperational();
-    // 구획은 공통 소켓이 갱신한다. 이 타이머는 신청·입출차·오늘 예약·위험알림을 보완한다.
+    // 구획은 공통 소켓이 갱신한다. 이 타이머는 신청·입출차·오늘 예약을 보완한다.
     const timer = window.setInterval(() => {
       if (!document.hidden) void loadOperational();
     }, 30000);
@@ -181,13 +159,6 @@ export default function AdminDashboard() {
       window.removeEventListener('focus', onFocus);
     };
   }, [reload]);
-
-  // 읽음 PATCH의 성공 응답을 확인한 알림만 갱신한다. 이 로컬 갱신으로 상세 GET을 재실행하지 않는다.
-  const handleAlertRead = useCallback((notificationId: number) => {
-    setAlerts((previous) => previous?.map((alert) =>
-      alert.notificationId === notificationId ? { ...alert, read: true } : alert,
-    ) ?? null);
-  }, []);
 
   // 수동 갱신은 목록 effect를 다시 시작하고 공통 구획 현황도 별도로 조회한다.
   const handleRefresh = () => {
@@ -254,14 +225,7 @@ export default function AdminDashboard() {
           error={requestsError}
         />
         <ParkingUsagePanel events={events} loading={eventsLoading} error={eventsError} />
-        <RiskAlertPanel
-          alerts={alerts}
-          loading={alertsLoading}
-          error={alertsError}
-          incidentError={incidentError}
-          refreshVersion={alertsVersion}
-          onRead={handleAlertRead}
-        />
+        <RiskAlertPanel />
       </div>
     </div>
   );
