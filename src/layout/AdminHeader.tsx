@@ -31,7 +31,7 @@ export default function AdminHeader() {
 
   return (
     <header className="admin-header d-flex align-items-center justify-content-between px-3">
-      <span className="fw-bold">주차관제 관리자 시스템</span>
+      <span className="admin-header-brand fw-bold">AI Alpha Parking Service</span>
       <div className="d-flex align-items-center gap-3">
         <span className="small">{currentAdmin} 님</span>
         <button
