@@ -2,6 +2,8 @@ import { Outlet } from 'react-router-dom';
 import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
 import RequireAuth from '../auth/RequireAuthProps';
+import { SafetyAlertProvider } from '../shared/safety/SafetyAlertProvider';
+import GlobalSafetyAlert from '../shared/safety/GlobalSafetyAlert';
 
 /**
  * AdminLayout
@@ -17,17 +19,19 @@ import RequireAuth from '../auth/RequireAuthProps';
  */
 export default function AdminLayout() {
   return (
-    <RequireAuth allowedRoles={["ADMIN"]}>
-      <div className="admin-layout">
-        <AdminHeader />
-        <div className="d-flex">
-          <AdminSidebar />
-          <main className="admin-content flex-grow-1 p-4">
-            <Outlet />
-          </main>
+    <RequireAuth allowedRoles={['ADMIN']}>
+      <SafetyAlertProvider>
+        <div className="admin-layout">
+          <AdminHeader />
+          <div className="d-flex">
+            <AdminSidebar />
+            <main className="admin-content flex-grow-1 p-4">
+              <Outlet />
+            </main>
+          </div>
         </div>
-      </div>
+        <GlobalSafetyAlert />
+      </SafetyAlertProvider>
     </RequireAuth>
-
   );
 }
