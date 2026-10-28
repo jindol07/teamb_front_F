@@ -4,7 +4,6 @@ import AdminLogin from '../pages/admin/login/AdminLogin';
 import AdminDashboard from '../pages/admin/dashboard/AdminDashboard';
 import AdminNotice from '../pages/admin/notice/AdminNotice';
 import ParkingStatusAdmin from '../pages/admin/parking/status/ParkingStatusAdmin';
-import ParkingUsageAdmin from '../pages/admin/parking/parkingUsage/ParkingUsageAdmin';
 import VehicleManage from '../pages/admin/vehicle/VehicleManage';
 import History from '../pages/admin/history/History';
 import AdminSignup from '../pages/admin/login/AdminSignUp';
@@ -28,7 +27,8 @@ export default function AdminRoutes() {
                 {/* 기존 즐겨찾기 및 외부 링크는 새 주차관제 페이지로 이동 */}
                 <Route path="parking/status" element={<Navigate to="/admin/parking" replace />} />
                 <Route path="parking/manage" element={<Navigate to="/admin/parking" replace />} />
-                <Route path="parking-usage" element={<ParkingUsageAdmin />} />
+                {/* 삭제한 입출차 관리 화면의 기존 링크는 전체 이력으로 이동합니다. */}
+                <Route path="parking-usage" element={<Navigate to="/admin/history" replace />} />
                 <Route path="vehicle" element={<VehicleManage />} />
                 <Route path="mileage" element={<AdminMileage />} />
                 <Route path="history" element={<History />} />

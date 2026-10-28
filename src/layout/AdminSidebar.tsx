@@ -43,15 +43,6 @@ export default function AdminSidebar() {
 
         <li className="nav-item">
           <span
-            className={menuItemClass(location.pathname === '/admin/parking-usage')}
-            onClick={() => navigate('/admin/parking-usage')}
-          >
-            입출차 관리
-          </span>
-        </li>
-
-        <li className="nav-item">
-          <span
             className={menuItemClass(location.pathname === '/admin/vehicle')}
             onClick={() => navigate('/admin/vehicle')}
           >
