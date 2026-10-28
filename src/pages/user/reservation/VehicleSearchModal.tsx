@@ -98,21 +98,9 @@ export default function VehicleSearchModal({
 
         const mappedVehicles: VehicleItem[] = data
           .filter((vehicle: any) => {
-            const registrationStatus = String(
-              vehicle.registrationStatusCode ??
-                vehicle.registration_status_code ??
-                vehicle.registrationstatuscode ??
-                '',
-            )
-              .trim()
-              .toUpperCase();
             const deletedAt =
               vehicle.deletedAt ?? vehicle.deleted_at ?? vehicle.deletedat;
-
-            return (
-              ['REGISTERED', 'APPROVED'].includes(registrationStatus) &&
-              deletedAt == null
-            );
+            return deletedAt == null;
           })
           .map((vehicle: any) => ({
             id: Number(vehicle.vehicleId ?? vehicle.vehicle_id ?? vehicle.vehicleid),
