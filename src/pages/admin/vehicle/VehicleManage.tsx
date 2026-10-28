@@ -20,6 +20,7 @@ import {
 
 type ActiveMenu = 'list' | 'register' | 'upload' | 'status' | 'edit' | 'plus' | 'detail' | 'report';
 type VehicleSummaryFilter = 'ALL' | 'REGISTERED' | 'ADDITIONAL' | 'VISIT' | 'PENDING';
+const VEHICLE_PAGE_SIZE = 10;
 
 interface VehicleForm {
   vehiclenumber: string;
@@ -357,6 +358,7 @@ export default function VehicleManage() {
   const [prediction, setPrediction] = useState<VehiclePrediction | null>(null);
   const [predictionChecked, setPredictionChecked] = useState(false);
   const [vehicleSearch, setVehicleSearch] = useState('');
+  const [vehiclePage, setVehiclePage] = useState(1);
   const [vehicleSummaryFilter, setVehicleSummaryFilter] =
     useState<VehicleSummaryFilter>('ALL');
   const [fineForm, setFineForm] = useState<FineForm>(createInitialFineForm());
@@ -430,6 +432,17 @@ export default function VehicleManage() {
         .includes(keyword)
     );
   });
+  const vehiclePageCount = Math.max(1, Math.ceil(filteredVehicles.length / VEHICLE_PAGE_SIZE));
+  const currentVehiclePage = Math.min(vehiclePage, vehiclePageCount);
+  const pagedVehicles = filteredVehicles.slice(
+    (currentVehiclePage - 1) * VEHICLE_PAGE_SIZE,
+    currentVehiclePage * VEHICLE_PAGE_SIZE,
+  );
+  const firstVehiclePage = Math.max(1, Math.min(currentVehiclePage - 2, vehiclePageCount - 4));
+  const vehiclePageNumbers = Array.from(
+    { length: Math.min(5, vehiclePageCount) },
+    (_, index) => firstVehiclePage + index,
+  );
   const filteredFines = fines.filter((fine) => {
     const keyword = fineSearch.trim().toLowerCase();
     const vehicle = vehicles.find((item) => item.vehicleid === fine.vehicleid);
@@ -1044,7 +1057,7 @@ export default function VehicleManage() {
                   type="button"
                   className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'ALL' ? styles.summaryItemActive : ''}`}
                   aria-pressed={vehicleSummaryFilter === 'ALL'}
-                  onClick={() => setVehicleSummaryFilter('ALL')}
+                  onClick={() => { setVehicleSummaryFilter('ALL'); setVehiclePage(1); }}
                 >
                   <span>전체 차량</span>
                   <strong>
@@ -1056,7 +1069,7 @@ export default function VehicleManage() {
                   type="button"
                   className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'REGISTERED' ? styles.summaryItemActive : ''}`}
                   aria-pressed={vehicleSummaryFilter === 'REGISTERED'}
-                  onClick={() => setVehicleSummaryFilter('REGISTERED')}
+                  onClick={() => { setVehicleSummaryFilter('REGISTERED'); setVehiclePage(1); }}
                 >
                   <span>등록된 차량</span>
                   <strong className={styles.summaryNormal}>
@@ -1068,7 +1081,7 @@ export default function VehicleManage() {
                   type="button"
                   className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'ADDITIONAL' ? styles.summaryItemActive : ''}`}
                   aria-pressed={vehicleSummaryFilter === 'ADDITIONAL'}
-                  onClick={() => setVehicleSummaryFilter('ADDITIONAL')}
+                  onClick={() => { setVehicleSummaryFilter('ADDITIONAL'); setVehiclePage(1); }}
                 >
                   <span>추가 등록 차량</span>
                   <strong>
@@ -1086,7 +1099,7 @@ export default function VehicleManage() {
                   type="button"
                   className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'VISIT' ? styles.summaryItemActive : ''}`}
                   aria-pressed={vehicleSummaryFilter === 'VISIT'}
-                  onClick={() => setVehicleSummaryFilter('VISIT')}
+                  onClick={() => { setVehicleSummaryFilter('VISIT'); setVehiclePage(1); }}
                 >
                   <span>방문 차량</span>
                   <strong className={styles.summaryStopped}>
@@ -1098,7 +1111,7 @@ export default function VehicleManage() {
                   type="button"
                   className={`${styles.summaryItem} ${styles.summaryItemButton} ${vehicleSummaryFilter === 'PENDING' ? styles.summaryItemActive : ''}`}
                   aria-pressed={vehicleSummaryFilter === 'PENDING'}
-                  onClick={() => setVehicleSummaryFilter('PENDING')}
+                  onClick={() => { setVehicleSummaryFilter('PENDING'); setVehiclePage(1); }}
                 >
                   <span>접수중인 차량</span>
                   <strong>
@@ -1118,7 +1131,7 @@ export default function VehicleManage() {
                     <input
                       type="text"
                       value={vehicleSearch}
-                      onChange={(e) => setVehicleSearch(e.target.value)}
+                      onChange={(e) => { setVehicleSearch(e.target.value); setVehiclePage(1); }}
                       placeholder="차량번호, 차주명 검색"
                     />
                   </div>
@@ -1168,7 +1181,7 @@ export default function VehicleManage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredVehicles.map((vehicle) => (
+                      {pagedVehicles.map((vehicle) => (
                         <tr key={vehicle.vehicleid}>
                           <td>
                             {vehicle.isApprovedRequest ? (
@@ -1210,6 +1223,31 @@ export default function VehicleManage() {
                     </tbody>
                   </table>
                 </div>
+              )}
+              {filteredVehicles.length > 0 && (
+                <nav className={styles.vehiclePagination} aria-label="차량 등록 현황 페이지">
+                  <span className={styles.vehiclePageSummary}>
+                    {(currentVehiclePage - 1) * VEHICLE_PAGE_SIZE + 1}–{Math.min(currentVehiclePage * VEHICLE_PAGE_SIZE, filteredVehicles.length)} / {filteredVehicles.length}대
+                  </span>
+                  <div className={styles.vehiclePageControls}>
+                    <button type="button" onClick={() => setVehiclePage(1)} disabled={currentVehiclePage === 1} aria-label="첫 페이지">«</button>
+                    <button type="button" onClick={() => setVehiclePage(currentVehiclePage - 1)} disabled={currentVehiclePage === 1} aria-label="이전 페이지">‹</button>
+                    {vehiclePageNumbers.map((pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        type="button"
+                        className={pageNumber === currentVehiclePage ? styles.vehicleActivePage : undefined}
+                        onClick={() => setVehiclePage(pageNumber)}
+                        aria-current={pageNumber === currentVehiclePage ? 'page' : undefined}
+                        aria-label={`${pageNumber}페이지`}
+                      >
+                        {pageNumber}
+                      </button>
+                    ))}
+                    <button type="button" onClick={() => setVehiclePage(currentVehiclePage + 1)} disabled={currentVehiclePage === vehiclePageCount} aria-label="다음 페이지">›</button>
+                    <button type="button" onClick={() => setVehiclePage(vehiclePageCount)} disabled={currentVehiclePage === vehiclePageCount} aria-label="마지막 페이지">»</button>
+                  </div>
+                </nav>
               )}
             </div>
           )}

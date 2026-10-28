@@ -3,6 +3,7 @@ import axios from 'axios';
 import { loginSuccess, loginFailure, logout } from '../reducers/authReducer';
 import { AppDispatch } from "../reducers/store";
 import { adminApi, clearSession, getRefreshToken, saveTokens, userApi } from '../../api/axios';
+import { startLoginSession } from '../loginSession';
 
 // ADMIN ---
 export const adminLogin = (username: string, password: string) =>
@@ -29,6 +30,7 @@ export const adminLogin = (username: string, password: string) =>
 
             localStorage.setItem('username', username);
             // 관리자 세션임을 명시해 사용자 refresh와 섞이지 않게 한다.
+            startLoginSession();
             saveTokens(token, refreshToken, 'admin');
 
             dispatch(loginSuccess({ username, token }));
@@ -113,6 +115,7 @@ export const login = (username: string, password: string) =>
 
             localStorage.setItem('username', username);
             // access/refresh 토큰을 함께 저장하고 웹소켓에 변경을 알린다.
+            startLoginSession();
             saveTokens(token, refreshToken, 'user');
 
             dispatch(loginSuccess({ username, token }));

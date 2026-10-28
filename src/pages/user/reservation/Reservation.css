@@ -105,6 +105,40 @@
   box-sizing: border-box;
 }
 
+.reservation-map-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  width: 100%;
+  padding: 8px 12px 0;
+  color: #596579;
+  font-size: 12px;
+}
+
+.reservation-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reservation-map-legend i {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+}
+
+.reservation-map-legend__reserved {
+  background: #fff2d8;
+  border: 1px solid #e5cd98;
+}
+
+.reservation-map-legend__selected {
+  background: #fff;
+  border: 2px solid #2563eb;
+}
+
 /* 구획 클릭 안내 문구 및 하단 알림 숨김 */
 .parking-reservation-map .alert,
 .parking-reservation-map .alert-primary,
@@ -175,6 +209,54 @@
   margin: 0;
   color: #6c757d;
   font-size: 0.9rem;
+}
+
+.my-reservation-list {
+  flex: 0 0 auto;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.my-reservation-list h5 {
+  margin: 0 0 8px;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.my-reservation-list__items {
+  display: grid;
+  gap: 7px;
+}
+
+.my-reservation-list__item {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #64748b;
+  text-align: left;
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.my-reservation-list__item strong {
+  color: #334155;
+  font-size: 0.85rem;
+}
+
+.my-reservation-list__item:hover {
+  border-color: #9db6e8;
+}
+
+.my-reservation-list__item.is-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 
 /* =========================================================

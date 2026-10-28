@@ -3,8 +3,12 @@ import axios from 'axios';
 import { userVehicleApi, type UserVehicle } from '../../../api/uservehicleApi';
 import style from './VehicleManmentag.module.css';
 
+const normalizeVehicleNumber = (value: string) => value.replace(/[\s-]/g, '').toUpperCase();
+
 export default function VehicleManagement() {
   const [vehicles, setVehicles] = useState<UserVehicle[]>([]);
+  const [pendingVehicleNumbers, setPendingVehicleNumbers] = useState<string[]>([]);
+  const [vehiclesLoaded, setVehiclesLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
@@ -19,9 +23,11 @@ export default function VehicleManagement() {
 
   const loadVehicles = useCallback(async () => {
     setIsLoading(true);
+    setVehiclesLoaded(false);
     setErrorMessage('');
     try {
       setVehicles(await userVehicleApi.getMine());
+      setVehiclesLoaded(true);
     } catch {
       setErrorMessage('차량 목록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -33,7 +39,14 @@ export default function VehicleManagement() {
     void loadVehicles();
   }, [loadVehicles]);
 
+  const normalizedCarNumber = normalizeVehicleNumber(carNumber);
+  const isDuplicateVehicleNumber = normalizedCarNumber.length > 0 && (
+    vehicles.some((vehicle) => normalizeVehicleNumber(vehicle.vehicleNumber) === normalizedCarNumber) ||
+    pendingVehicleNumbers.includes(normalizedCarNumber)
+  );
+
   const handleAdd = async () => {
+    if (isSubmitting) return;
     const number = carNumber.trim();
     const owner = ownerName.trim();
     const model = carModel.trim();
@@ -43,11 +56,22 @@ export default function VehicleManagement() {
       return;
     }
 
+    if (!vehiclesLoaded) {
+      setFormAlert('차량 목록을 확인하지 못했습니다. 차량 목록을 다시 불러온 뒤 신청해주세요.');
+      return;
+    }
+
+    if (isDuplicateVehicleNumber) {
+      setFormAlert('이미 등록했거나 신청한 차량번호입니다. 차량번호를 확인해주세요.');
+      return;
+    }
+
     setIsSubmitting(true);
     setMessage('');
     setErrorMessage('');
     try {
       await userVehicleApi.requestRegistration(number, owner, model);
+      setPendingVehicleNumbers((prev) => [...prev, normalizeVehicleNumber(number)]);
       setCarNumber('');
       setOwnerName('');
       setCarModel('');
@@ -338,10 +362,22 @@ export default function VehicleManagement() {
                 <span>차량번호</span>
                 <input
                   value={carNumber}
-                  onChange={(e) => setCarNumber(e.target.value)}
+                  onChange={(e) => {
+                    setCarNumber(e.target.value);
+                    setMessage('');
+                    setErrorMessage('');
+                    setFormAlert('');
+                  }}
                   placeholder="예: 12가3456"
                   maxLength={20}
+                  aria-invalid={isDuplicateVehicleNumber}
+                  aria-describedby={isDuplicateVehicleNumber ? 'duplicate-vehicle-number' : undefined}
                 />
+                {isDuplicateVehicleNumber && (
+                  <small id="duplicate-vehicle-number" className={style['vm-field-error']} role="alert">
+                    이미 등록했거나 신청한 차량번호입니다.
+                  </small>
+                )}
               </label>
 
               <label className={style['vm-field']}>
@@ -363,10 +399,19 @@ export default function VehicleManagement() {
                 />
               </label>
 
-              <button className={style['vm-primary-btn']} type="submit" disabled={isSubmitting}>
-                {isSubmitting ? '신청 중…' : '＋ 차량 등록 신청'}
+              <button
+                className={style['vm-primary-btn']}
+                type="submit"
+                disabled={isSubmitting || isLoading || !vehiclesLoaded || isDuplicateVehicleNumber}
+              >
+                {isSubmitting ? '신청 중…' : isLoading ? '차량 확인 중…' : '＋ 차량 등록 신청'}
               </button>
             </form>
+            {!vehiclesLoaded && !isLoading && (
+              <button type="button" className={style['vm-secondary-btn']} onClick={() => void loadVehicles()}>
+                차량 목록 다시 불러오기
+              </button>
+            )}
             {message && <p role="status" className="mt-3 mb-0 text-success">{message}</p>}
             {errorMessage && <p role="alert" className="mt-3 mb-0 text-danger">{errorMessage}</p>}
           </section>

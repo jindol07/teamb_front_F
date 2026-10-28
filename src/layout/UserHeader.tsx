@@ -33,8 +33,8 @@ export default function UserHeader() {
   return (
     <header className="user-header d-flex align-items-center border-bottom">
       <div className="container d-flex justify-content-between align-items-center h-100">
-        <Link to="/user" className="fw-bold fs-5 text-decoration-none text-dark">
-          주차관제 서비스
+        <Link to="/user" className="user-header-brand fw-bold fs-5 text-decoration-none">
+          <span className="user-header-brand-text">AI Alpha Parking Service</span>
         </Link>
 
         <div className="d-flex align-items-center gap-3">

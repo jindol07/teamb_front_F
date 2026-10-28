@@ -5,12 +5,13 @@ import type { AdditionalVehicleRequest } from './vehicleStore';
 
 // 추가 등록 신청 상태 정의
 type AdditionalVehicleStatus = '접수' | '승인' | '반려' | '취소';
+const REQUEST_PAGE_SIZE = 8;
 
 // AdditionalVehicleManagement 컴포넌트 Props 인터페이스
 interface AdditionalVehicleManagementProps {
   requests: AdditionalVehicleRequest[];
   onDetail: (request: AdditionalVehicleRequest) => void;
-  onApprove: (request: AdditionalVehicleRequest) => void;
+  onApprove: (request: AdditionalVehicleRequest) => Promise<boolean>;
   onReject: (request: AdditionalVehicleRequest, reason: string) => Promise<boolean>;
 }
 
@@ -28,6 +29,7 @@ export default function AdditionalVehicleManagement({
 
   // 검색어 상태
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   // 신청 상태 필터 상태 ('전체' 또는 특정 상태)
   const [statusFilter, setStatusFilter] = useState<'전체' | AdditionalVehicleStatus>(
@@ -36,10 +38,12 @@ export default function AdditionalVehicleManagement({
 
   // 반려 처리 대상 요청 객체 상태
   const [rejectTarget, setRejectTarget] = useState<AdditionalVehicleRequest | null>(null);
+  const [approvalTarget, setApprovalTarget] = useState<AdditionalVehicleRequest | null>(null);
 
   // 반려 사유 입력 텍스트 상태
   const [rejectReason, setRejectReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
 
@@ -72,6 +76,17 @@ export default function AdditionalVehicleManagement({
 
     return matchesSearch && matchesStatus;
   });
+  const pageCount = Math.max(1, Math.ceil(filteredRequests.length / REQUEST_PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageRequests = filteredRequests.slice(
+    (currentPage - 1) * REQUEST_PAGE_SIZE,
+    currentPage * REQUEST_PAGE_SIZE,
+  );
+  const firstVisiblePage = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const pageNumbers = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, index) => firstVisiblePage + index,
+  );
 
   // 추가 등록 신청 승인 핸들러
   const handleApprove = (request: AdditionalVehicleRequest) => {
@@ -92,15 +107,22 @@ export default function AdditionalVehicleManagement({
       return;
     }
 
-    const confirmed = window.confirm(
-      `${request.vehiclenumber} 차량의 추가 등록 신청을 승인하시겠습니까?`,
-    );
+    setApprovalTarget(request);
+  };
 
-    if (!confirmed) {
-      return;
+  const confirmApprove = async () => {
+    if (!approvalTarget || isApproving) return;
+
+    setIsApproving(true);
+    try {
+      const succeeded = await onApprove(approvalTarget);
+      if (succeeded) setApprovalTarget(null);
+    } catch (error) {
+      console.error('차량 신청 승인 처리 실패:', error);
+      setLoadError('차량 신청 승인 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsApproving(false);
     }
-
-    onApprove(request);
   };
 
   // 추가 등록 신청 반려 확정 핸들러
@@ -166,7 +188,7 @@ export default function AdditionalVehicleManagement({
           type="button"
           className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '전체' ? styles.summaryItemActive : ''}`}
           aria-pressed={statusFilter === '전체'}
-          onClick={() => setStatusFilter('전체')}
+          onClick={() => { setStatusFilter('전체'); setPage(1); }}
         >
           <span>전체 신청</span>
 
@@ -180,7 +202,7 @@ export default function AdditionalVehicleManagement({
           type="button"
           className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '접수' ? styles.summaryItemActive : ''}`}
           aria-pressed={statusFilter === '접수'}
-          onClick={() => setStatusFilter('접수')}
+          onClick={() => { setStatusFilter('접수'); setPage(1); }}
         >
           <span>접수</span>
 
@@ -194,7 +216,7 @@ export default function AdditionalVehicleManagement({
           type="button"
           className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '승인' ? styles.summaryItemActive : ''}`}
           aria-pressed={statusFilter === '승인'}
-          onClick={() => setStatusFilter('승인')}
+          onClick={() => { setStatusFilter('승인'); setPage(1); }}
         >
           <span>승인</span>
 
@@ -208,7 +230,7 @@ export default function AdditionalVehicleManagement({
           type="button"
           className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '반려' ? styles.summaryItemActive : ''}`}
           aria-pressed={statusFilter === '반려'}
-          onClick={() => setStatusFilter('반려')}
+          onClick={() => { setStatusFilter('반려'); setPage(1); }}
         >
           <span>반려</span>
 
@@ -221,7 +243,7 @@ export default function AdditionalVehicleManagement({
           type="button"
           className={`${styles.summaryItem} ${styles.summaryItemButton} ${statusFilter === '취소' ? styles.summaryItemActive : ''}`}
           aria-pressed={statusFilter === '취소'}
-          onClick={() => setStatusFilter('취소')}
+          onClick={() => { setStatusFilter('취소'); setPage(1); }}
         >
           <span>취소</span>
 
@@ -240,7 +262,7 @@ export default function AdditionalVehicleManagement({
           <input
             type="text"
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => { setSearch(event.target.value); setPage(1); }}
             placeholder="차량번호, 차주명 검색"
           />
         </div>
@@ -273,7 +295,7 @@ export default function AdditionalVehicleManagement({
             </thead>
 
             <tbody>
-              {filteredRequests.map((request) => (
+              {pageRequests.map((request) => (
                 <tr key={request.id}>
                   <td>{request.vehiclenumber}</td>
 
@@ -337,6 +359,89 @@ export default function AdditionalVehicleManagement({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {filteredRequests.length > 0 && (
+        <nav className={styles.vehiclePagination} aria-label="차량 신청 페이지">
+          <span className={styles.vehiclePageSummary}>
+            {(currentPage - 1) * REQUEST_PAGE_SIZE + 1}–{Math.min(currentPage * REQUEST_PAGE_SIZE, filteredRequests.length)} / {filteredRequests.length}건
+          </span>
+          <div className={styles.vehiclePageControls}>
+            <button type="button" onClick={() => setPage(1)} disabled={currentPage === 1} aria-label="첫 페이지">«</button>
+            <button type="button" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1} aria-label="이전 페이지">‹</button>
+            {pageNumbers.map((pageNumber) => (
+              <button
+                key={pageNumber}
+                type="button"
+                className={pageNumber === currentPage ? styles.vehicleActivePage : undefined}
+                onClick={() => setPage(pageNumber)}
+                aria-current={pageNumber === currentPage ? 'page' : undefined}
+                aria-label={`${pageNumber}페이지`}
+              >
+                {pageNumber}
+              </button>
+            ))}
+            <button type="button" onClick={() => setPage(currentPage + 1)} disabled={currentPage === pageCount} aria-label="다음 페이지">›</button>
+            <button type="button" onClick={() => setPage(pageCount)} disabled={currentPage === pageCount} aria-label="마지막 페이지">»</button>
+          </div>
+        </nav>
+      )}
+
+      {approvalTarget && (
+        <div
+          className={styles.modalOverlay}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isApproving) {
+              setApprovalTarget(null);
+            }
+          }}
+        >
+          <section
+            className={styles.rejectModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="approveModalTitle"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <h3 id="approveModalTitle">차량 등록 승인</h3>
+                <p>이 차량의 추가 등록 신청을 승인할까요?</p>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseButton}
+                aria-label="닫기"
+                disabled={isApproving}
+                onClick={() => setApprovalTarget(null)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.modalRequestInfo}>
+              <span>차량번호</span>
+              <strong>{approvalTarget.vehiclenumber}</strong>
+            </div>
+
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                disabled={isApproving}
+                onClick={() => setApprovalTarget(null)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                disabled={isApproving}
+                onClick={() => void confirmApprove()}
+              >
+                {isApproving ? '승인 중…' : '승인 확정'}
+              </button>
+            </div>
+          </section>
         </div>
       )}
 

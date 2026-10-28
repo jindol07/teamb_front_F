@@ -1,6 +1,19 @@
-import { useLayoutEffect, useRef } from 'react';
+import { Fragment, useLayoutEffect, useRef } from 'react';
 import { useChatbot } from './ChatbotContext';
 import type { ChatMessage } from './chatbotTypes';
+import { chatMessageDate } from './chatbotTypes';
+
+const messageTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul', hour: 'numeric', minute: '2-digit', hour12: true
+});
+
+function messageTime(value?: string | null): string | null {
+    if (!value || !chatMessageDate(value)) return null;
+    const normalized = value.replace(' ', 'T');
+    return messageTimeFormatter.format(new Date(
+        /(?:Z|[+-]\d{2}:\d{2})$/.test(normalized) ? normalized : `${normalized}+09:00`
+    ));
+}
 /*
   채팅 메시지 Props
 */
@@ -83,14 +96,23 @@ export default function ChatMessages({
             className="alpaca-chat-messages"
             onScroll={handleScroll}
         >
-            {messages.map((message) => (
+            {messages.map((message, index) => {
+                const date = chatMessageDate(message.createdAt);
+                const time = messageTime(message.createdAt);
+                const previousDate = index > 0 ? chatMessageDate(messages[index - 1].createdAt) : null;
+                return (
+                <Fragment key={message.id}>
+                {date && date !== previousDate && (
+                    <div className="chat-date-separator" role="separator" aria-label={`${date} 대화`}>
+                        <time dateTime={date}>{date}</time>
+                    </div>
+                )}
                 <div
-                    key={message.id}
-                    className={
+                    className={(
                         message.role === 'user'
                             ? 'chat-message user-message'
                             : 'chat-message assistant-message'
-                    }
+                    ) + (time ? ' has-time' : '')}
                 >
                     {/* 알파카 메시지일 경우 */}
                     {message.role === 'assistant' && (
@@ -103,9 +125,12 @@ export default function ChatMessages({
                     )}
                     <div className="message-bubble">
                         {message.content}
+                        {time && <time className="message-time">{time}</time>}
                     </div>
                 </div>
-            ))}
+                </Fragment>
+                );
+            })}
         </div>
             <button
                 type="button"

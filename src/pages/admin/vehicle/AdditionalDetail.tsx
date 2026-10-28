@@ -5,7 +5,7 @@ import type { AdditionalVehicleRequest } from './vehicleStore';
 interface AdditionalVehicleDetailProps {
   request: AdditionalVehicleRequest;
   onBack: () => void;
-  onApprove: (request: AdditionalVehicleRequest) => void;
+  onApprove: (request: AdditionalVehicleRequest) => Promise<boolean>;
   onReject: (
     request: AdditionalVehicleRequest,
     reason: string,
@@ -23,6 +23,9 @@ export default function AdditionalVehicleDetail({
   onApprove,
   onReject,
 }: AdditionalVehicleDetailProps) {
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [approveError, setApproveError] = useState('');
   const [showRejectModal, setShowRejectModal] =
     useState(false);
 
@@ -56,8 +59,21 @@ export default function AdditionalVehicleDetail({
     if (succeeded) closeRejectModal();
   };
 
-  const handleApprove = () => {
-    onApprove(request);
+  const handleApprove = async () => {
+    if (isApproving) return;
+
+    setIsApproving(true);
+    setApproveError('');
+    try {
+      const succeeded = await onApprove(request);
+      if (succeeded) setShowApproveModal(false);
+      else setApproveError('승인 처리에 실패했습니다. 다시 시도해주세요.');
+    } catch (error) {
+      console.error('차량 신청 승인 처리 실패:', error);
+      setApproveError('승인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsApproving(false);
+    }
   };
 
   return (
@@ -176,7 +192,10 @@ export default function AdditionalVehicleDetail({
               <button
                 type="button"
                 className={styles.primaryButton}
-                onClick={handleApprove}
+                onClick={() => {
+                  setApproveError('');
+                  setShowApproveModal(true);
+                }}
               >
                 신청 승인
               </button>
@@ -192,6 +211,67 @@ export default function AdditionalVehicleDetail({
           )}
         </div>
       </div>
+
+      {/* 승인 확인 모달 */}
+      {showApproveModal && (
+        <div
+          className={styles.modalOverlay}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isApproving) {
+              setShowApproveModal(false);
+            }
+          }}
+        >
+          <section
+            className={styles.rejectModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="approveModalTitle"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <h3 id="approveModalTitle">차량 등록 승인</h3>
+                <p>이 차량의 추가 등록 신청을 승인할까요?</p>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseButton}
+                aria-label="닫기"
+                disabled={isApproving}
+                onClick={() => setShowApproveModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={styles.modalRequestInfo}>
+              <span>차량번호</span>
+              <strong>{request.vehiclenumber}</strong>
+            </div>
+
+            {approveError && <p className={styles.requestLoadError} role="alert">{approveError}</p>}
+
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                disabled={isApproving}
+                onClick={() => setShowApproveModal(false)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                disabled={isApproving}
+                onClick={() => void handleApprove()}
+              >
+                {isApproving ? '승인 중…' : '승인 확정'}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* 반려 사유 입력 모달 */}
       {showRejectModal && (

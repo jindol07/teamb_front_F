@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { clearLoginSession } from '../auth/loginSession';
 
 export type AuthScope = 'user' | 'admin';
 
@@ -93,6 +94,7 @@ export function saveTokens(
 
 /** 로그아웃/refresh 실패 시 세션을 완전히 제거한다. */
 export function clearSession(): void {
+    clearLoginSession();
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(AUTH_SCOPE_KEY);

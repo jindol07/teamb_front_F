@@ -23,9 +23,11 @@ interface ReservationResponse {
 export default function Reservation() {
   const { refresh: refreshParkingSpaces } = useParkingSpaceSync('user');
   const [reservation, setReservation] = useState<ReservationResponse | null>(null);
+  const [reservations, setReservations] = useState<ReservationResponse[]>([]);
   const rawSlots = useParkingStore((state) => state.slots);
 
   const [now, setNow] = useState(new Date());
+  const [currentFloor, setCurrentFloor] = useState(1);
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
   const [reservationExpired, setReservationExpired] = useState(false);
 
@@ -66,30 +68,33 @@ export default function Reservation() {
         console.warn(
           '서버가 JSON 대신 HTML을 반환했습니다. 로그인이 필요할 수 있습니다.',
         );
+        setReservations([]);
         setReservation(null);
         return;
       }
 
       const data = JSON.parse(text);
 
-      if (Array.isArray(data) && data.length > 0) {
+      const reservationList: ReservationResponse[] = Array.isArray(data)
+        ? data
+        : data && typeof data === 'object'
+          ? [data]
+          : [];
+      const activeReservations = reservationList.filter(
+        (item) => item.status_code !== 'CANCELED',
+      );
 
-        const activeReservations = data.filter(
-          (r: ReservationResponse) => r.status_code !== 'CANCELED',
-        );
-
-        if (activeReservations.length > 0) {
-          setReservation(activeReservations[activeReservations.length - 1]);
-        } else {
-          setReservation(null);
-        }
-      } else if (data && !Array.isArray(data) && data.status_code !== 'CANCELED') {
-        setReservation(data);
-      } else {
-        setReservation(null);
-      }
+      setReservations(activeReservations);
+      setReservation((currentReservation) =>
+        activeReservations.find(
+          (item) =>
+            item.parking_reservation_id ===
+            currentReservation?.parking_reservation_id,
+        ) ?? activeReservations[0] ?? null,
+      );
     } catch (error) {
       console.error('예약 정보 조회 실패:', error);
+      setReservations([]);
       setReservation(null);
     }
   }, []);
@@ -152,7 +157,14 @@ export default function Reservation() {
   const handleCancelReservation = async () => {
     if (!reservation) return;
 
-    if (!window.confirm('예약을 취소하시겠습니까?')) return;
+    const selectedSpaceLabel = currentSlot
+      ? `지하 ${currentSlot.floor}층 ${currentSlot.slotNumber}`
+      : `주차 구획 ID ${reservation.parking_space_id}`;
+    const confirmMessage =
+      `${selectedSpaceLabel} · 차량 ${reservation.vehicle_number}\n` +
+      '선택한 예약을 취소하시겠습니까?';
+
+    if (!window.confirm(confirmMessage)) return;
 
     try {
       const response = await authFetch(
@@ -171,6 +183,12 @@ export default function Reservation() {
       }
 
       setReservation(null);
+      setReservations((currentReservations) =>
+        currentReservations.filter(
+          (item) =>
+            item.parking_reservation_id !== reservation.parking_reservation_id,
+        ),
+      );
       setRemainingTime(null);
       setReservationExpired(false);
       alert('예약이 성공적으로 취소되었습니다.');
@@ -183,10 +201,11 @@ export default function Reservation() {
   };
 
   const slots = rawSlots.map((parkingSlot) => {
-    const isActiveReservation =
-      reservation != null &&
-      Number(reservation.parking_space_id) === Number(parkingSlot.parkingSpaceId) &&
-      new Date(reservation.reservation_end_at).getTime() > now.getTime();
+    const isActiveReservation = reservations.some(
+      (item) =>
+        Number(item.parking_space_id) === Number(parkingSlot.parkingSpaceId) &&
+        new Date(item.reservation_end_at).getTime() > now.getTime(),
+    );
 
     if (!isActiveReservation || parkingSlot.status !== 'EMPTY') {
       return parkingSlot;
@@ -200,8 +219,26 @@ export default function Reservation() {
       return Number(reservation.parking_space_id) === Number(s.parkingSpaceId);
     }) ?? null;
 
-  const currentFloor = currentSlot?.floor ?? 1;
   const selectedSlotId = currentSlot?.id ?? null;
+
+  useEffect(() => {
+    if (!reservation) return;
+
+    const reservationSlot = rawSlots.find(
+      (slot) =>
+        Number(slot.parkingSpaceId) === Number(reservation.parking_space_id),
+    );
+    if (reservationSlot) setCurrentFloor(reservationSlot.floor);
+  }, [reservation?.parking_space_id, rawSlots]);
+
+  const handleReservationSlotClick = (slot: ExtendedParkingSlot) => {
+    const selectedReservation = reservations.find(
+      (item) => Number(item.parking_space_id) === Number(slot.parkingSpaceId),
+    );
+    if (!selectedReservation) return;
+
+    setReservation(selectedReservation);
+  };
 
   return (
     <div className="myreservation-page">
@@ -217,7 +254,7 @@ export default function Reservation() {
               <h4>&nbsp;주차 현황</h4>
               <p>
                 {reservation
-                  ? '현재 주차장의 주차 현황을 확인하세요.'
+                  ? '내 예약 구획을 선택하면 해당 예약 정보를 확인할 수 있습니다.'
                   : '예약 후 주차 현황을 확인할 수 있습니다.'}
               </p>
             </div>
@@ -266,10 +303,14 @@ export default function Reservation() {
                   mode="user"
                   slots={slots}
                   currentFloor={currentFloor}
-                  onFloorChange={() => {}}
-                  onSlotClick={() => {}}
+                  onFloorChange={setCurrentFloor}
+                  onSlotClick={handleReservationSlotClick}
                   selectedSlotId={selectedSlotId}
                 />
+                <div className="reservation-map-legend" aria-label="도면 범례">
+                  <span><i className="reservation-map-legend__reserved" /> 내 예약 구획</span>
+                  <span><i className="reservation-map-legend__selected" /> 선택 중</span>
+                </div>
               </div>
             )}
           </div>
@@ -280,9 +321,48 @@ export default function Reservation() {
           <div className="reservation-summary-header">
             <div>
               <h4>&nbsp;예약 확인</h4>
-              <p>예약 정보를 확인하세요.</p>
+              <p>예약 목록에서 확인할 예약을 선택하세요.</p>
             </div>
           </div>
+
+          {reservations.length > 0 && (
+            <section className="my-reservation-list" aria-label="내 예약 목록">
+              <h5>내 예약 목록</h5>
+              <div className="my-reservation-list__items">
+                {reservations.map((item) => {
+                  const itemSlot = rawSlots.find(
+                    (slot) =>
+                      Number(slot.parkingSpaceId) ===
+                      Number(item.parking_space_id),
+                  );
+                  const isSelected =
+                    item.parking_reservation_id ===
+                    reservation?.parking_reservation_id;
+
+                  return (
+                    <button
+                      key={item.parking_reservation_id}
+                      type="button"
+                      className={`my-reservation-list__item${isSelected ? ' is-selected' : ''}`}
+                      aria-pressed={isSelected}
+                      onClick={() => setReservation(item)}
+                    >
+                      <strong>
+                        {itemSlot
+                          ? `지하 ${itemSlot.floor}층 ${itemSlot.slotNumber}`
+                          : `구획 ID ${item.parking_space_id}`}
+                      </strong>
+                      <span>
+                        {item.reservation_start_at?.split('T')[0]} ~{' '}
+                        {item.reservation_end_at?.split('T')[0]}
+                      </span>
+                      <span>차량 {item.vehicle_number}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {reservation && (
             <div className="reservation-detail">
@@ -295,6 +375,14 @@ export default function Reservation() {
                 </div>
 
                 <div className="reservation-info">
+                  <div className="info-item">
+                    <span>주차 구획</span>
+                    <strong>
+                      {currentSlot
+                        ? `지하 ${currentSlot.floor}층 ${currentSlot.slotNumber}`
+                        : `구획 ID ${reservation.parking_space_id}`}
+                    </strong>
+                  </div>
                   <div className="info-item">
                     <span>예약 기간</span>
                     <strong>
@@ -351,7 +439,7 @@ export default function Reservation() {
                     className="btn btn-outline-danger w-100 mt-2"
                     onClick={handleCancelReservation}
                   >
-                    예약 취소
+                    선택한 예약 취소
                   </button>
                 )}
               </div>
