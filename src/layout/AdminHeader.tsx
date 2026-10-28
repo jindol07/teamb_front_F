@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { adminLogoutAction, getAdmin } from '../auth/actions/authActions';
 import { useAppDispatch } from '../auth/reducers/store';
 import { useEffect, useState } from 'react';
@@ -31,7 +31,9 @@ export default function AdminHeader() {
 
   return (
     <header className="admin-header d-flex align-items-center justify-content-between px-3">
-      <span className="admin-header-brand fw-bold">AI Alpha Parking Service</span>
+      <Link to="/admin/dashboard" className="admin-header-brand fw-bold text-decoration-none">
+        AI Alpha Parking Service
+      </Link>
       <div className="d-flex align-items-center gap-3">
         <span className="small">{currentAdmin} 님</span>
         <button
