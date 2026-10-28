@@ -1,4 +1,9 @@
-/** 실시간 구획 상태를 기존 주차관제와 같은 기준으로 집계하는 대시보드 카드. */
+/** 파일 안내
+ * 용도: 전체 구획·사용중·오늘 예약·사용가능·사용불가를 표시하는 대시보드 카드.
+ * 직접 사용처: AdminDashboard. 구획과 오늘 예약 건수는 부모에서 전달받는다.
+ * 사용가능 면수는 전달된 구획 상태로 집계하며 예약 기록 수를 다시 빼지 않는다. 오늘 예약의 단위는 건이다.
+ * 미조회·예약 조회 실패는 0 대신 대시로 표시하며 확인필요 구획은 사용가능에 넣지 않는다.
+ */
 import type { ExtendedParkingSlot } from '../../../shared/parking/parking';
 import styles from './AdminDashboard.module.css';
 
@@ -17,6 +22,7 @@ export default function SummaryCards({
   reservationDate,
   reservationError,
 }: SummaryCardsProps) {
+  // 사용불가 유형은 점유 상태보다 우선한다. 서로 다른 카드에 같은 구획을 중복 집계하지 않는다.
   const disabled = slots.filter(
     (slot) => slot.status === 'DISABLED' || slot.slotType === 'DISABLED',
   ).length;

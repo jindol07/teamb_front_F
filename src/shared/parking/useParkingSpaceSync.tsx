@@ -1,13 +1,13 @@
-/** [1023_1010] 파일 안내
+/** 파일 안내
  * 용도: 역할별 WebSocket 연결과 장애 시 HTTP 대체 조회를 관리하는 공유 훅.
- * 직접 사용처: ParkingStatusAdmin, ParkingStatus, 사용자 Reservation.tsx.
+ * 직접 사용처: AdminDashboard, ParkingStatusAdmin, ParkingStatus, 사용자 Reservation.tsx.
  * parkingSpaceApi로 접속·조회하고 useParkingStore에 반영한다. 토큰 변경·만료·언마운트 시 자원을 정리한다.
  * 인증 성공 시 기본 폴링을 중단한다. 관리자 예약 보조 조회는 이 훅 밖의 별도 경로다.
  */
 /**
  * 관리자 현황은 A, 사용자 현황은 U에서 받는다.
  * HTTP는 기존 axios JWT 인증을 사용하고, 소켓은 첫 AUTH 메시지로 인증한다.
- * 연결 장애 중에는 5초 HTTP 조회를 유지하되 인증 실패 시 재시도를 중지한다.
+ * 연결 장애 중에는 5초 HTTP 조회를 유지한다. 토큰 만료 시 갱신을 시도하고 권한 거절·갱신 실패 시 중단한다.
  */
 import { useEffect } from 'react';
 import { fetchPublicParkingSpaces, getParkingWebSocketUrl } from './parkingSpaceApi';
@@ -16,7 +16,7 @@ import { refreshAccessToken, refreshAdminAccessToken } from '../../api/axios';
 import { normalizeParkingSpaces } from './parkingSpaceResponse';
 import { useParkingStore } from './useParkingStore';
 
-// [1023_1010] A/U별 연결 관리자를 만든다. 동일 서버의 여러 구독자는 연결과 폴링을 공유한다.
+// A/U별 연결 관리자를 만든다. 동일 서버의 여러 구독자는 연결과 폴링을 공유한다.
 function createParkingSpaceSync(server: ParkingServer) {
   const POLL_MS = 5000;
   const HEARTBEAT_MS = 15000;
@@ -37,8 +37,7 @@ function createParkingSpaceSync(server: ParkingServer) {
   let authBlocked = false;
   let renewing = false;
 
-  // 화면에서의 사전 확인이다. 실제 서명/권한 검증은 항상 서버가 수행한다.
-  // [1023_1010] 화면의 사전 만료·역할 검사다. JWT 서명과 실제 권한 검증은 서버가 수행한다.
+  // 화면의 사전 만료·역할 검사다. JWT 서명과 실제 권한 검증은 서버가 수행한다.
   function tokenExpiration(value: string): number {
     const parts = value.split('.');
     if (parts.length !== 3) throw new Error('로그인 정보를 확인할 수 없습니다. 다시 로그인해 주세요.');
@@ -59,7 +58,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     }
   }
 
-  // [1023_1010] 토큰·구독·세대가 바뀐 뒤 도착한 응답을 폐기하기 위한 조건이다.
+  // 토큰·구독·세대가 바뀐 뒤 도착한 응답을 폐기하기 위한 조건이다.
   function isCurrent(epoch: number, currentToken: string | null): boolean {
     return subscribers > 0 && generation === epoch && token === currentToken
       && localStorage.getItem('token') === currentToken;
@@ -70,7 +69,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     pollTimer = undefined;
   }
 
-  // [1023_1010] 세대와 버전을 먼저 바꿔 이전 비동기 응답을 무효화한 뒤 소켓·타이머·요청을 정리한다.
+  // 세대와 버전을 먼저 바꿔 이전 비동기 응답을 무효화한 뒤 소켓·타이머·요청을 정리한다.
   function stopResources() {
     generation += 1;
     snapshotVersion += 1;
@@ -89,7 +88,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     reconnectDelay = 3000;
   }
 
-  // [1023_1010] 인증 실패 상태에서는 자동 재시도를 멈추고 기존 구획 데이터를 비워 잘못된 계정 노출을 막는다.
+  // 인증 실패 상태에서는 자동 재시도를 멈추고 기존 구획 데이터를 비워 잘못된 계정 노출을 막는다.
   function failAuthentication(message: string) {
     stopResources();
     authBlocked = true;
@@ -146,8 +145,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     }, Math.min(remaining, 2147483647));
   }
 
-  /** 늦은 HTTP 결과가 계정 변경이나 최신 소켓 상태를 덮어쓰지 못하게 한다. */
-  // [1023_1010] HTTP 조회에는 10초 제한을 두고, 더 최신 소켓 스냅샷이 있으면 늦은 HTTP 결과를 반영하지 않는다.
+  /** HTTP는 10초로 제한한다. 계정 변경 또는 최신 소켓 수신 뒤 도착한 이전 HTTP 결과는 폐기한다. */
   async function refreshParkingSpaces(): Promise<void> {
     if (subscribers === 0 || authBlocked || !token) return;
     if (localStorage.getItem('token') !== token) {
@@ -183,7 +181,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     }
   }
 
-  // [1023_1010] 동시 폴링 요청을 하나로 제한한다. 실패 표시는 스토어가 담당한다.
+  // 동시 폴링 요청을 하나로 제한한다. 실패 표시는 스토어가 담당한다.
   function load() {
     if (pendingRequest || authBlocked) return;
     const request = refreshParkingSpaces();
@@ -195,14 +193,14 @@ function createParkingSpaceSync(server: ParkingServer) {
     });
   }
 
-  // [1023_1010] 연결 장애 중 즉시 한 번 조회하고 이후 5초 주기로 현황을 보완한다.
+  // 연결 장애 중 즉시 한 번 조회하고 이후 5초 주기로 현황을 보완한다.
   function startPolling() {
     if (pollTimer !== undefined || subscribers === 0 || authBlocked || !token) return;
     load();
     pollTimer = window.setInterval(load, POLL_MS);
   }
 
-  // [1023_1010] 재연결 대기는 3초부터 최대 30초까지 증가한다. 인증 거절 시에는 재시도하지 않는다.
+  // 재연결 대기는 3초부터 최대 30초까지 증가한다. 인증 거절 시에는 재시도하지 않는다.
   function scheduleReconnect() {
     if (subscribers === 0 || authBlocked || !token || reconnectTimer !== undefined) return;
     reconnectTimer = window.setTimeout(() => {
@@ -212,7 +210,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     reconnectDelay = Math.min(reconnectDelay * 2, 30000);
   }
 
-  // [1023_1010] 토큰을 URL에 넣지 않고 첫 AUTH 메시지로 전송한다.
+  // 토큰을 URL에 넣지 않고 첫 AUTH 메시지로 전송한다.
   function connect() {
     if (subscribers === 0 || authBlocked || !token || socket) return;
     if (localStorage.getItem('token') !== token) {
@@ -256,7 +254,7 @@ function createParkingSpaceSync(server: ParkingServer) {
       if (event.data === 'PONG' && authenticated) return;
       try {
         const message = JSON.parse(event.data);
-        // [1023_1010] 인증이 확인되면 폴링을 중지하고 HTTP 보완 조회·주기 PING을 시작한다.
+        // 인증이 확인되면 폴링을 중지하고 HTTP 보완 조회·주기 PING을 시작한다.
         if (message?.type === 'AUTH_OK' && !authenticated) {
           authenticated = true;
           window.clearTimeout(socketTimeout);
@@ -281,7 +279,7 @@ function createParkingSpaceSync(server: ParkingServer) {
         if (!authenticated || message?.type !== 'PARKING_SPACES_SNAPSHOT' || !Array.isArray(message.spaces)) {
           throw new Error('지원하지 않는 주차현황 웹소켓 응답입니다.');
         }
-        // [1023_1010] 소켓 응답도 HTTP와 같은 형식 검증을 거쳐 반영하고 스냅샷 버전을 올린다.
+        // 소켓 응답도 HTTP와 같은 형식 검증을 거쳐 반영하고 스냅샷 버전을 올린다.
         useParkingStore.getState().replaceFromServer(normalizeParkingSpaces(message.spaces));
         snapshotVersion += 1;
       } catch {
@@ -293,7 +291,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     connection.onerror = () => {
       if (socket === connection) connection.close();
     };
-    // [1023_1010] 인증 종료 코드는 재로그인을 안내하고 일반 연결 장애는 HTTP 조회와 재연결로 전환한다.
+    // 인증 종료 코드는 재로그인을 안내하고 일반 연결 장애는 HTTP 조회와 재연결로 전환한다.
     connection.onclose = (event: CloseEvent) => {
       if (socket !== connection) return;
       window.clearTimeout(socketTimeout);
@@ -313,7 +311,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     };
   }
 
-  // [1023_1010] 현재 저장된 토큰으로 만료 예약·초기 HTTP·소켓 연결을 시작한다.
+  // 현재 저장된 토큰으로 만료 예약·초기 HTTP·소켓 연결을 시작한다.
   function startForCurrentToken() {
     token = localStorage.getItem('token');
     authBlocked = false;
@@ -338,7 +336,7 @@ function createParkingSpaceSync(server: ParkingServer) {
     }
   }
 
-  // [1023_1010] 계정 변경 시 이전 계정의 데이터와 연결을 폐기한 뒤 새 토큰으로 시작한다.
+  // 계정 변경 시 이전 계정의 데이터와 연결을 폐기한 뒤 새 토큰으로 시작한다.
   function handleAuthChange() {
     if (subscribers === 0 || localStorage.getItem('token') === token) return;
     stopResources();
@@ -346,12 +344,12 @@ function createParkingSpaceSync(server: ParkingServer) {
     startForCurrentToken();
   }
 
-  // [1023_1010] 다른 탭에서 발생한 토큰 변경 또는 저장소 초기화를 감지한다.
+  // 다른 탭에서 발생한 토큰 변경 또는 저장소 초기화를 감지한다.
   function handleStorage(event: StorageEvent) {
     if (event.key === 'token' || event.key === null) handleAuthChange();
   }
 
-  // [1023_1010] 첫 구독에서 시작하고 마지막 구독 해제에서 종료한다. 리스너도 동일한 함수 참조로 해제한다.
+  // 첫 구독에서 시작하고 마지막 구독 해제에서 종료한다. 리스너도 동일한 함수 참조로 해제한다.
   function subscribe() {
     subscribers += 1;
     if (subscribers === 1) {
@@ -382,7 +380,7 @@ const connections = {
   user: createParkingSpaceSync('user'),
 };
 
-// [1023_1010] 화면은 서버 역할을 선택하고 필요 시 refresh를 호출한다. 연결 생명주기는 effect가 관리한다.
+// 화면은 서버 역할을 선택하고 필요 시 refresh를 호출한다. 연결 생명주기는 effect가 관리한다.
 export function useParkingSpaceSync(server: ParkingServer = 'admin') {
   const connection = connections[server];
   useEffect(connection.subscribe, [connection]);

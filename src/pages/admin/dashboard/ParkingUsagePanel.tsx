@@ -1,4 +1,9 @@
-/** 최근 입차·출차 이벤트 각각을 1건으로 표시하는 대시보드 목록. */
+/** 파일 안내
+ * 용도: 최근 입차·출차 이벤트를 최대 5건 보여 주는 대시보드 목록.
+ * 직접 사용처: AdminDashboard. 데이터 조회와 갱신은 부모가 수행하고 이 파일은 표시만 담당한다.
+ * 같은 이용 기록의 입차·출차는 별도 이벤트다. 표시 구획은 현재 이용 기록에 연결된 값이며 당시 위치 보관값은 아니다.
+ * 로딩·오류·빈 목록을 구분하고 전체 보기는 공통 이력 화면으로 이동한다.
+ */
 import { Link } from 'react-router-dom';
 import type { DashboardParkingEventRow } from './dashboardApi';
 import styles from './AdminDashboard.module.css';
@@ -21,7 +26,7 @@ export default function ParkingUsagePanel({
           <h2 id="dashboard-usage-title">최근 입출차 내역</h2>
           <p>발생 시각 기준 최근 5건</p>
         </div>
-        <Link to="/admin/parking-usage">전체 보기 →</Link>
+        <Link to="/admin/history">전체 보기 →</Link>
       </div>
       {loading ? (
         <div className={styles.emptyState} role="status">
