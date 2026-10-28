@@ -15,6 +15,39 @@ import type { ExtendedParkingSlot } from './parking';
 
 export type SyncState = 'idle' | 'loading' | 'ready' | 'error';
 
+function areParkingSlotsEqual(
+  currentSlots: ExtendedParkingSlot[],
+  nextSlots: ExtendedParkingSlot[],
+): boolean {
+  if (currentSlots.length !== nextSlots.length) return false;
+
+  return currentSlots.every((current, index) => {
+    const next = nextSlots[index];
+    return current.id === next.id
+      && current.parkingSpaceId === next.parkingSpaceId
+      && current.slotNumber === next.slotNumber
+      && current.spaceCode === next.spaceCode
+      && current.floor === next.floor
+      && current.x === next.x
+      && current.y === next.y
+      && current.width === next.width
+      && current.height === next.height
+      && current.status === next.status
+      && current.vehicleNumber === next.vehicleNumber
+      && current.slotType === next.slotType
+      && current.memo === next.memo
+      && current.zoneCode === next.zoneCode
+      && current.rawStatusCode === next.rawStatusCode
+      && current.rawTypeCode === next.rawTypeCode
+      && current.updatedAt === next.updatedAt;
+  });
+}
+
+function areStringArraysEqual(currentValues: string[], nextValues: string[]): boolean {
+  return currentValues.length === nextValues.length
+    && currentValues.every((value, index) => value === nextValues[index]);
+}
+
 // [1023_1010] 구획 데이터·선택 상태·동기화 상태와 갱신 함수를 한 계약으로 묶는다.
 interface ParkingState {
   slots: ExtendedParkingSlot[];
@@ -57,16 +90,21 @@ export const useParkingStore = create<ParkingState>((set) => ({
   // [1023_1010] 서버 응답 전체를 변환한 후 반영한다. 검증 예외가 나면 부분 목록으로 교체하지 않는다.
   replaceFromServer: (rows) => {
     const { slots, unmappedNumbers } = mergeParkingSpaces(rows);
-    set((state) => ({
-      slots,
-      unmappedNumbers,
-      syncState: 'ready',
-      syncError: null,
-      lastSyncedAt: new Date().toLocaleString('ko-KR'),
-      // 폴링 때 선택 객체가 오래된 상태로 남지 않게 최신 DB 객체로 교체.
-      selectedSlot: state.selectedSlot
-        ? slots.find((slot) => slot.parkingSpaceId != null && slot.parkingSpaceId === state.selectedSlot?.parkingSpaceId) ?? null
-        : null,
-    }));
+    set((state) => {
+      const slotsChanged = !areParkingSlotsEqual(state.slots, slots);
+      const unmappedNumbersChanged = !areStringArraysEqual(state.unmappedNumbers, unmappedNumbers);
+
+      return {
+        slots: slotsChanged ? slots : state.slots,
+        unmappedNumbers: unmappedNumbersChanged ? unmappedNumbers : state.unmappedNumbers,
+        syncState: 'ready',
+        syncError: null,
+        lastSyncedAt: new Date().toLocaleString('ko-KR'),
+        // 폴링 때 선택 객체가 오래된 상태로 남지 않게 최신 DB 객체로 교체.
+        selectedSlot: slotsChanged && state.selectedSlot
+          ? slots.find((slot) => slot.parkingSpaceId != null && slot.parkingSpaceId === state.selectedSlot?.parkingSpaceId) ?? null
+          : state.selectedSlot,
+      };
+    });
   },
 }));
