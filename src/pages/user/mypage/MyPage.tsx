@@ -1,150 +1,45 @@
 import { useState } from 'react';
-import useAgent from '../../../hooks/useAgent';
-import AccountManagement from './AccountManagement';
-import ParkingHistory from './ParkingHistory';
-import PasswordChange from './PasswordChange';
+import { CarFront, History, UserRound, Wallet } from 'lucide-react';
 import VehicleManagement from './VehicleManagement';
 import MileageHistory from './MileageHistory';
-// 마이페이지 메뉴 타입
-type MenuType = 'password' | 'vehicle' | 'parking' | 'account' | 'mileage';
+import ParkingHistory from './ParkingHistory';
+import MyInfo from './MyInfo';
+import styles from './MyInfo.module.css';
+
+type MenuType = 'info' | 'parking' | 'vehicle' | 'mileage';
+const menus = [
+  { id: 'info' as const, label: '내 정보', icon: UserRound },
+  { id: 'parking' as const, label: '주차 이용 내역', icon: History },
+  { id: 'vehicle' as const, label: '내 차량 관리', icon: CarFront },
+  { id: 'mileage' as const, label: '마일리지', icon: Wallet },
+];
+
+// 네 개의 마이페이지 메뉴와 선택한 메뉴의 기존·신규 화면을 표시한다.
 export default function MyPage() {
-  // 모바일 여부 확인
-  const { isMobile } = useAgent();
-  // 현재 선택된 메뉴
-  const [selectedMenu, setSelectedMenu] = useState<MenuType>('password');
-  // 선택된 메뉴에 따라 화면 변경
-  const renderContent = () => {
-    switch (selectedMenu) {
-      case 'password':
-        return <PasswordChange />;
-      case 'vehicle':
-        return <VehicleManagement />;
-      case 'parking':
-        return <ParkingHistory />;
-      case 'account':
-        return <AccountManagement />;
-      case 'mileage':
-        return <MileageHistory/>;
-      default:
-        return <PasswordChange />;
-    }
-  };
+  const [selectedMenu, setSelectedMenu] = useState<MenuType>('info');
   return (
-    <div className="container py-4">
-      {/* 마이페이지 제목 */}
-      <h2 className="mb-2">마이페이지</h2>
-      <p className="text-muted mb-4">회원정보와 차량 및 주차 이용 내역을 관리하세요.</p>
-      {/* 모바일 화면 */}
-      {isMobile ? (
-        <div>
-          {/* 모바일 메뉴 */}
-          <div className="d-grid gap-2 mb-4">
-            <button
-              type="button"
-              className={`btn ${
-                selectedMenu === 'password' ? 'btn-primary' : 'btn-outline-primary'
-              }`}
-              onClick={() => setSelectedMenu('password')}
-            >
-              회원정보 수정
+    <div className={`container py-4 ${styles.page}`}>
+      <header className={styles.header}>
+        <span className={styles.eyebrow}>AI ALPHA PARKING · MY PAGE</span>
+        <h2>마이페이지</h2>
+        <p>나의 계정부터 주차 생활까지, 한곳에서 편리하게.</p>
+      </header>
+      <div className={styles.layout}>
+        <nav className={styles.navigation} aria-label="마이페이지 메뉴">
+          {menus.map(({ id, label, icon: Icon }) => (
+            <button key={id} type="button" aria-current={selectedMenu === id ? 'page' : undefined}
+              onClick={() => setSelectedMenu(id)}>
+              <Icon size={18} aria-hidden="true" />{label}
             </button>
-            <button
-              type="button"
-              className={`btn ${
-                selectedMenu === 'vehicle' ? 'btn-primary' : 'btn-outline-primary'
-              }`}
-              onClick={() => setSelectedMenu('vehicle')}
-            >
-              내 차량 관리
-            </button>
-            <button
-              type="button"
-              className={`btn ${
-                selectedMenu === 'parking' ? 'btn-primary' : 'btn-outline-primary'
-              }`}
-              onClick={() => setSelectedMenu('parking')}
-            >
-              주차 이용 내역
-            </button>
-            <button
-              type="button"
-              className={`btn ${
-                selectedMenu === 'account' ? 'btn-primary' : 'btn-outline-primary'
-              }`}
-              onClick={() => setSelectedMenu('account')}
-            >
-              계정 관리
-            </button>
-              <button
-              type="button"
-              className={`btn ${
-                selectedMenu === 'mileage' ? 'btn-primary' : 'btn-outline-primary'
-              }`}
-              onClick={() => setSelectedMenu('mileage')}
-            >
-              마일리지
-            </button>
-          </div>
-          {/* 선택된 메뉴 내용 */}
-          {renderContent()}
-        </div>
-      ) : (
-        /* PC 화면 */
-        <div className="row">
-          {/* 왼쪽 메뉴 */}
-          <div className="col-md-3">
-            <div className="list-group">
-              <button
-                type="button"
-                className={`list-group-item list-group-item-action ${
-                  selectedMenu === 'password' ? 'active' : ''
-                }`}
-                onClick={() => setSelectedMenu('password')}
-              >
-                회원정보 수정
-              </button>
-              <button
-                type="button"
-                className={`list-group-item list-group-item-action ${
-                  selectedMenu === 'vehicle' ? 'active' : ''
-                }`}
-                onClick={() => setSelectedMenu('vehicle')}
-              >
-                내 차량 관리
-              </button>
-              <button
-                type="button"
-                className={`list-group-item list-group-item-action ${
-                  selectedMenu === 'parking' ? 'active' : ''
-                }`}
-                onClick={() => setSelectedMenu('parking')}
-              >
-                주차 이용 내역
-              </button>
-              <button
-                type="button"
-                className={`list-group-item list-group-item-action ${
-                  selectedMenu === 'account' ? 'active' : ''
-                }`}
-                onClick={() => setSelectedMenu('account')}
-              >
-                계정 관리
-              </button>
-               <button
-                type="button"
-                className={`list-group-item list-group-item-action ${
-                  selectedMenu === 'mileage' ? 'active' : ''
-                }`}
-                onClick={() => setSelectedMenu('mileage')}
-              >
-                마일리지
-              </button>
-            </div>
-          </div>
-          {/* 오른쪽 내용 */}
-          <div className="col-md-9">{renderContent()}</div>
-        </div>
-      )}
+          ))}
+        </nav>
+        <main className={styles.content}>
+          {selectedMenu === 'info' && <MyInfo />}
+          {selectedMenu === 'parking' && <ParkingHistory />}
+          {selectedMenu === 'vehicle' && <VehicleManagement />}
+          {selectedMenu === 'mileage' && <MileageHistory />}
+        </main>
+      </div>
     </div>
   );
 }

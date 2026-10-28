@@ -9,6 +9,7 @@ import {
 import styles from './AdminMileage.module.css';
 
 type MileageType = 'ADMIN_REWARD' | 'USE' | 'ON_TIME_EXIT_REWARD';
+const PAGE_SIZE = 10;
 
 function errorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -29,6 +30,7 @@ function formatDate(value: string | number): string {
 export default function AdminMileage() {
   const [offices, setOffices] = useState<AdminMileageOffice[]>([]);
   const [history, setHistory] = useState<AdminMileageHistoryDto[]>([]);
+  const [page, setPage] = useState(1);
   const [officeId, setOfficeId] = useState('');
   const [mileageTypeCode, setMileageTypeCode] = useState<MileageType>('ADMIN_REWARD');
   const [amount, setAmount] = useState('');
@@ -37,6 +39,15 @@ export default function AdminMileage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const pageCount = Math.max(1, Math.ceil(history.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageItems = history.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const firstVisiblePage = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const pageNumbers = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, index) => firstVisiblePage + index,
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -90,6 +101,7 @@ export default function AdminMileage() {
       });
       setAmount('');
       setDescription('');
+      setPage(1);
       setSuccess('마일리지가 등록되었습니다.');
       await loadData();
     } catch (cause) {
@@ -167,7 +179,7 @@ export default function AdminMileage() {
                 <tr><th>일시</th><th>사무실</th><th>유형</th><th>마일리지</th><th>처리 사유</th></tr>
               </thead>
               <tbody>
-                {history.map((item) => {
+                {pageItems.map((item) => {
                   const signedAmount = getSignedMileageAmount(item);
                   return (
                     <tr key={item.mileagehistoryid}>
@@ -184,6 +196,31 @@ export default function AdminMileage() {
               </tbody>
             </table>
           </div>
+        )}
+        {!loading && history.length > 0 && (
+          <nav className={styles.pagination} aria-label="마일리지 이력 페이지">
+            <span className={styles.pageSummary}>
+              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, history.length)} / {history.length}건
+            </span>
+            <div className={styles.pageControls}>
+              <button type="button" onClick={() => setPage(1)} disabled={currentPage === 1} aria-label="첫 페이지">«</button>
+              <button type="button" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1} aria-label="이전 페이지">‹</button>
+              {pageNumbers.map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  className={pageNumber === currentPage ? styles.activePage : undefined}
+                  onClick={() => setPage(pageNumber)}
+                  aria-current={pageNumber === currentPage ? 'page' : undefined}
+                  aria-label={`${pageNumber}페이지`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+              <button type="button" onClick={() => setPage(currentPage + 1)} disabled={currentPage === pageCount} aria-label="다음 페이지">›</button>
+              <button type="button" onClick={() => setPage(pageCount)} disabled={currentPage === pageCount} aria-label="마지막 페이지">»</button>
+            </div>
+          </nav>
         )}
       </section>
     </div>

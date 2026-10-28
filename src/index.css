@@ -46,7 +46,7 @@ body {
 /* ---------- 사용자(User) 영역 ---------- */
 .user-header {
   height: var(--user-header-height);
-  background-color: #4dabf7;
+  background: #4dabf7;
   border-bottom: 1px solid #4dabf7;
 }
 
@@ -55,7 +55,7 @@ body {
   align-items: center;
   padding: 0.45rem 0.85rem;
   border-radius: 0.5rem;
-  background-color: transparent;
+  background: transparent;
   color: #ffffff;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
   font-style: italic;
@@ -65,9 +65,23 @@ body {
   color: #ffffff;
 }
 
-.user-header-brand span {
+.user-header-brand-text {
   display: inline-block;
   transform: skewX(-5deg);
+  clip-path: inset(0 100% 0 0);
+  animation: user-header-typewriter 1.8s steps(24, end) forwards;
+}
+
+@keyframes user-header-typewriter {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-header-brand-text {
+    clip-path: none;
+    animation: none;
+  }
 }
 
 .user-header .text-secondary {
@@ -117,6 +131,12 @@ body {
   background-color: var(--admin-primary);
   color: #ffffff;
   height: 56px;
+}
+
+.admin-header-brand {
+  font-style: italic;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transform: skewX(-5deg);
 }
 
 .admin-sidebar {

@@ -48,10 +48,10 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
   const [selectedVisitorVehicle, setSelectedVisitorVehicle] =
     useState<VisitorVehicle | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const availability = useReservationAvailability(startDate, endDate);
+  const availability = useReservationAvailability(startDate, endDate ?? startDate);
   const dateAwareSlots = useMemo(() => {
     const availableSpaceIds = availability.availableSpaceIds;
-    if (!startDate || !endDate) return slots;
+    if (!startDate) return slots;
     if (!availableSpaceIds) {
       return slots.map((parkingSlot) =>
         parkingSlot.status === 'EMPTY'
@@ -66,12 +66,12 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
         && availableSpaceIds.has(parkingSlot.parkingSpaceId);
       return { ...parkingSlot, status: isAvailable ? 'EMPTY' as const : 'RESERVED' as const };
     });
-  }, [slots, availability.availableSpaceIds, startDate, endDate]);
+  }, [slots, availability.availableSpaceIds, startDate]);
 
   useEffect(() => {
-    if (!selectedSlot || !startDate || !endDate || !availability.availableSpaceIds) return;
+    if (!selectedSlot || !startDate || !availability.availableSpaceIds) return;
     if (selectedSlot.parkingSpaceId == null || !availability.availableSpaceIds.has(selectedSlot.parkingSpaceId)) {
-      const unavailableMessage = `${formatDateString(startDate)} ~ ${formatDateString(endDate)} 기간에 이미 예약된 자리입니다. 이 기간에는 예약할 수 없습니다.`;
+      const unavailableMessage = `${formatDateString(startDate)} ~ ${formatDateString(endDate ?? startDate)} 기간에 이미 예약된 자리입니다. 이 기간에는 예약할 수 없습니다.`;
       if (closeOnUnavailable) {
         alert(unavailableMessage);
         onClose();
@@ -332,7 +332,7 @@ export default function MyBookingModal({ slot, initialStartDate, initialEndDate,
                         statusStr === 'DISABLED' ||
                         clickedSlot.slotType === 'DISABLED' ||
                         statusStr === 'UNKNOWN' ||
-                        (startDate != null && endDate != null && statusStr === 'RESERVED')
+                        (startDate != null && statusStr === 'RESERVED')
                       ) {
                         setMessage(startDate && endDate
                           ? `${formatDateString(startDate)} ~ ${formatDateString(endDate)} 기간에는 예약할 수 없는 자리입니다.`
