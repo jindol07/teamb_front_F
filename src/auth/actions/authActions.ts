@@ -225,6 +225,25 @@ export const checkUsername = async (username: string) => {
 };
 
 // email
+export const checkEmail = async (email: string): Promise<boolean | null> => {
+    try {
+        const response = await axios.get<boolean>(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/check-email',
+            {
+                params: {
+                    email: email.trim()
+                }
+            }
+        );
+
+        return response.data;
+
+    } catch (error) {
+        console.log(error);
+        return null;
+    }
+};
+
 export interface EmailVerificationResponse {
     success: boolean;
     reason: string;
