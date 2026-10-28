@@ -1,6 +1,8 @@
 /* 모달 배경 */
 .vehicle-search-backdrop {
     z-index: 9998;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
 }
 
 /* 모달 */
