@@ -46,7 +46,7 @@ interface SafetyContextValue {
   close: () => void;
   refresh: () => void;
   retryDetail: () => void;
-  changeStatus: (status: SafetyTargetStatus, note: string) => Promise<boolean>;
+  changeStatus: (status: SafetyTargetStatus) => Promise<boolean>;
 }
 const SafetyContext = createContext<SafetyContextValue | null>(null);
 
@@ -203,9 +203,9 @@ export function SafetyAlertProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!account || selectedId !== null || saving) return;
-    const next = groups.find((alert) => !presented.current.has(alert.notificationId));
+    const next = groups.find((alert) => !presented.current.has(alert.incidentId));
     if (next) {
-      presented.current.add(next.notificationId);
+      presented.current.add(next.incidentId);
       setSelectedId(next.incidentId);
     }
   }, [account, groups, selectedId, saving]);
@@ -213,12 +213,15 @@ export function SafetyAlertProvider({ children }: { children: ReactNode }) {
   const open = useCallback((id: number) => {
     if (savingRef.current || !currentAccount()) return;
     const alert = alertsRef.current?.find((a) => a.incidentId === id);
-    if (alert) presented.current.add(alert.notificationId);
+    if (alert) presented.current.add(alert.incidentId);
     setSelectedId(id);
     setDetailRetry((n) => n + 1);
   }, []);
   const close = useCallback(() => {
-    if (!savingRef.current) setSelectedId(null);
+    if (savingRef.current) return;
+    // 현재 수신한 모든 사건을 접는다. 같은 사건의 재알림은 접힌 상태를 유지하고 새 사건만 자동 표시한다.
+    for (const alert of alertsRef.current ?? []) presented.current.add(alert.incidentId);
+    setSelectedId(null);
   }, []);
   const refresh = useCallback(() => loadRef.current(), []);
   const retryDetail = useCallback(() => setDetailRetry((n) => n + 1), []);
@@ -282,7 +285,7 @@ export function SafetyAlertProvider({ children }: { children: ReactNode }) {
   }, [selectedId, detailRetry, account]);
 
   const changeStatus = useCallback(
-    async (status: SafetyTargetStatus, note: string) => {
+    async (status: SafetyTargetStatus) => {
       if (
         selectedId === null ||
         !detail ||
@@ -302,7 +305,6 @@ export function SafetyAlertProvider({ children }: { children: ReactNode }) {
         const result = await changeSafetyIncidentStatus(
           selectedId,
           status,
-          note,
           controller.signal,
         );
         if (controller.signal.aborted || currentAccount() !== account) return false;
@@ -322,7 +324,7 @@ export function SafetyAlertProvider({ children }: { children: ReactNode }) {
       } catch (cause) {
         if (!controller.signal.aborted && currentAccount() === account) {
           setActionError(safetyError(cause));
-          // 다른 관리자와의 충돌·응답 불명확 시 입력은 보존하고 GET으로 실제 상태만 재확인한다.
+          // 다른 관리자와의 충돌·응답 불명확 시 GET으로 실제 상태를 재확인한다.
           try {
             const latest = await fetchDashboardSafetyIncident(
               selectedId,

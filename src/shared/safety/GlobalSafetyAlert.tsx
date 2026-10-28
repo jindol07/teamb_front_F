@@ -1,9 +1,9 @@
 /** 파일 안내
  * 용도: 관리자 모든 페이지 위에 위험 사건 모달과 미처리 배너를 표시한다.
  * 직접 사용처: AdminLayout. 데이터·업무 상태 변경은 SafetyAlertProvider를 사용한다.
- * 자동 팝업 자체로 사건을 처리하지 않는다. 명시적 시작·완료 버튼과 완료 메모를 요구한다.
+ * 자동 팝업 자체로 사건을 처리하지 않는다. 명시적인 처리 완료 버튼만으로 완료한다. 접어 두기는 현재 알림 전체에 적용한다.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParkingStore } from '../parking/useParkingStore';
 import { useSafetyAlerts } from './SafetyAlertProvider';
 import styles from './GlobalSafetyAlert.module.css';
@@ -39,22 +39,18 @@ export default function GlobalSafetyAlert() {
   const safety = useSafetyAlerts();
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const [note, setNote] = useState('');
   const slots = useParkingStore((state) => state.slots);
   const selected = safety.alerts?.find((a) => a.incidentId === safety.selectedId);
   const detail = safety.detail?.incidentId === safety.selectedId ? safety.detail : null;
-  const noteBytes = new TextEncoder().encode(note.trim()).length;
-  const canResolve = detail?.status === 'PROCESSING' || detail?.status === 'HOLD';
-  const canClose = !safety.saving && (!detail || detail.status !== 'RECEIVED');
+  const canResolve =
+    detail != null && ['RECEIVED', 'PROCESSING', 'HOLD'].includes(detail.status);
+  const canClose = !safety.saving;
   const location =
     detail?.parkingSpaceId == null
       ? '위치 미확인'
       : (slots.find((s) => s.parkingSpaceId === detail.parkingSpaceId)?.spaceCode ??
         `구획 #${detail.parkingSpaceId}`);
 
-  useEffect(() => {
-    setNote('');
-  }, [safety.selectedId]);
   useEffect(() => {
     if (safety.selectedId === null) return;
     const element = dialog.current;
@@ -135,7 +131,7 @@ export default function GlobalSafetyAlert() {
                 type="button"
                 className={styles.headerClose}
                 onClick={safety.close}
-                aria-label="위험알림 창 닫기"
+                aria-label="현재 위험알림 모두 접어 두기"
               >
                 ×
               </button>
@@ -206,29 +202,6 @@ export default function GlobalSafetyAlert() {
                     {safety.readError}
                   </p>
                 )}
-                {detail.status === 'RECEIVED' && (
-                  <p className={styles.instructions}>
-                    ‘확인·처리 시작’을 누르면 담당 관리자와 확인 시각이 서버에 기록됩니다.
-                  </p>
-                )}
-                {canResolve && (
-                  <div className={styles.note}>
-                    <label htmlFor="safety-resolution-note">
-                      처리 메모 <span>(완료 시 필수)</span>
-                    </label>
-                    <textarea
-                      id="safety-resolution-note"
-                      rows={4}
-                      value={note}
-                      disabled={safety.saving}
-                      onChange={(event) => setNote(event.target.value)}
-                      placeholder="현장 확인 결과와 조치 내용을 입력해 주세요."
-                    />
-                    <small className={noteBytes > 500 ? styles.error : ''}>
-                      {noteBytes}/500바이트 · 한글은 글자당 약 3바이트입니다.
-                    </small>
-                  </div>
-                )}
                 {detail.status === 'RESOLVED' && (
                   <div className={styles.completed} role="status">
                     <strong>처리 완료된 사건입니다.</strong>
@@ -238,7 +211,8 @@ export default function GlobalSafetyAlert() {
                 )}
                 {safety.actionError && (
                   <p className={styles.error} role="alert">
-                    {safety.actionError} 입력한 메모는 유지됩니다.
+                    {safety.actionError} 완료 여부를 최신 상태로 확인한 뒤 다시 시도해
+                    주세요.
                   </p>
                 )}
               </>
@@ -249,34 +223,15 @@ export default function GlobalSafetyAlert() {
             <div>
               {canClose && (
                 <button type="button" onClick={safety.close}>
-                  {detail?.status === 'RESOLVED' ? '닫기' : '접어 두기'}
-                </button>
-              )}
-              {detail?.status === 'RECEIVED' && (
-                <button
-                  type="button"
-                  className={styles.primary}
-                  disabled={safety.saving || safety.detailLoading}
-                  onClick={() => void safety.changeStatus('PROCESSING', '')}
-                >
-                  {safety.saving ? '저장 중…' : '확인·처리 시작'}
+                  {detail?.status === 'RESOLVED' ? '모두 닫기' : '모두 접어 두기'}
                 </button>
               )}
               {canResolve && (
                 <button
                   type="button"
                   className={styles.primary}
-                  disabled={
-                    safety.saving ||
-                    safety.detailLoading ||
-                    !note.trim() ||
-                    noteBytes > 500
-                  }
-                  onClick={() => {
-                    void safety.changeStatus('RESOLVED', note).then((success) => {
-                      if (success) setNote('');
-                    });
-                  }}
+                  disabled={safety.saving || safety.detailLoading}
+                  onClick={() => void safety.changeStatus('RESOLVED')}
                 >
                   {safety.saving ? '저장 중…' : '처리 완료'}
                 </button>
