@@ -176,28 +176,17 @@ export async function markDashboardSafetyAlertRead(
 
 export type SafetyTargetStatus = 'PROCESSING' | 'RESOLVED';
 
-/** 기존 서버 전환 규칙과 메모 길이를 따른다. 상태 성공 응답을 검증하기 전에는 UI를 완료로 바꾸지 않는다. */
+/** 완료 메모 없이 status만 전송한다. 서버의 성공 응답을 검증한 뒤에만 화면에 완료를 반영한다. */
 export async function changeSafetyIncidentStatus(
   incidentId: number,
   status: SafetyTargetStatus,
-  note: string,
   signal?: AbortSignal,
 ): Promise<{ incidentId: number; status: string; resolutionNote: string | null }> {
   safetyId(incidentId);
-  const resolutionNote = note.trim();
-  if (
-    status === 'RESOLVED' &&
-    (!resolutionNote || new TextEncoder().encode(resolutionNote).length > 500)
-  ) {
-    throw new Error(
-      '처리 메모를 입력해 주세요. UTF-8 기준 500바이트까지 저장할 수 있습니다.',
-    );
-  }
   const response = await adminApi.patch<unknown>(
     `/api/admin/safety-incidents/${incidentId}/status`,
     {
       status,
-      ...(status === 'RESOLVED' ? { resolutionNote } : {}),
     },
     { signal, timeout: 10000 },
   );
@@ -231,8 +220,7 @@ export function safetyError(error: unknown): string {
     if (error.response?.status === 403) return '관리자 권한을 확인해 주세요.';
     if (error.response?.status === 409)
       return '다른 관리자가 처리 상태를 변경했거나 허용되지 않은 상태 전환입니다. 최신 상태를 확인해 주세요.';
-    if (error.response?.status === 400)
-      return '처리 상태 또는 메모 형식을 확인해 주세요.';
+    if (error.response?.status === 400) return '처리 상태 요청을 확인해 주세요.';
     if (error.code === 'ECONNABORTED')
       return '조회 시간이 초과되었습니다. 다시 시도해 주세요.';
     return '데이터를 불러오지 못했습니다. 서버 연결을 확인해 주세요.';
