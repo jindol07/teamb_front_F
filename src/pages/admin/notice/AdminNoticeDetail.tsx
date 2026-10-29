@@ -13,14 +13,12 @@ const categoryCodeMap: Record<string, string> = {
     시설점검: 'FACILITY_INSPECTION',
     주차요금: 'PARKING_FEE',
     긴급공지: 'EMERGENCY_NOTICE',
-    정기권: 'SEASON_PASS',
 };
 const categoryOptions = [
     { value: 'USAGE_GUIDE', label: '이용안내' },
     { value: 'FACILITY_INSPECTION', label: '시설점검' },
     { value: 'PARKING_FEE', label: '주차요금' },
     { value: 'EMERGENCY_NOTICE', label: '긴급공지' },
-    { value: 'SEASON_PASS', label: '정기권' },
 ];
 export default function AdminNoticeDetail() {
     const navigate = useNavigate();

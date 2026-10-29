@@ -16,9 +16,6 @@ export const getCategoryBadge = (category: string): string => {
         case '긴급공지':
             return 'bg-danger';
 
-        case '정기권':
-            return 'bg-info text-dark';
-
         default:
             return 'bg-secondary';
     }

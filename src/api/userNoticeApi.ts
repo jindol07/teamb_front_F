@@ -26,7 +26,6 @@ const categoryMap: Record<string, string> = {
     FACILITY_INSPECTION: '시설점검',
     PARKING_FEE: '주차요금',
     EMERGENCY_NOTICE: '긴급공지',
-    SEASON_PASS: '정기권',
 };
 // 서버 응답 → 기존 React Notice 타입 변환
 const convertUserNotice = (

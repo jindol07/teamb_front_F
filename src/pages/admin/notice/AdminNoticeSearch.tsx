@@ -24,7 +24,6 @@ export default function AdminNoticeSearch({
         <option value="시설점검">시설점검</option>
         <option value="주차요금">주차요금</option>
         <option value="긴급공지">긴급공지</option>
-        <option value="정기권">정기권</option>
       </select>
       <input
         type="text"

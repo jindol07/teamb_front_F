@@ -84,7 +84,6 @@ export default function AdminNoticeForm({ onRegister, onCancel }: AdminNoticeFor
           <option value="FACILITY_INSPECTION">시설점검</option>
           <option value="PARKING_FEE">주차요금</option>
           <option value="EMERGENCY_NOTICE">긴급공지</option>
-          <option value="SEASON_PASS">정기권</option>
         </select>
       </div>
       {/* 제목 */}
