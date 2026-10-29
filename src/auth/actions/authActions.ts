@@ -279,6 +279,27 @@ export const checkBusiness = async (business_number: string) => {
     }
 };
 
+// 차량 번호 중복 확인
+export const checkVehicleNumber = async (
+    vehicle_number: string
+): Promise<boolean | null> => {
+    try {
+        const response = await axios.get<boolean>(
+            import.meta.env.VITE_BOOT_API_BASE_URL_U + '/api/auth/check-vehicle',
+            {
+                params: {
+                    vehicle_number: vehicle_number.trim().replace(/\s/g, "")
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.log(error);
+        return null;
+    }
+};
+
 export interface EmailVerificationResponse {
     success: boolean;
     reason: string;

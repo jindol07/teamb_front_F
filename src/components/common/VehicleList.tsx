@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { vehicleState } from "../../pages/user/login/UserSignUp";
+import { checkVehicleNumber } from "../../auth/actions/authActions";
 
 export default function VehicleList({
     vehicles, setVehicles
@@ -129,6 +130,12 @@ export default function VehicleList({
                                 }
                             </div>
 
+                            {isModifyVehiclesInfo === i && vehicleError && (
+                                <div className="text-danger small mt-1">
+                                    {vehicleError}
+                                </div>
+                            )}
+
                             {/* 차량별 버튼 */}
                             <div className="d-flex flex-row justify-content-end gap-2">
                                 <button
@@ -139,28 +146,85 @@ export default function VehicleList({
                                             : "btn btn-outline-primary"
                                     }
                                     style={{ minWidth: 80 }}
-                                    onClick={() => {
-                                        if (isModifyVehiclesInfo == i) {
-                                            setIsModifyVehiclesInfo(null);
-                                            setVehicles(vehicles.map((f, j) => {
-                                                if (i === j) {
-                                                    return {
-                                                        vehicle_number: modifyVehicle.vehicle_number,
-                                                        owner_name: modifyVehicle.owner_name,
-                                                        vehicle_type_code: modifyVehicle.vehicle_type_code
-                                                    }
+                                    
+                                    onClick={async () => {
+                                        if (isModifyVehiclesInfo === i) {
+                                            // 필수 입력값 검사
+                                            if (!modifyVehicle.vehicle_number.trim()) {
+                                                setVehicleError("차량 번호를 입력해주세요.");
+                                                return;
+                                            }
+
+                                            if (!modifyVehicle.owner_name.trim()) {
+                                                setVehicleError("소유주를 입력해주세요.");
+                                                return;
+                                            }
+
+                                            // 차량 번호의 공백 제거
+                                            const normalizedVehicleNumber =
+                                                modifyVehicle.vehicle_number.replace(/\s/g, "");
+
+                                            // 현재 수정 중인 차량을 제외하고 목록 내 중복 검사
+                                            const isDuplicateInList = vehicles.some(
+                                                (vehicle, index) =>
+                                                    index !== i &&
+                                                    vehicle.vehicle_number.replace(/\s/g, "") ===
+                                                        normalizedVehicleNumber
+                                            );
+
+                                            if (isDuplicateInList) {
+                                                setVehicleError("이미 입력한 차량 번호입니다.");
+                                                return;
+                                            }
+
+                                            // 기존 차량 번호와 비교
+                                            const originalVehicleNumber =
+                                                vehicles[i].vehicle_number.replace(/\s/g, "");
+
+                                            // 차량 번호가 변경된 경우에만 서버 중복 검사
+                                            if (normalizedVehicleNumber !== originalVehicleNumber) {
+                                                const result = await checkVehicleNumber(normalizedVehicleNumber);
+
+                                                if (result === null) {
+                                                    setVehicleError(
+                                                        "차량 번호 중복 확인에 실패했습니다. 다시 시도해주세요."
+                                                    );
+                                                    return;
                                                 }
-                                                return f;
+
+                                                if (result) {
+                                                    setVehicleError("이미 등록된 차량 번호입니다.");
+                                                    return;
+                                                }
+                                            }
+
+                                            // 검사를 모두 통과하면 수정 완료
+                                            setVehicles(vehicles.map((vehicle, index) => {
+                                                if (index === i) {
+                                                    return {
+                                                        vehicle_number: modifyVehicle.vehicle_number.trim(),
+                                                        owner_name: modifyVehicle.owner_name.trim(),
+                                                        vehicle_type_code: modifyVehicle.vehicle_type_code,
+                                                    };
+                                                }
+
+                                                return vehicle;
                                             }));
+
+                                            setVehicleError("");
+                                            setIsModifyVehiclesInfo(null);
                                         } else {
+                                            // 수정 모드 진입
+                                            setVehicleError("");
                                             setIsModifyVehiclesInfo(i);
                                             setModifyVehicle({
                                                 vehicle_number: e.vehicle_number,
                                                 owner_name: e.owner_name,
                                                 vehicle_type_code: e.vehicle_type_code,
-                                            })
+                                            });
                                         }
                                     }}
+
                                 >
                                     {isModifyVehiclesInfo == i ? "확인" : "수정"}
                                 </button>
@@ -258,7 +322,7 @@ export default function VehicleList({
                                 type="button"
                                 className="btn btn-primary"
                                 style={{ minWidth: 80 }}
-                                onClick={() => {
+                                onClick={async () => {
                                     if (!newVehicle.vehicle_number.trim()) {
                                         setVehicleError("차량 번호를 입력해주세요.");
                                         return;
@@ -266,6 +330,35 @@ export default function VehicleList({
 
                                     if (!newVehicle.owner_name.trim()) {
                                         setVehicleError("소유주를 입력해주세요.");
+                                        return;
+                                    }
+
+                                    // 이미 입력한 차량 목록에서 중복 확인
+                                    const normalizedVehicleNumber = newVehicle.vehicle_number
+                                        .replace(/\s/g, "")
+                                        .trim();
+
+                                    const isDuplicateInList = vehicles.some(
+                                        (vehicle) =>
+                                            vehicle.vehicle_number.replace(/\s/g, "").trim() ===
+                                            normalizedVehicleNumber
+                                    );
+
+                                    if (isDuplicateInList) {
+                                        setVehicleError("이미 입력한 차량 번호입니다.");
+                                        return;
+                                    }
+
+                                    // 서버에 차량 번호 중복 확인 요청
+                                    const result = await checkVehicleNumber(normalizedVehicleNumber);
+
+                                    if (result === null) {
+                                        setVehicleError("차량 번호 중복 확인에 실패했습니다. 다시 시도해주세요.");
+                                        return;
+                                    }
+
+                                    if (result) {
+                                        setVehicleError("이미 등록된 차량 번호입니다.");
                                         return;
                                     }
 
