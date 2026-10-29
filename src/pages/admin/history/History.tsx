@@ -14,7 +14,7 @@ const HISTORY_CATEGORIES: HistoryCategory[] = [
   { table: 'vehicle_history', label: '차량 이력', description: '차량 등록·변경 기록', source: 'admin' },
   { table: 'notice_history', label: '공지사항 이력', description: '공지 등록·수정 기록', source: 'admin' },
   { table: 'parking_usage', label: '입·출차 이력', description: '입·출차 기록', source: 'admin' },
-  { table: 'office_history', label: '사무실 이력', description: '백엔드 조회 API 미구현', source: 'admin', available: false },
+  { table: 'office_history', label: '사무실 이력', description: '사무실 계정 등록·변경 기록', source: 'admin' },
   { table: 'report_history', label: '신고 이력', description: '접수·검토·처리 결과 기록', source: 'admin' },
   { table: 'parking_space_history', label: '주차공간 이력', description: '주차공간 이력 기록', source: 'admin'},
 ];
@@ -38,6 +38,15 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 const normalizeField = (key: string) => key.replace(/[_-]/g, '').toLowerCase();
+// 사무실 이력에만 적용한다. 다른 팀원이 사용하는 공통 컬럼명은 변경하지 않는다.
+const OFFICE_HISTORY_LABELS: Record<string, string> = {
+  officehistoryid: '이력 번호', officeid: '사무실 ID', companyid: '회사 ID',
+  floorno: '층', officenumber: '호실', loginid: '로그인 ID', email: '이메일', phone: '연락처',
+  statuscode: '계정 상태', createdat: '계정 생성 일시', updatedat: '계정 수정 일시',
+  withdrawnat: '계정 탈퇴 일시', changedbyadminid: '변경 관리자 ID',
+  actortypecode: '변경 주체', changetypecode: '변경 유형', changereason: '변경 사유',
+  validfrom: '이력 시작 일시', validto: '이력 종료 일시',
+};
 const ACTOR_ID_HIDDEN_FIELDS = new Set(['actorid']);
 const NOTICE_HISTORY_HIDDEN_FIELDS = new Set(['filepath', 'storedname']);
 const MILEAGE_HISTORY_HIDDEN_FIELDS = new Set(['office']);
@@ -61,6 +70,10 @@ const toRecords = (payload: unknown): HistoryRecord[] => {
 };
 
 const fetchCategoryRecords = async (table: string, signal: AbortSignal): Promise<HistoryRecord[]> => {
+  if (table === 'office_history') {
+    const response = await adminApi.get<unknown>('/api/office-histories', { signal });
+    return toRecords(response.data);
+  }
   if (table === 'parking_usage') {
     const records = await fetchParkingUsages(signal);
     return records as unknown as HistoryRecord[];
@@ -100,6 +113,7 @@ const fetchCategoryRecords = async (table: string, signal: AbortSignal): Promise
 };
 
 const getCategoryApiPath = (table: string) => {
+  if (table === 'office_history') return '관리자 API /api/office-histories';
   if (table === 'notice_history') return '/api/notice → /api/notice/{noticeId}/history';
   if (table === 'parking_space_history') return '관리자 API /api/parking/spaces';
   if (table === 'parking_usage') return '/api/parking/usages';
@@ -279,7 +293,10 @@ export default function History() {
           ) : (
             <div className={style.tableWrap}>
               <table>
-                <thead><tr>{columns.map((column) => <th key={column}>{getFieldLabel(column)}</th>)}</tr></thead>
+                <thead><tr>{columns.map((column) => <th key={column}>{
+                  (selected.table === 'office_history' ? OFFICE_HISTORY_LABELS[normalizeField(column)] : undefined)
+                  ?? getFieldLabel(column)
+                }</th>)}</tr></thead>
                 <tbody>{pagedRecords.map((record, rowIndex) => (
                   <tr key={String(record.id ?? record.historyId ?? record.history_id ?? rowIndex)}>
                     {columns.map((column) => <td key={column}>{renderCell(record[column], column)}</td>)}
