@@ -1,4 +1,9 @@
-/** 미검토 추가 차량 신청 목록. 승인·반려는 기존 차량관리 화면에서 처리한다. */
+/** 파일 안내
+ * 용도: 처리 대기 차량 추가 등록 신청 건수와 최근 접수 5건을 표시한다.
+ * 직접 사용처: AdminDashboard. 부모가 REQUESTED 상태로 걸러 전달한 목록을 사용한다.
+ * 건수는 전체 대기 목록 길이이고 표시 행만 5건으로 제한한다. 원본 배열을 변경하지 않고 정렬한다.
+ * 승인·반려 기능은 없으며 전체 보기를 누르면 기존 차량관리 화면으로 이동한다.
+ */
 import { Link } from 'react-router-dom';
 import type { VehicleChangeRequestDTO } from '../../../api/vehicleApi';
 import styles from './AdminDashboard.module.css';

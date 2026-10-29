@@ -251,6 +251,22 @@
   cursor: pointer;
 }
 
+.welcomeHand {
+  display: inline-block;
+  transform-origin: 75% 75%;
+  vertical-align: -0.12em;
+  animation: welcomeHandWave 2.4s ease-in-out infinite;
+}
+
+@keyframes welcomeHandWave {
+  0%, 68%, 100% { transform: rotate(0deg); }
+  74% { transform: rotate(18deg); }
+  80% { transform: rotate(-12deg); }
+  86% { transform: rotate(16deg); }
+  92% { transform: rotate(-8deg); }
+  97% { transform: rotate(0deg); }
+}
+
 .notificationIconButton:hover {
   background: #eff6ff;
   color: #2563eb;
@@ -559,6 +575,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .welcomeHand {
+    animation: none;
+  }
+
   .notificationShake,
   .notificationBounce,
   .notificationPulse,

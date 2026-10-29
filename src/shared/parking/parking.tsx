@@ -1,4 +1,4 @@
-/** [1023_1010] 파일 안내
+/** 파일 안내
  * 용도: 관리자·사용자·예약 도면이 공유하는 구획 타입과 도면 Props 계약.
  * 직접 사용처: ParkingMapView, parkingSpaceAdapter, useParkingStore, SlotDetailPanel, ParkingStatus 및 사용자 예약 모달.
  * status는 화면 코드, rawStatusCode는 응답의 코드이며 DB PK와 화면 선택용 id를 구분한다.
@@ -46,7 +46,7 @@ export interface ExtendedParkingSlot extends ParkingSlot {
 
 /**
  * 화면 역할에 관계없이 Konva 도면에 필요한 입력값만 받음.
- * 이전 주석본에서 mode/slots가 중복 선언된 오류를 수정함.
+ * 선택·층 변경 동작은 부모가 맡으며 이 계약 자체에는 API 호출이나 DB 변경 기능이 없다.
  */
 export interface ParkingMapProps {
   mode: 'admin' | 'user';

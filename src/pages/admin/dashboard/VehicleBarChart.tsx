@@ -1,4 +1,9 @@
-/** DAILY_PARKING_SUMMARY의 일별 집계를 Chart.js 그룹 막대로 표시한다. */
+/** 파일 안내
+ * 용도: 저장된 일별 주차 이용·예약·방문 차량 이용 건수를 Chart.js 막대로 표시한다.
+ * 직접 사용처: AdminDashboard. 기간 선택 변경을 부모에 전달하고 직접 API를 호출하지 않는다.
+ * 주간은 최근 7일, 월간은 최근 30일이다. 집계가 없는 날짜를 임의로 0건으로 생성하지 않는다.
+ * 방문 차량 이용은 전체 이용과 합산하지 않으며 같은 데이터를 접근성용 표로도 제공한다.
+ */
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -71,6 +76,7 @@ export default function VehicleBarChart({
       },
     },
   };
+  // 서버가 날짜순으로 반환한 행을 세 개의 독립된 데이터 계열로 변환한다.
   const data: ChartData<'bar'> = {
     labels: rows.map((row) => row.summaryDate.slice(5).replace('-', '/')),
     datasets: [

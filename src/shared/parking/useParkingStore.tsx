@@ -1,4 +1,4 @@
-/** [1023_1010] 파일 안내
+/** 파일 안내
  * 용도: 서버 구획 스냅샷·선택한 층/구획·조회 상태를 보관하는 Zustand 스토어.
  * 직접 사용처: useParkingSpaceSync, 관리자·사용자 현황, 공통 스토어를 읽는 예약 화면·모달.
  * parkingSpaceAdapter로 검증·변환한 결과를 반영한다. DB를 직접 수정하거나 입차 기록을 생성하지 않는다.
@@ -15,7 +15,40 @@ import type { ExtendedParkingSlot } from './parking';
 
 export type SyncState = 'idle' | 'loading' | 'ready' | 'error';
 
-// [1023_1010] 구획 데이터·선택 상태·동기화 상태와 갱신 함수를 한 계약으로 묶는다.
+function areParkingSlotsEqual(
+  currentSlots: ExtendedParkingSlot[],
+  nextSlots: ExtendedParkingSlot[],
+): boolean {
+  if (currentSlots.length !== nextSlots.length) return false;
+
+  return currentSlots.every((current, index) => {
+    const next = nextSlots[index];
+    return current.id === next.id
+      && current.parkingSpaceId === next.parkingSpaceId
+      && current.slotNumber === next.slotNumber
+      && current.spaceCode === next.spaceCode
+      && current.floor === next.floor
+      && current.x === next.x
+      && current.y === next.y
+      && current.width === next.width
+      && current.height === next.height
+      && current.status === next.status
+      && current.vehicleNumber === next.vehicleNumber
+      && current.slotType === next.slotType
+      && current.memo === next.memo
+      && current.zoneCode === next.zoneCode
+      && current.rawStatusCode === next.rawStatusCode
+      && current.rawTypeCode === next.rawTypeCode
+      && current.updatedAt === next.updatedAt;
+  });
+}
+
+function areStringArraysEqual(currentValues: string[], nextValues: string[]): boolean {
+  return currentValues.length === nextValues.length
+    && currentValues.every((value, index) => value === nextValues[index]);
+}
+
+// 구획 데이터·선택 상태·동기화 상태와 갱신 함수를 한 계약으로 묶는다.
 interface ParkingState {
   slots: ExtendedParkingSlot[];
   selectedFloor: number;
@@ -32,9 +65,9 @@ interface ParkingState {
   replaceFromServer: (rows: ParkingSpaceDto[]) => void;
 }
 
-// [1023_1010] 서버 스냅샷을 표시하는 캐시다. 상태 변경 함수 호출만으로 DB가 수정되지는 않는다.
+// 서버 스냅샷을 표시하는 캐시다. 상태 변경 함수 호출만으로 DB가 수정되지는 않는다.
 export const useParkingStore = create<ParkingState>((set) => ({
-  // 도면 형상은 AI팀과 약속한 정적 좌표임. 점유 상태는 모두 UNKNOWN에서 출발.
+  // 최초에는 구획이 없다. 검증된 서버 응답을 받아 DB 좌표와 상태를 함께 채운다.
   slots: [],
   selectedFloor: 1,
   selectedSlot: null,
@@ -54,19 +87,24 @@ export const useParkingStore = create<ParkingState>((set) => ({
     slots: [], selectedFloor: 1, selectedSlot: null, syncState: 'idle',
     syncError: null, lastSyncedAt: null, unmappedNumbers: [],
   }),
-  // [1023_1010] 서버 응답 전체를 변환한 후 반영한다. 검증 예외가 나면 부분 목록으로 교체하지 않는다.
+  // 서버 응답 전체를 변환한 후 반영한다. 검증 예외가 나면 부분 목록으로 교체하지 않는다.
   replaceFromServer: (rows) => {
     const { slots, unmappedNumbers } = mergeParkingSpaces(rows);
-    set((state) => ({
-      slots,
-      unmappedNumbers,
-      syncState: 'ready',
-      syncError: null,
-      lastSyncedAt: new Date().toLocaleString('ko-KR'),
-      // 폴링 때 선택 객체가 오래된 상태로 남지 않게 최신 DB 객체로 교체.
-      selectedSlot: state.selectedSlot
-        ? slots.find((slot) => slot.parkingSpaceId != null && slot.parkingSpaceId === state.selectedSlot?.parkingSpaceId) ?? null
-        : null,
-    }));
+    set((state) => {
+      const slotsChanged = !areParkingSlotsEqual(state.slots, slots);
+      const unmappedNumbersChanged = !areStringArraysEqual(state.unmappedNumbers, unmappedNumbers);
+
+      return {
+        slots: slotsChanged ? slots : state.slots,
+        unmappedNumbers: unmappedNumbersChanged ? unmappedNumbers : state.unmappedNumbers,
+        syncState: 'ready',
+        syncError: null,
+        lastSyncedAt: new Date().toLocaleString('ko-KR'),
+        // 폴링 때 선택 객체가 오래된 상태로 남지 않게 최신 DB 객체로 교체.
+        selectedSlot: slotsChanged && state.selectedSlot
+          ? slots.find((slot) => slot.parkingSpaceId != null && slot.parkingSpaceId === state.selectedSlot?.parkingSpaceId) ?? null
+          : state.selectedSlot,
+      };
+    });
   },
 }));

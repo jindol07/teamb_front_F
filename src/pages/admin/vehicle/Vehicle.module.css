@@ -2160,6 +2160,47 @@
   margin-top: 24px;
 }
 
+.uploadResultIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 14px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.uploadResultSuccess {
+  background: #e8f7ef;
+  color: #17804b;
+}
+
+.uploadResultWarning {
+  background: #fff5db;
+  color: #a15c00;
+}
+
+.uploadResultError {
+  background: #fef0f0;
+  color: #c43636;
+}
+
+.uploadResultErrors {
+  display: grid;
+  gap: 7px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 14px 16px 14px 34px;
+  border: 1px solid #fecdca;
+  border-radius: 10px;
+  background: #fff8f7;
+  color: #9f3028;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .dangerButton {
   padding: 10px 18px;
   border: 1px solid #dc2626;

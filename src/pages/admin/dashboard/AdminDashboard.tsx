@@ -1,4 +1,10 @@
-/** 관리자 대시보드: 통계·차량 신청은 읽기 전용, 주차현황은 기존 실시간 구독을 공유한다. */
+/** 파일 안내
+ * 용도: 주차현황, 일별 통계, 차량 추가 신청, 최근 입출차와 위험알림 영역을 조립하는 관리자 첫 화면.
+ * 직접 사용처: AdminRouter의 dashboard 경로.
+ * 구획은 useParkingSpaceSync의 공통 연결을 사용하고 통계·신청·입출차·오늘 예약은 각 조회 API에서 받는다.
+ * 통계의 주간·월간은 최근 7일·30일이다. 신청·입출차·오늘 예약은 30초마다, 위험알림은 공통 Provider에서 5초마다 갱신한다.
+ * 위험알림 목록은 공통 Provider를 공유하며 항목 선택 시 전역 상세·처리 모달을 연다.
+ */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { VehicleChangeRequestDTO } from '../../../api/vehicleApi';
@@ -50,6 +56,7 @@ export default function AdminDashboard() {
   }>(() => ({ date: parkingToday(), count: null, error: null }));
   const [operationalLoading, setOperationalLoading] = useState(true);
 
+  // 통계 기간만 바뀌면 차트 요청만 다시 실행하고, 이전 기간의 응답은 취소한다.
   useEffect(() => {
     const controller = new AbortController();
     setStatisticsLoading(true);
@@ -69,6 +76,7 @@ export default function AdminDashboard() {
     return () => controller.abort();
   }, [period, reload]);
 
+  // 여러 목록의 성공·실패를 분리해 한 API 장애가 다른 목록을 숨기지 않도록 한다.
   useEffect(() => {
     const controller = new AbortController();
     let inFlight = false;
@@ -137,7 +145,7 @@ export default function AdminDashboard() {
       }
     };
     void loadOperational();
-    // 구획은 공통 소켓이 갱신한다. 이 타이머는 신청·입출차·오늘 예약만 보완한다.
+    // 구획은 공통 소켓이 갱신한다. 이 타이머는 신청·입출차·오늘 예약을 보완한다.
     const timer = window.setInterval(() => {
       if (!document.hidden) void loadOperational();
     }, 30000);
@@ -152,6 +160,7 @@ export default function AdminDashboard() {
     };
   }, [reload]);
 
+  // 수동 갱신은 목록 effect를 다시 시작하고 공통 구획 현황도 별도로 조회한다.
   const handleRefresh = () => {
     setReload((version) => version + 1);
     void refresh().catch(() => {

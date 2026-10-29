@@ -1,4 +1,4 @@
-/** [1023_1010] 파일 안내
+/** 파일 안내
  * 용도: 선택 구획의 보정 입력·기존 미출차 차량 검색·변경 이력·예약 내역 표시.
  * 직접 사용처: ParkingStatusAdmin.tsx. 예약 탭에서 ParkingReservationList를 사용한다.
  * parkingSpaceApi의 correction·usage-candidates 조회를 사용하고 저장은 부모 onSave에 위임한다.
@@ -39,14 +39,19 @@ const typeLabels: Record<string, string> = {
   DISABLED_PERSON: '장애인',
   DISABLED: '기존 사용불가 구분',
 };
-// [1023_1010] datetime-local 입력에 맞도록 현재 브라우저의 로컬 시각 문자열을 만든다.
+// datetime-local에는 시간대가 없으므로 브라우저 위치와 무관하게 한국 현재 시각을 넣는다.
 const nowInput = () => {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 19);
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? '';
+  return `${value('year')}-${value('month')}-${value('day')}T${value('hour')}:${value('minute')}:${value('second')}`;
 };
-// [1023_1010] unknown 예외를 사용자에게 표시할 문자열로 변환한다.
+// unknown 예외를 사용자에게 표시할 문자열로 변환한다.
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
 
@@ -78,7 +83,7 @@ export function SlotDetailPanel({
   const submitLock = useRef(false);
   const mounted = useRef(true);
 
-  // [1023_1010] 이전 상세·검색 요청을 취소한 뒤 구획 원본과 이력을 다시 읽고 편집 기준값을 초기화한다.
+  // 이전 상세·검색 요청을 취소한 뒤 구획 원본과 이력을 다시 읽고 편집 기준값을 초기화한다.
   const reload = useCallback(async () => {
     detailRequest.current?.abort();
     searchRequest.current?.abort();
@@ -120,7 +125,7 @@ export function SlotDetailPanel({
     }
   }, [id]);
 
-  // [1023_1010] 구획 변경·언마운트 시 이전 요청을 취소하고 화면 종료 후 상태 갱신을 막는다.
+  // 구획 변경·언마운트 시 이전 요청을 취소하고 화면 종료 후 상태 갱신을 막는다.
   useEffect(() => {
     mounted.current = true;
     void reload();
@@ -132,7 +137,7 @@ export function SlotDetailPanel({
   }, [reload]);
 
   const active = detail?.activeUsages ?? [];
-  // [1023_1010] 사용중에는 기존 기록 연결을, 차량이 연결된 사용가능에는 정리 방법 선택을 요구한다.
+  // 사용중에는 기존 기록 연결을, 차량이 연결된 사용가능에는 정리 방법 선택을 요구한다.
   const chooseStatus = (next: string) => {
     setStatus(next);
     setDirty(true);
@@ -145,7 +150,7 @@ export function SlotDetailPanel({
     );
   };
 
-  // [1023_1010] 차량번호로 기존 미출차 기록만 검색한다. 검색 자체로 입차·배정은 수행하지 않는다.
+  // 차량번호로 기존 미출차 기록만 검색한다. 검색 자체로 입차·배정은 수행하지 않는다.
   const search = async () => {
     if (query.replace(/\s/g, '').length < 2) {
       setError('차량번호를 두 글자 이상 입력해 주세요.');
@@ -171,7 +176,7 @@ export function SlotDetailPanel({
     }
   };
 
-  // [1023_1010] 필수 사유·대상 기록·출차 시각을 확인하고 관리자 확인 후 부모 저장 함수를 호출한다.
+  // 필수 사유·대상 기록·출차 시각을 확인하고 관리자 확인 후 부모 저장 함수를 호출한다.
   const save = async () => {
     if (!detail || submitLock.current) return;
     setError(null);
@@ -210,10 +215,10 @@ export function SlotDetailPanel({
       )
     )
       return;
-    // [1023_1010] React 렌더링보다 먼저 잠금을 설정해 빠른 연속 클릭에 의한 중복 저장을 막는다.
+    // React 렌더링보다 먼저 잠금을 설정해 빠른 연속 클릭에 의한 중복 저장을 막는다.
     submitLock.current = true;
     try {
-      // [1023_1010] 변경값과 조회 당시 expected 값들을 함께 보내 서버가 동시 변경을 확인하도록 한다.
+      // 변경값과 조회 당시 expected 값들을 함께 보내 서버가 동시 변경을 확인하도록 한다.
       await onSave({
         spaceStatusCode: status,
         spaceTypeCode: type,
@@ -360,7 +365,7 @@ export function SlotDetailPanel({
                   {action === 'EXIT' && (
                     <>
                       <label className="form-label mt-2" htmlFor="parking-exit-at">
-                        실제 출차 시각
+                        실제 출차 시각 (한국 시간)
                       </label>
                       <input
                         id="parking-exit-at"

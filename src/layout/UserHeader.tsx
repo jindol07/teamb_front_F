@@ -3,6 +3,7 @@ import { currentUserMock } from '../mock/userMock';
 import { getOffice, logoutAction } from '../auth/actions/authActions';
 import { useAppDispatch } from '../auth/reducers/store';
 import { useEffect, useState } from 'react';
+import alpicon from '../assets/alpicon.ico';
 
 /**
  * UserHeader
@@ -33,6 +34,7 @@ export default function UserHeader() {
     <header className="user-header d-flex align-items-center border-bottom">
       <div className="container d-flex justify-content-between align-items-center h-100">
         <Link to="/user" className="user-header-brand fw-bold fs-5 text-decoration-none">
+          <img className="user-header-brand-icon" src={alpicon} alt="" aria-hidden="true" />
           <span className="user-header-brand-text">AI Alpha Parking Service</span>
         </Link>
 
