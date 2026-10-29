@@ -34,7 +34,6 @@ export default function UserLogin() {
 
     // login후 이동할 경로 설정 위해서 useLocation훅을 사용한다.
     const location = useLocation();
-    console.log("location.search:" + location.search);
     // 로그인 시 리다이렉트할 경로 설정 (기본값은 메인 페이지)
     const redirectPath = new URLSearchParams(location.search).get('redirect') || '/';
 
@@ -124,7 +123,7 @@ export default function UserLogin() {
                     <button type="submit" className="btn btn-primary w-100 mb-3">
                         로그인
                     </button>
-                    <button
+                    {/* <button
                         style={{ backgroundColor: '#03C75A', border: 'none' }}
                         type="button"
                         className="btn btn-primary w-100 mb-3"
@@ -148,7 +147,7 @@ export default function UserLogin() {
                             </div>
                             <span>네이버 로그인</span>
                         </div>
-                    </button>
+                    </button> */}
 
                     <div className="d-flex justify-content-between small">
                         <Link to="/user/signup" className="text-decoration-none">

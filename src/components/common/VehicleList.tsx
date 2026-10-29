@@ -16,6 +16,7 @@ export default function VehicleList({
         owner_name: "",
         vehicle_type_code: "PERSONAL",
     })
+    const [vehicleError, setVehicleError] = useState("");
 
     function deleteCurrentVehicle(num : number): void {
         setVehicles(vehicles.filter((e, i) => {
@@ -27,7 +28,6 @@ export default function VehicleList({
     }
 
     function setFormData(e : React.ChangeEvent<any>): void {
-        console.log(e.target.name);
         setModifyVehicle({
             ...modifyVehicle,
             [e.target.name]: e.target.value,
@@ -196,11 +196,15 @@ export default function VehicleList({
                                 type="text"
                                 className="form-control"
                                 placeholder="예: 12가 3456"
-                                onChange={e => setNewVehicle({
-                                    vehicle_number: e.target.value,
-                                    owner_name: newVehicle.owner_name,
-                                    vehicle_type_code: newVehicle.vehicle_type_code,
-                                })}
+                                value={newVehicle.vehicle_number}
+                                onChange={e => {
+                                    setNewVehicle({
+                                        vehicle_number: e.target.value,
+                                        owner_name: newVehicle.owner_name,
+                                        vehicle_type_code: newVehicle.vehicle_type_code,
+                                    });
+                                    setVehicleError("");
+                                }}
                             />
                         </div>
 
@@ -213,11 +217,15 @@ export default function VehicleList({
                                 type="text"
                                 className="form-control"
                                 placeholder="홍길동"
-                                onChange={e => setNewVehicle({
-                                    vehicle_number: newVehicle.vehicle_number,
-                                    owner_name: e.target.value,
-                                    vehicle_type_code: newVehicle.vehicle_type_code,
-                                })}
+                                value={newVehicle.owner_name}
+                                onChange={e => {
+                                    setNewVehicle({
+                                        vehicle_number: newVehicle.vehicle_number,
+                                        owner_name: e.target.value,
+                                        vehicle_type_code: newVehicle.vehicle_type_code,
+                                    });
+                                    setVehicleError("");
+                                }}
                             />
                         </div>
 
@@ -240,14 +248,29 @@ export default function VehicleList({
                                 <option value="OFFICE">법인차량</option>
                             </select>
                         </div>
-
+                        {vehicleError && (
+                            <div className="text-danger small">
+                                {vehicleError}
+                            </div>
+                        )}
                         <div className="d-flex flex-row justify-content-end gap-2">
                             <button
                                 type="button"
                                 className="btn btn-primary"
                                 style={{ minWidth: 80 }}
                                 onClick={() => {
-                                    setVehicles([...vehicles, newVehicle])
+                                    if (!newVehicle.vehicle_number.trim()) {
+                                        setVehicleError("차량 번호를 입력해주세요.");
+                                        return;
+                                    }
+
+                                    if (!newVehicle.owner_name.trim()) {
+                                        setVehicleError("소유주를 입력해주세요.");
+                                        return;
+                                    }
+
+                                    setVehicles([...vehicles, newVehicle]);
+                                    setVehicleError("");
                                     setIsNewVehicle(false);
                                 }}
                             >
@@ -258,7 +281,10 @@ export default function VehicleList({
                                 type="button"
                                 className="btn btn-outline-secondary"
                                 style={{ minWidth: 80 }}
-                                onClick={() => setIsNewVehicle(false)}
+                                onClick={() => {
+                                    setIsNewVehicle(false);
+                                    setVehicleError("");
+                                }}
                             >
                                 취소
                             </button>

@@ -22,7 +22,6 @@ export default function UserHeader() {
   useEffect(() => {
     const fetchOffice = async () => {
       const result = await getOffice();
-      console.log(result);
       if (result) {
         setCurrentUser(result.data.username);
       }

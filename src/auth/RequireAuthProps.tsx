@@ -15,8 +15,6 @@ const RequireAuth: React.FC<RequireAuthProps> = ({
 
     const location = useLocation();
 
-    console.log(location);
-
     // 1. JWT 토큰 확인
     const token = localStorage.getItem('token');
     
@@ -43,8 +41,6 @@ const RequireAuth: React.FC<RequireAuthProps> = ({
     const decoded = parseJwt(token);
     const userRole = decoded?.role;
 
-    console.log(decoded, allowedRoles);
-
     // 4. 토큰이 잘못된 경우
     if (!decoded) {
         if (location.pathname.startsWith("/admin")) {
@@ -53,8 +49,6 @@ const RequireAuth: React.FC<RequireAuthProps> = ({
             return <Navigate to="/user/login" replace />;
         }
     }
-
-    console.log(location.pathname.startsWith("/admin"));
 
     // 5. 권한 검사
     if (allowedRoles) {
