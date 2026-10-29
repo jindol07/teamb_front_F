@@ -30,7 +30,7 @@ export default function UserRoutes() {
   return (
     <>
       {/* 첫 화면 접속 시 로그인 화면으로 이동 */}
-      <Route path="/" element={<Navigate to="/user" replace />} />
+      <Route path="/" element={<Navigate to="/user/login" replace />} />
 
 
       {/* 로그인 화면은 공통 Header/Footer가 필요 없으므로 UserLayout 밖에 둡니다 */}
