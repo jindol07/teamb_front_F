@@ -13,7 +13,7 @@ import {
 } from '../../../auth/actions/authActions';
 
 /**
- * 입주민 회원가입 페이지 (/user/signup)
+ * 입주사 회원가입 페이지 (/user/signup)
  */
 
 export interface vehicleState {
@@ -117,7 +117,6 @@ export default function UserSignUp() {
 
     const userNameCheck = async () => {
         const isCheck = await checkUsername(username)
-        console.log(username, isCheck);
         if (username != null) {
             if (!isCheck) {
                 setCheckedUsername(username);
@@ -279,7 +278,7 @@ export default function UserSignUp() {
         }
 
         // if (!verificationCode) {
-        //     errors.verification_code = "입주민 인증번호를 입력해주세요.";
+        //     errors.verification_code = "입주사 인증번호를 입력해주세요.";
         // }
 
         if (vehicles.length === 0) {
@@ -380,7 +379,7 @@ export default function UserSignUp() {
                 {/* 제목 */}
                 <div className="text-center mb-4">
                     <h2 className="fw-bold text-primary">주차관제 서비스</h2>
-                    <p className="text-secondary">입주민 회원가입</p>
+                    <p className="text-secondary">입주사 회원가입</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
@@ -716,17 +715,17 @@ export default function UserSignUp() {
                     </div>
 
 
-                    {/* 입주민 인증번호 */}
+                    {/* 입주사 인증번호 */}
                     {/*<div className="mb-3">
                         <label htmlFor="residentCode" className="form-label">
-                            입주민 인증번호
+                            입주사 인증번호
                         </label>
                         <input
                             type="text"
                             id="verification_code"
                             name="verification_code"
                             className={`form-control ${validationErrors.verification_code ? "is-invalid" : ""}`}
-                            placeholder="입주민 인증번호를 입력해주세요"
+                            placeholder="입주사 인증번호를 입력해주세요"
                             onChange={() => setValidationErrors(prev => ({ ...prev, verification_code: "" }))}
                         />
                         {validationErrors.verification_code && (
@@ -735,7 +734,7 @@ export default function UserSignUp() {
                             </div>
                         )}
                         <div className="form-text">
-                            관리사무소에서 발급받은 입주민 인증번호를 입력해주세요.
+                            관리사무소에서 발급받은 입주사 인증번호를 입력해주세요.
                         </div>
                     </div>*/}
                     {/* 차량 등록 */}

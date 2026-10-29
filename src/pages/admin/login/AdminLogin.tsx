@@ -32,8 +32,6 @@ export default function AdminLogin() {
     // login후 이동할 경로 설정 위해서 useLocation훅을 사용한다.
     const location = useLocation();
 
-
-    console.log("location.search:" + location.search);
     // 로그인 시 리다이렉트할 경로 설정 (기본값은 메인 페이지)
     const redirectPath = new URLSearchParams(location.search).get('redirect') || '/';
 
@@ -49,12 +47,10 @@ export default function AdminLogin() {
         const success = await dispatch(adminLogin(username, password));
         
         if (!success) {
-            console.log(33);
             setErrorMessage('아이디 또는 비밀번호를 확인하세요.');
             return;
         }
 
-        console.log(redirectPath);
         if (redirectPath == '/') {
             navigate('/admin/dashboard', { replace: true });
         } else {
