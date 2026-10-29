@@ -36,7 +36,7 @@ export function useAlpharkingAnnouncements(enabled: boolean) {
         setNotice(null);
         if (token) {
             // 로그인한 본인의 전체 예약 API를 사용하며 최근 50건 제한에 의한 누락을 피합니다.
-            void userApi.get<unknown>('/api/reservation', { signal: controller.signal, timeout: 10000 })
+            void userApi.get<unknown>(' ', { signal: controller.signal, timeout: 10000 })
                 .then(({ data }) => {
                     if (active && readToken() === token) personal.current = { token, text: reservationNotice(data), ready: true };
                 }).catch(() => {

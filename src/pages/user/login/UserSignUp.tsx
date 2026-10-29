@@ -5,6 +5,7 @@ import VehicleList from '../../../components/common/VehicleList';
 import {
     checkUsername,
     checkEmail,
+    checkBusiness,
     officeSignup,
     sendEmailVerificationCode,
     signupData,
@@ -60,11 +61,17 @@ export default function UserSignUp() {
     const [policyType, setPolicyType] = useState<"terms" | "privacy" | null>(null);
     const [isAvailableEmail, setIsAvailableEmail] = useState<boolean>(false);
     const [checkedEmail, setCheckedEmail] = useState<string>("");   
+    const [businessNumber, setBusinessNumber] = useState("");
+    const [checkedBusinessNumber, setCheckedBusinessNumber] = useState("");
+    const [isAvailableBusinessNumber, setIsAvailableBusinessNumber] = useState(false);
+    const [signupError, setSignupError] = useState("");
 
     const navigate = useNavigate();
-
+    
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        setSignupError("");
 
         if (verifiedEmail !== email.trim()) {
             setValidationErrors(prev => ({
@@ -103,16 +110,23 @@ export default function UserSignUp() {
             const result = await officeSignup(signupPayload);
 
             if (!result) {
-                alert("회원가입에 실패했습니다. 입력 내용을 확인해주세요.");
+                setSignupError("회원가입에 실패했습니다. 입력 내용을 확인해주세요.");
                 return;
             }
 
             setUserInfo(result.data);
             alert("가입이 정상적으로 완료되었습니다.");
             navigate("/user/login");
+        
+        } catch (error: any) {
+            setSignupError(
+                error.message ||
+                "회원가입 중 오류가 발생했습니다. 다시 시도해주세요."
+            );
         } finally {
             setSignupBusy(false);
         }
+
     };
 
     const userNameCheck = async () => {
@@ -178,6 +192,52 @@ export default function UserSignUp() {
             setValidationErrors(prev => ({
                 ...prev,
                 email: "",
+            }));
+        }
+    };
+
+    const userBusinessCheck = async () => {
+        const normalizedBusinessNumber = businessNumber.replace(/-/g, "").trim();
+
+        if (!/^\d{10}$/.test(normalizedBusinessNumber)) {
+            setIsAvailableBusinessNumber(false);
+            setCheckedBusinessNumber("");
+
+            setValidationErrors(prev => ({
+                ...prev,
+                company_business_number: "사업자등록번호는 숫자 10자리로 입력해주세요."
+            }));
+            return;
+        }
+
+        const result = await checkBusiness(normalizedBusinessNumber);
+
+        if (result === null) {
+            setIsAvailableBusinessNumber(false);
+            setCheckedBusinessNumber("");
+
+            setValidationErrors(prev => ({
+                ...prev,
+                company_business_number: "사업자등록번호 중복 확인에 실패했습니다. 다시 시도해주세요."
+            }));
+            return;
+        }
+
+        if (result) {
+            setIsAvailableBusinessNumber(false);
+            setCheckedBusinessNumber("");
+
+            setValidationErrors(prev => ({
+                ...prev,
+                company_business_number: "이미 등록된 사업자등록번호입니다."
+            }));
+        } else {
+            setIsAvailableBusinessNumber(true);
+            setCheckedBusinessNumber(normalizedBusinessNumber);
+
+            setValidationErrors(prev => ({
+                ...prev,
+                company_business_number: ""
             }));
         }
     };
@@ -251,12 +311,17 @@ export default function UserSignUp() {
             errors.company_company_name = "회사명은 최대 20자까지 입력할 수 있습니다.";
         }
 
-        const businessNumberValue = businessNumber.replace(/-/g, "");
+        const businessNumberValue = businessNumber.replace(/-/g, "").trim();
 
-        if (!businessNumber) {
+        if (!businessNumberValue) {
             errors.company_business_number = "사업자 등록번호를 입력해주세요.";
         } else if (!/^\d{10}$/.test(businessNumberValue)) {
             errors.company_business_number = "사업자 등록번호는 숫자 10자리로 입력해주세요.";
+        } else if (
+            !isAvailableBusinessNumber ||
+            checkedBusinessNumber !== businessNumberValue
+        ) {
+            errors.company_business_number = "사업자등록번호 중복 확인을 해주세요.";
         }
 
         if (!companyAddr) {
@@ -605,7 +670,6 @@ export default function UserSignUp() {
                         )}
                     </div>
 
-
                     {/* 회사 정보 */}
                     <div className="mb-3">
                         <label htmlFor="emailCode" className="form-label">
@@ -626,26 +690,55 @@ export default function UserSignUp() {
                             </div>
                         )}
                     </div>
-                    {/* 회사 전화 */}
+
+                    {/* 사업자 등록번호 */}
                     <div className="mb-3">
-                        <label htmlFor="emailCode" className="form-label">
+                        <label htmlFor="company_business_number" className="form-label">
                             사업자 등록번호
                         </label>
-                        <input
-                            type="text"
-                            id="company_business_number"
-                            name="company_business_number"
-                            className={`form-control ${validationErrors.company_business_number ? "is-invalid" : ""}`}
-                            placeholder="사업자 등록번호를 적어주세요"
-                            maxLength={12}
-                            onChange={() => setValidationErrors(prev => ({ ...prev, company_business_number: "" }))}
-                        />
+                        <div className="input-group">
+                            <input
+                                type="text"
+                                id="company_business_number"
+                                name="company_business_number"
+                                className={`form-control ${
+                                    validationErrors.company_business_number ? "is-invalid" : ""
+                                }`}
+                                placeholder="사업자 등록번호를 적어주세요 ('-' 없이 입력)"
+                                maxLength={10}
+                                value={businessNumber}
+                                onChange={(e) => {
+                                    setBusinessNumber(e.target.value);
+                                    setIsAvailableBusinessNumber(false);
+                                    setCheckedBusinessNumber("");
+
+                                    setValidationErrors(prev => ({
+                                        ...prev,
+                                        company_business_number: ""
+                                    }));
+                                }}
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-outline-primary"
+                                onClick={userBusinessCheck}
+                            >
+                                중복 확인
+                            </button>
+                        </div>
                         {validationErrors.company_business_number && (
                             <div className="text-danger small mt-1">
                                 {validationErrors.company_business_number}
                             </div>
                         )}
+                        {isAvailableBusinessNumber &&
+                            checkedBusinessNumber === businessNumber.replace(/-/g, "").trim() && (
+                                <div className="text-success small mt-1">
+                                    사용 가능한 사업자등록번호입니다.
+                                </div>
+                            )}
                     </div>
+
                     {/* 회사 주소 */}
                     <div className="mb-3">
                         <label htmlFor="emailCode" className="form-label">
@@ -666,7 +759,6 @@ export default function UserSignUp() {
                             </div>
                         )}
                     </div>
-
 
                     {/* 회사 상세 주소 */}
                     <div className="mb-3">
@@ -851,21 +943,21 @@ export default function UserSignUp() {
 
 
 
+                    {/* 회원가입 오류 메시지 */}
+                    {signupError && (
+                        <div className="text-danger small mb-3" role="alert">
+                            {signupError}
+                        </div>
+                    )}
+
                     {/* 회원가입 버튼 */}
                     <button
-                        type="submit"
-                        className="btn btn-primary w-100 mb-3"
-                    >
-                        회원가입
-                    </button>
-
-                    {/* <button
                         type="submit"
                         className="btn btn-primary w-100 mb-3"
                         disabled={signupBusy}
                     >
                         {signupBusy ? "가입 처리 중..." : "회원가입"}
-                    </button> */}
+                    </button>
 
 
                     {/* 로그인 이동 */}
