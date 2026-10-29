@@ -1,10 +1,9 @@
 export const parseJwt = (token: string) => {
-    console.log("parseJwt.ts token =>"+token);
+    // console.log("parseJwt.ts token =>"+token);
     try {
       // payLoad는 배열에서 1번째에 해당이 된다.
       const payLoad = token.split('.')[1];
-      console.log("*************payLoad*******************");
-      console.log(`payLoad : ${payLoad}`);
+      // console.log(`payLoad : ${payLoad}`);
       
 
       const jsonPayload = decodeURIComponent(
@@ -14,9 +13,9 @@ export const parseJwt = (token: string) => {
           .join('')
       );
 
-      console.log(`jsonPayload : ${jsonPayload}`);
-      console.log(`JSON.parse(jsonPayload):${JSON.parse(jsonPayload).sub}, Role: ${JSON.parse(jsonPayload).role}`);
-      console.log("*************payLoad*******************");
+      // console.log(`jsonPayload : ${jsonPayload}`);
+      // console.log(`JSON.parse(jsonPayload):${JSON.parse(jsonPayload).sub}, Role: ${JSON.parse(jsonPayload).role}`);
+      // console.log("*************payLoad*******************");
       
       return JSON.parse(jsonPayload);
     } catch (error) {

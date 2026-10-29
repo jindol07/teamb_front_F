@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import VehicleList from '../../../components/common/VehicleList';
 
 /**
- * 입주민 회원가입 페이지 (/user/signup)
+ * 입주사 회원가입 페이지 (/user/signup)
  * 현재는 실제 회원가입/인증 기능을 구현하지 않습니다.
  */
 export default function UserSignUp() {
@@ -24,7 +24,7 @@ export default function UserSignUp() {
         {/* 제목 */}
         <div className="text-center mb-4">
           <h2 className="fw-bold text-primary">주차관제 서비스</h2>
-          <p className="text-secondary">입주민 회원가입</p>
+          <p className="text-secondary">입주사 회원가입</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -152,21 +152,21 @@ export default function UserSignUp() {
           </div>
 
 
-          {/* 입주민 인증번호 */}
+          {/* 입주사 인증번호 */}
           <div className="mb-3">
             <label htmlFor="residentCode" className="form-label">
-              입주민 인증번호
+              입주사 인증번호
             </label>
 
             <input
               type="text"
               id="residentCode"
               className="form-control"
-              placeholder="입주민 인증번호를 입력해주세요"
+              placeholder="입주사 인증번호를 입력해주세요"
             />
 
             <div className="form-text">
-              관리사무소에서 발급받은 입주민 인증번호를 입력해주세요.
+              관리사무소에서 발급받은 입주사 인증번호를 입력해주세요.
             </div>
           </div>
 
