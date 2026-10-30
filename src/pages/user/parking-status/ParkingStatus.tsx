@@ -510,3 +510,4 @@ const handleSlotClick = (slot: ExtendedParkingSlot) => {
     </div>
   );
 }
+/*시연용*/
